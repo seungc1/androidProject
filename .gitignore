@@ -1,15 +1,35 @@
-*.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
+# ----------------------------------------------------------------------
+# 💡 Android & IntelliJ/Android Studio Files to Ignore
+# ----------------------------------------------------------------------
+
+# 1. JetBrains/IntelliJ/Android Studio Files (.idea folder)
+#    : 로컬 설정, 사용자 환경, 캐시 파일 등 개인적인 파일 무시
+#    - compiler.xml 파일도 이 규칙에 의해 무시됩니다.
+.idea/
+# 하지만, 일부 팀 환경에서 공유해야 할 .idea 파일이 있다면 아래에서 예외 처리 가능
+# 예: !.idea/runConfigurations/ # Run 설정 공유 시
+
+# 2. Project/Module Specific Files
+*.iml             # IntelliJ/Android Studio 모듈 파일 (IDE가 재생성)
+.gradle/          # Gradle 캐시 및 임시 파일
+
+# 3. Build Artifacts
+/build            # 모든 빌드 결과물 (APK, 클래스 파일 등)
+/captures         # 스크린샷 및 기타 캡처 파일
+/out              # 컴파일 결과물 (오래된 방식)
+
+# 4. Local Properties and Environment
+/local.properties # 사용자 환경 경로 설정 (민감 정보 포함 가능)
+
+# 5. Native Build Files
 .externalNativeBuild
 .cxx
-local.properties
+
+# 6. Temporary & OS Files
+.DS_Store         # macOS에서 생성되는 임시 파일
+Thumbs.db         # Windows에서 생성되는 썸네일 캐시
+
+# 7. Dalvik/ART Specific Files
+*.apk
+*.ap_
+*.dex
