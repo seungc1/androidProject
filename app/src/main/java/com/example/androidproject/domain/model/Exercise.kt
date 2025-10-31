@@ -1,13 +1,31 @@
-// app/src/main/java/com/example/androidproject/domain/model/Exercise.kt
 package com.example.androidproject.domain.model
 
-// 재활 운동 정보를 나타내는 데이터 클래스
+/**
+ * 개별 운동에 대한 상세 정보.
+ * Domain Layer Model
+ */
 data class Exercise(
-    val id: String,         // 운동 고유 ID
-    val name: String,       // 운동 이름 (예: "손목 스트레칭")
-    val description: String,// 운동 설명
-    val targetBodyPart: String, // 주 타겟 신체 부위
-    val riskBodyParts: List<String>, // 이 운동이 부담을 줄 수 있는 신체 부위 목록 (예: ["손목", "어깨"])
-    val videoUrl: String? = null, // 운동 가이드 영상 URL (초기에는 null 또는 더미 값)
-    val difficulty: Int = 1 // 운동 난이도 (1:쉬움, 5:어려움)
+    /** 운동을 식별하는 고유 ID. */
+    val id: String,
+
+    /** 운동의 이름 (예: "스쿼트"). */
+    val name: String,
+
+    /** 운동 방법 및 효과에 대한 상세 설명. */
+    val description: String,
+
+    /** 운동 대상 신체 부위 (예: "하체", "코어"). */
+    val bodyPart: String,
+
+    /** 운동 난이도 (예: "초급", "중급", "고급"). */
+    val difficulty: String,
+
+    /** 운동 동작을 보여주는 영상의 URL (선택 사항). */
+    val videoUrl: String?,
+
+    /** 운동 시 주의해야 할 점 (선택 사항). */
+    val precautions: String?,
+
+    /** AI가 이 운동을 추천한 구체적인 이유 (선택 사항). */
+    val aiRecommendationReason: String?
 )

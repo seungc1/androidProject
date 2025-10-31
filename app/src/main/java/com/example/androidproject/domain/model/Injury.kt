@@ -1,9 +1,22 @@
-// app/src/main/java/com/example/androidproject/domain/model/Injury.kt
 package com.example.androidproject.domain.model
 
-// 사용자의 부상 정보를 나타내는 데이터 클래스
+/**
+ * 사용자가 겪고 있는 부상에 대한 상세 정보.
+ * Domain Layer Model
+ */
 data class Injury(
-    val bodyPart: String, // 손상 부위 (예: "손목", "무릎", "허리")
-    val painLevel: Int,   // 통증 수준 (예: 0-10 척도)
-    val diagnosis: String? = null // 진단명 (선택 사항)
+    /** 부상을 식별하는 고유 ID. */
+    val id: String,
+
+    /** 부상의 명칭 (예: "손목 염좌"). */
+    val name: String,
+
+    /** 부상이 있는 신체 부위 (예: "손목", "어깨"). */
+    val bodyPart: String,
+
+    /** 부상의 심각도 (예: "경미", "보통", "심각"). */
+    val severity: String,
+
+    /** 부상에 대한 상세 설명. */
+    val description: String
 )
