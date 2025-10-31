@@ -1,6 +1,6 @@
 package com.example.androidproject.presentation.viewmodel;
 
-import com.example.androidproject.domain.usecase.GetRecommendedRehabUseCase;
+import com.example.androidproject.domain.usecase.GetAIRecommendationUseCase;
 import dagger.internal.DaggerGenerated;
 import dagger.internal.Factory;
 import dagger.internal.QualifierMetadata;
@@ -20,24 +20,24 @@ import javax.inject.Provider;
     "rawtypes"
 })
 public final class RehabViewModel_Factory implements Factory<RehabViewModel> {
-  private final Provider<GetRecommendedRehabUseCase> getRecommendedRehabUseCaseProvider;
+  private final Provider<GetAIRecommendationUseCase> getAIRecommendationUseCaseProvider;
 
   public RehabViewModel_Factory(
-      Provider<GetRecommendedRehabUseCase> getRecommendedRehabUseCaseProvider) {
-    this.getRecommendedRehabUseCaseProvider = getRecommendedRehabUseCaseProvider;
+      Provider<GetAIRecommendationUseCase> getAIRecommendationUseCaseProvider) {
+    this.getAIRecommendationUseCaseProvider = getAIRecommendationUseCaseProvider;
   }
 
   @Override
   public RehabViewModel get() {
-    return newInstance(getRecommendedRehabUseCaseProvider.get());
+    return newInstance(getAIRecommendationUseCaseProvider.get());
   }
 
   public static RehabViewModel_Factory create(
-      Provider<GetRecommendedRehabUseCase> getRecommendedRehabUseCaseProvider) {
-    return new RehabViewModel_Factory(getRecommendedRehabUseCaseProvider);
+      Provider<GetAIRecommendationUseCase> getAIRecommendationUseCaseProvider) {
+    return new RehabViewModel_Factory(getAIRecommendationUseCaseProvider);
   }
 
-  public static RehabViewModel newInstance(GetRecommendedRehabUseCase getRecommendedRehabUseCase) {
-    return new RehabViewModel(getRecommendedRehabUseCase);
+  public static RehabViewModel newInstance(GetAIRecommendationUseCase getAIRecommendationUseCase) {
+    return new RehabViewModel(getAIRecommendationUseCase);
   }
 }

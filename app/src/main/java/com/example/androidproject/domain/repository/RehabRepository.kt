@@ -2,13 +2,13 @@
 package com.example.androidproject.domain.repository
 
 import com.example.androidproject.domain.model.Exercise
-import com.example.androidproject.domain.model.Injury
+import kotlinx.coroutines.flow.Flow
 
-// 재활 관련 데이터를 가져오는 계약(Interface)
 interface RehabRepository {
-    // 사용자의 부상 정보를 기반으로 추천 운동 목록을 가져오는 함수
-    suspend fun getRecommendedExercises(injury: Injury): List<Exercise>
+    // 특정 운동의 상세 정보 가져오기
+    suspend fun getExerciseDetail(exerciseId: String): Flow<Exercise>
 
-    // 특정 신체 부위에 대한 모든 재활 운동 목록을 가져오는 함수 (옵션)
-    suspend fun getAllExercisesByBodyPart(bodyPart: String): List<Exercise>
+    // (옵션) 모든 운동 목록 가져오기 - AI 추천 외에 브라우징 기능을 위한 것.
+    // 필요하다면 나중에 추가하거나, GetAIRecommendationUseCase에서 다 가져올 수도 있음.
+    // suspend fun getAllExercises(): Flow<List<Exercise>>
 }
