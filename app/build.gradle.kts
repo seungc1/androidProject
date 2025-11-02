@@ -67,7 +67,9 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)   // LifecycleScope와 같은 런타임 기능 지원
 
     // Hilt (Dagger Hilt: 의존성 주입 프레임워크. 객체 생성 및 관리를 자동화하여 코드 결합도 낮춤)
-    implementation(libs.hilt.android)                        // Hilt 라이브러리 핵심
+    implementation(libs.hilt.android)
+    implementation(libs.junit.junit)
+    implementation(libs.hilt.android.testing)                        // Hilt 라이브러리 핵심
     kapt(libs.hilt.compiler)                                 // Hilt 어노테이션 프로세서 (컴파일 시 코드 생성)
     implementation(libs.androidx.hilt.navigation.fragment)   // Fragment에서 ViewModel 주입을 돕는 유틸리티 (선택 사항, Navigation Component 사용 시 유용)
     kapt(libs.androidx.hilt.compiler)                        // Hilt Android 컴파일러 (선택 사항, 일부 상황에서 필요할 수 있음)
@@ -81,7 +83,15 @@ dependencies {
     kapt(libs.androidx.room.compiler)           // Room 어노테이션 프로세서 (컴파일 시 DB 관련 코드 생성)
     implementation(libs.androidx.room.ktx)      // Room에서 코루틴을 사용하여 비동기 DB 작업 지원
 
-    // --- 추가된 의존성 끝 ---
+    // Hilt 테스트 종속성
+    testImplementation(libs.hilt.android.testing)
+    kaptTest(libs.hilt.compiler) // "..." 대신 libs. alias 사용 ('hilt-compiler'를 kaptTest 스코프에서 재사용)
+
+
+    // --- 나머지 테스트 종속성 (JUnit 등) ---
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 
 
     // For testing
