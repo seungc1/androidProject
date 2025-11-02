@@ -6,9 +6,11 @@ import android.view.View;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.SavedStateHandle;
 import androidx.lifecycle.ViewModel;
-import com.example.androidproject.data.repository.RehabRepositoryImpl;
-import com.example.androidproject.domain.repository.RehabRepository;
-import com.example.androidproject.domain.usecase.GetRecommendedRehabUseCase;
+import com.example.androidproject.data.repository.AIApiRepositoryImpl;
+import com.example.androidproject.data.repository.UserRepositoryImpl;
+import com.example.androidproject.domain.repository.AIApiRepository;
+import com.example.androidproject.domain.repository.UserRepository;
+import com.example.androidproject.domain.usecase.GetAIRecommendationUseCase;
 import com.example.androidproject.presentation.ui.MainActivity;
 import com.example.androidproject.presentation.viewmodel.RehabViewModel;
 import com.example.androidproject.presentation.viewmodel.RehabViewModel_HiltModules_KeyModule_ProvideFactory;
@@ -407,8 +409,8 @@ public final class DaggerRehabAIApp_HiltComponents_SingletonC {
 
     }
 
-    private GetRecommendedRehabUseCase getRecommendedRehabUseCase() {
-      return new GetRecommendedRehabUseCase(singletonCImpl.bindRehabRepositoryProvider.get());
+    private GetAIRecommendationUseCase getAIRecommendationUseCase() {
+      return new GetAIRecommendationUseCase(singletonCImpl.bindAIApiRepositoryProvider.get(), singletonCImpl.bindUserRepositoryProvider.get());
     }
 
     @SuppressWarnings("unchecked")
@@ -444,7 +446,7 @@ public final class DaggerRehabAIApp_HiltComponents_SingletonC {
       public T get() {
         switch (id) {
           case 0: // com.example.androidproject.presentation.viewmodel.RehabViewModel 
-          return (T) new RehabViewModel(viewModelCImpl.getRecommendedRehabUseCase());
+          return (T) new RehabViewModel(viewModelCImpl.getAIRecommendationUseCase());
 
           default: throw new AssertionError(id);
         }
@@ -523,9 +525,13 @@ public final class DaggerRehabAIApp_HiltComponents_SingletonC {
   private static final class SingletonCImpl extends RehabAIApp_HiltComponents.SingletonC {
     private final SingletonCImpl singletonCImpl = this;
 
-    private Provider<RehabRepositoryImpl> rehabRepositoryImplProvider;
+    private Provider<AIApiRepositoryImpl> aIApiRepositoryImplProvider;
 
-    private Provider<RehabRepository> bindRehabRepositoryProvider;
+    private Provider<AIApiRepository> bindAIApiRepositoryProvider;
+
+    private Provider<UserRepositoryImpl> userRepositoryImplProvider;
+
+    private Provider<UserRepository> bindUserRepositoryProvider;
 
     private SingletonCImpl() {
 
@@ -535,8 +541,10 @@ public final class DaggerRehabAIApp_HiltComponents_SingletonC {
 
     @SuppressWarnings("unchecked")
     private void initialize() {
-      this.rehabRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 0);
-      this.bindRehabRepositoryProvider = DoubleCheck.provider((Provider) rehabRepositoryImplProvider);
+      this.aIApiRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 0);
+      this.bindAIApiRepositoryProvider = DoubleCheck.provider((Provider) aIApiRepositoryImplProvider);
+      this.userRepositoryImplProvider = new SwitchingProvider<>(singletonCImpl, 1);
+      this.bindUserRepositoryProvider = DoubleCheck.provider((Provider) userRepositoryImplProvider);
     }
 
     @Override
@@ -572,8 +580,11 @@ public final class DaggerRehabAIApp_HiltComponents_SingletonC {
       @Override
       public T get() {
         switch (id) {
-          case 0: // com.example.androidproject.data.repository.RehabRepositoryImpl 
-          return (T) new RehabRepositoryImpl();
+          case 0: // com.example.androidproject.data.repository.AIApiRepositoryImpl 
+          return (T) new AIApiRepositoryImpl();
+
+          case 1: // com.example.androidproject.data.repository.UserRepositoryImpl 
+          return (T) new UserRepositoryImpl();
 
           default: throw new AssertionError(id);
         }
