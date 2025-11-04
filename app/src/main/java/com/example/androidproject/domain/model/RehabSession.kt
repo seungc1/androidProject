@@ -1,12 +1,13 @@
 package com.example.androidproject.domain.model
 
-import java.time.LocalDateTime
+
+import java.util.Date
 
 data class RehabSession(
     val id: String,
     val userId: String,
     val exerciseId: String,
-    val dateTime: LocalDateTime, // 운동 기록 시간
+    val dateTime: Date, // 운동 기록 시간
     val sets: Int, // 세트 수
     val reps: Int, // 반복 횟수
     val durationMinutes: Int?, // 지속 시간 (분)

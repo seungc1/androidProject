@@ -33,3 +33,80 @@ Thumbs.db         # Windows에서 생성되는 썸네일 캐시
 *.apk
 *.ap_
 *.dex
+
+=================================================================
+
+Android / Gradle / Kotlin Project .gitignore
+
+=================================================================
+
+--- 1. 운영체제 및 IDE 관련 ---
+
+.DS_Store
+.idea/workspace.xml
+.idea/libraries
+.idea/modules.xml
+.idea/codeStyles
+.idea/gradle.xml
+.idea/vcs.xml
+
+--- 2. Gradle 및 빌드 캐시 ---
+
+.gradle/
+/build/
+/app/build/
+/out/
+local.properties
+/gradle-wrapper.properties.bak
+/gradle-wrapper.jar
+
+--- 3. Kotlin 및 컴파일러 캐시 ---
+
+Kotlin 컴파일러 아웃풋
+
+*.class
+
+--- 4. Hilt/Dagger, Kapt, Room 자동 생성 파일 (스크린샷에 나타난 파일들) ---
+
+Kapt (Annotation Processor Tool) 생성 파일
+
+/app/build/generated/source/kapt/
+/app/build/generated/hilt/
+/app/build/generated/ap_generated_sources/
+/app/build/generated/
+/app/build/tmp/
+/app/build/intermediates/
+
+Hilt 및 Dagger 내부 임시 파일
+
+스크린샷에서 보이는 모든 hilt_aggregated_deps, Injects 파일 제외
+
+/app/build/intermediates/javac/
+/app/build/intermediates/tmp/
+/app/build/intermediates/classes/
+/app/build/intermediates/dex_archive/
+/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/
+
+Room Persistence Library DB 파일
+
+(Room 사용 시 생성될 수 있는 SQLite DB 파일)
+
+*.db
+*.sqlite
+
+--- 5. Lint 및 테스트 관련 ---
+
+/app/lint-results.xml
+/app/lint-results.html
+/app/jacoco/
+/app/test-results/
+
+--- 6. Android Studio 임시 파일 ---
+
+*.iml
+.idea/
+.project
+.classpath
+/app/app.iml
+
+/app/build/intermediates/incremental/
