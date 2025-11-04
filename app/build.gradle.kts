@@ -36,13 +36,11 @@ android {
 
 
     compileOptions {
-        // Java 컴파일러의 타겟 버전을 17로 설정
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        // Kotlin 컴파일러의 JVM 타겟 버전을 17로 설정
-        jvmTarget = "17"
+        jvmTarget = "11"
     }
 }
 
