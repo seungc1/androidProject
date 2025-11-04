@@ -1,85 +1,59 @@
-# ----------------------------------------------------------------------
-# 💡 Android & IntelliJ/Android Studio Files to Ignore
-# ----------------------------------------------------------------------
+모든 빌드 결과, 캐시, IDE 생성 파일을 제외합니다.
 
-# 1. JetBrains/IntelliJ/Android Studio Files (.idea folder)
-#    : 로컬 설정, 사용자 환경, 캐시 파일 등 개인적인 파일 무시
-#    - compiler.xml 파일도 이 규칙에 의해 무시됩니다.
+=================================================================
+
+--- 1. 운영체제 및 IDE 관련 (Local Files) ---
+
+.DS_Store             # macOS 임시 파일
+Thumbs.db             # Windows 임시 파일
+
+IntelliJ/Android Studio 로컬 설정 및 캐시 (개인 환경)
+
 .idea/
-# 하지만, 일부 팀 환경에서 공유해야 할 .idea 파일이 있다면 아래에서 예외 처리 가능
-# 예: !.idea/runConfigurations/ # Run 설정 공유 시
-
-# 2. Project/Module Specific Files
-*.iml             # IntelliJ/Android Studio 모듈 파일 (IDE가 재생성)
-.gradle/          # Gradle 캐시 및 임시 파일
-
-# 3. Build Artifacts
-/build            # 모든 빌드 결과물 (APK, 클래스 파일 등)
-/captures         # 스크린샷 및 기타 캡처 파일
-/out              # 컴파일 결과물 (오래된 방식)
-
-# 4. Local Properties and Environment
-/local.properties # 사용자 환경 경로 설정 (민감 정보 포함 가능)
-
-# 5. Native Build Files
-.externalNativeBuild
-.cxx
-
-# 6. Temporary & OS Files
-.DS_Store         # macOS에서 생성되는 임시 파일
-Thumbs.db         # Windows에서 생성되는 썸네일 캐시
-
-# 7. Dalvik/ART Specific Files
-*.apk
-*.ap_
-*.dex
-
-=================================================================
-
-Android / Gradle / Kotlin Project .gitignore
-
-=================================================================
-
---- 1. 운영체제 및 IDE 관련 ---
-
-.DS_Store
-.idea/workspace.xml
-.idea/libraries
-.idea/modules.xml
+.idea/workspace.xml   # 열었던 파일, 창 위치 등
+.idea/libraries       # Gradle에 의해 재생성되는 라이브러리 목록
+.idea/modules.xml     # 프로젝트 모듈 구성 (재생성됨)
 .idea/codeStyles
 .idea/gradle.xml
 .idea/vcs.xml
 
---- 2. Gradle 및 빌드 캐시 ---
+--- 2. Gradle 및 빌드 캐시 (Build Artifacts) ---
 
-.gradle/
-/build/
-/app/build/
-/out/
-local.properties
+Gradle 캐시 파일 및 Version Catalog Accessor 클래스 (스크린샷 오류 파일 포함)
+
+.gradle/               # 모든 Gradle 캐시 (스크린샷 오류의 근원)
+/local.properties      # 사용자 환경 경로 설정 (민감 정보 포함 가능)
 /gradle-wrapper.properties.bak
-/gradle-wrapper.jar
+/gradle-wrapper.jar    # Wrapper jar 파일은 제외 (소스 트래킹 X)
 
---- 3. Kotlin 및 컴파일러 캐시 ---
+--- 3. 컴파일 및 빌드 결과 ---
 
-Kotlin 컴파일러 아웃풋
+*.iml                  # IntelliJ/Android Studio 모듈 파일 (IDE가 재생성)
+*.apk
+*.ap_
+*.dex
+*.db                   # SQLite DB 파일
+*.sqlite
+*.class                # 컴파일된 클래스 파일
 
-*.class
+/build                 # 프로젝트 전체 빌드 결과
+/app/build/            # 앱 모듈 빌드 결과
+/out/                  # 오래된 컴파일 결과물 경로
+/captures              # 스크린샷 및 기타 캡처 파일
+/app/app.iml           # 모듈 파일
 
---- 4. Hilt/Dagger, Kapt, Room 자동 생성 파일 (스크린샷에 나타난 파일들) ---
+--- 4. KAPT / Hilt / Room 자동 생성 파일 (핵심 제외) ---
 
 Kapt (Annotation Processor Tool) 생성 파일
 
 /app/build/generated/source/kapt/
 /app/build/generated/hilt/
 /app/build/generated/ap_generated_sources/
-/app/build/generated/
+/app/build/generated/  # 재정의 (generated 폴더 전체)
 /app/build/tmp/
-/app/build/intermediates/
+/app/build/intermediates/ # 빌드 중간 파일 (스크린샷 오류의 근원)
 
-Hilt 및 Dagger 내부 임시 파일
-
-스크린샷에서 보이는 모든 hilt_aggregated_deps, Injects 파일 제외
+Hilt 및 Dagger/Kapt 내부 임시 파일 상세 경로 (intermediates 하위에 포함되지만 명시적으로 다시 추가)
 
 /app/build/intermediates/javac/
 /app/build/intermediates/tmp/
@@ -87,26 +61,11 @@ Hilt 및 Dagger 내부 임시 파일
 /app/build/intermediates/dex_archive/
 /app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/
 
-Room Persistence Library DB 파일
+--- 5. 네이티브 및 테스트 관련 ---
 
-(Room 사용 시 생성될 수 있는 SQLite DB 파일)
-
-*.db
-*.sqlite
-
---- 5. Lint 및 테스트 관련 ---
-
+.externalNativeBuild
+.cxx
 /app/lint-results.xml
 /app/lint-results.html
 /app/jacoco/
 /app/test-results/
-
---- 6. Android Studio 임시 파일 ---
-
-*.iml
-.idea/
-.project
-.classpath
-/app/app.iml
-
-/app/build/intermediates/incremental/
