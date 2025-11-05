@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  [파일 2/2] - item_diet.xml
+  식단 목록(RecyclerView)의 각 항목(한 줄) UI입니다.
+  경로: res/layout/item_diet.xml
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingVertical="12dp"
+    android:background="?attr/selectableItemBackground"> <!-- 클릭 피드백을 위한 배경 -->
+
+    <!-- 식단 이름 (예: 닭가슴살 샐러드) -->
+    <TextView
+        android:id="@+id/dietNameTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/dietCaloriesTextView"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="닭가슴살 샐러드" />
+
+    <!-- 칼로리 정보 (예: 300kcal) -->
+    <TextView
+        android:id="@+id/dietCaloriesTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+        android:textColor="?android:attr/textColorSecondary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="300kcal" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

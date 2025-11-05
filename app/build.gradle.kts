@@ -33,8 +33,6 @@ android {
         }
     }
 
-
-
     compileOptions {
         // Java 컴파일러의 타겟 버전을 17로 설정
         sourceCompatibility = JavaVersion.VERSION_17
@@ -43,6 +41,13 @@ android {
     kotlinOptions {
         // Kotlin 컴파일러의 JVM 타겟 버전을 17로 설정
         jvmTarget = "17"
+    }
+
+    // --- (성준민 추가) ViewBinding 기능 활성화 ---
+    // 나중에 MainFragment.kt, HomeFragment.kt 등에서
+    // XML 레이아웃을 쉽게 연결하기 위해 필요합니다.
+    buildFeatures {
+        viewBinding = true
     }
 }
 
@@ -54,6 +59,22 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+
+    // --- (성준민 추가) 화면 구성(UI)을 위한 필수 라이브러리 ---
+
+    // 1. Navigation (화면 이동)
+    // (Unresolved class 'NavHostFragment' 오류 해결)
+    // (libs 별명 대신 실제 라이브러리 경로 사용)
+    implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
+    implementation("androidx.navigation:navigation-ui-ktx:2.7.7")
+
+    // 2. RecyclerView (목록)
+    // (Unresolved class 'LinearLayoutManager' 오류 해결)
+    // (libs 별명 대신 실제 라이브러리 경로 사용)
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+
+    // --- (성준민 추가 끝) ---
+
 
     // --- 추가된 의존성 시작 ---
 
@@ -77,7 +98,7 @@ dependencies {
     implementation(libs.retrofit.converter.gson) // JSON 데이터를 Kotlin 객체로 변환하기 위한 Gson 컨버터
 
     // Room Database (로컬 데이터베이스: SQLite를 객체 지향적으로 쉽게 사용)
-    implementation(libs.androidx.room.runtime)  // Room 데이터베이스 런타임
+    implementation(libs.androidx.room.runtime)  // Room 데이터베이스 S런타임
     kapt(libs.androidx.room.compiler)           // Room 어노테이션 프로세서 (컴파일 시 DB 관련 코드 생성)
     implementation(libs.androidx.room.ktx)      // Room에서 코루틴을 사용하여 비동기 DB 작업 지원
 

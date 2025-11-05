@@ -487,7 +487,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public VersionAccessors(ProviderFactory providers, DefaultVersionCatalog config) { super(providers, config); }
 
         /**
-         * Version alias <b>activity</b> with value <b>1.11.0</b>
+         * Version alias <b>activity</b> with value <b>1.7.0</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -507,7 +507,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getAgp() { return getVersion("agp"); }
 
         /**
-         * Version alias <b>appcompat</b> with value <b>1.7.1</b>
+         * Version alias <b>appcompat</b> with value <b>1.6.1</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -517,7 +517,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getAppcompat() { return getVersion("appcompat"); }
 
         /**
-         * Version alias <b>constraintlayout</b> with value <b>2.2.1</b>
+         * Version alias <b>constraintlayout</b> with value <b>2.1.4</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -537,7 +537,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getConverterGson() { return getVersion("converterGson"); }
 
         /**
-         * Version alias <b>coreKtx</b> with value <b>1.17.0</b>
+         * Version alias <b>coreKtx</b> with value <b>1.10.0</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -547,7 +547,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getCoreKtx() { return getVersion("coreKtx"); }
 
         /**
-         * Version alias <b>espressoCore</b> with value <b>3.7.0</b>
+         * Version alias <b>espressoCore</b> with value <b>3.5.1</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -557,7 +557,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getEspressoCore() { return getVersion("espressoCore"); }
 
         /**
-         * Version alias <b>hilt</b> with value <b>2.48</b>
+         * Version alias <b>hilt</b> with value <b>2.44</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -567,7 +567,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getHilt() { return getVersion("hilt"); }
 
         /**
-         * Version alias <b>hiltCompiler</b> with value <b>1.1.0</b>
+         * Version alias <b>hiltCompiler</b> with value <b>1.0.0</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -587,7 +587,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getJunit() { return getVersion("junit"); }
 
         /**
-         * Version alias <b>junitVersion</b> with value <b>1.3.0</b>
+         * Version alias <b>junitVersion</b> with value <b>1.1.5</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -597,7 +597,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getJunitVersion() { return getVersion("junitVersion"); }
 
         /**
-         * Version alias <b>kotlin</b> with value <b>1.9.0</b>
+         * Version alias <b>kotlin</b> with value <b>1.8.20</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -607,7 +607,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getKotlin() { return getVersion("kotlin"); }
 
         /**
-         * Version alias <b>kotlinCoroutines</b> with value <b>1.7.3</b>
+         * Version alias <b>kotlinCoroutines</b> with value <b>1.7.1</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -617,7 +617,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getKotlinCoroutines() { return getVersion("kotlinCoroutines"); }
 
         /**
-         * Version alias <b>lifecycle</b> with value <b>2.6.2</b>
+         * Version alias <b>lifecycle</b> with value <b>2.6.1</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -627,7 +627,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getLifecycle() { return getVersion("lifecycle"); }
 
         /**
-         * Version alias <b>material</b> with value <b>1.13.0</b>
+         * Version alias <b>material</b> with value <b>1.9.0</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.
@@ -647,7 +647,7 @@ public class LibrariesForLibs extends AbstractExternalDependencyFactory {
         public Provider<String> getRetrofit() { return getVersion("retrofit"); }
 
         /**
-         * Version alias <b>room</b> with value <b>2.6.0</b>
+         * Version alias <b>room</b> with value <b>2.5.2</b>
          * <p>
          * If the version is a rich version and cannot be represented as a
          * single version string, an empty string is returned.

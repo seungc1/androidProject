@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "com.example.androidproject.app-mergeDebugResources-54:/layout/fragment_home.xml",
+        "source": "com.example.androidproject.app-main-57:/layout/fragment_home.xml"
+    },
+    {
+        "merged": "com.example.androidproject.app-mergeDebugResources-54:/layout/activity_main.xml",
+        "source": "com.example.androidproject.app-main-57:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.example.androidproject.app-mergeDebugResources-54:/layout/item_exercise.xml",
+        "source": "com.example.androidproject.app-main-57:/layout/item_exercise.xml"
+    },
+    {
+        "merged": "com.example.androidproject.app-mergeDebugResources-54:/layout/item_diet.xml",
+        "source": "com.example.androidproject.app-main-57:/layout/item_diet.xml"
+    }
+]
