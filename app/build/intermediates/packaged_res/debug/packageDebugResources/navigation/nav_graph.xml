@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  [오류 수정 3/3]
+  'activity_main.xml'이 참조하는 '내비게이션 지도'입니다.
+  이 파일이 없으면 'R' 파일과 'ViewBinding'이 생성되지 않아
+  'MainActivity.kt'에서 'Unresolved reference' 오류가 발생합니다.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/navigation_home"> <!-- '홈'을 시작 화면으로 지정 -->
+
+    <!--
+      1. '홈' 화면 (두뇌) 연결
+      (님의 tree 경로: ...presentation/main/HomeFragment.kt)
+    -->
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.example.androidproject.presentation.main.HomeFragment"
+        android:label="홈"
+        tools:layout="@layout/fragment_home" />
+
+    <!--
+      2. '기록' 화면 (두뇌) 연결
+      (님의 tree 경로: ...presentation/history/HistoryFragment.kt)
+    -->
+    <fragment
+        android:id="@+id/navigation_history"
+        android:name="com.example.androidproject.presentation.history.HistoryFragment"
+        android:label="기록"
+        tools:layout="@layout/fragment_history_placeholder" /> <!-- (임시 레이아웃) -->
+
+    <!--
+      3. '개인정보' 화면 (두뇌) 연결
+      (님의 tree 경로: ...presentation/profile/ProfileFragment.kt)
+    -->
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.example.androidproject.presentation.profile.ProfileFragment"
+        android:label="개인정보"
+        tools:layout="@layout/fragment_profile_placeholder" /> <!-- (임시 레이아G아웃) -->
+
+</navigation>

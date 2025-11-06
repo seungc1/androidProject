@@ -1,7 +1,7 @@
 package com.example.androidproject;
 
 import com.example.androidproject.di.RepositoryModule;
-import com.example.androidproject.presentation.ui.MainActivity_GeneratedInjector;
+import com.example.androidproject.presentation.main.HomeFragment_GeneratedInjector;
 import com.example.androidproject.presentation.viewmodel.RehabViewModel_HiltModules;
 import dagger.Binds;
 import dagger.Component;
@@ -179,6 +179,7 @@ public final class RehabAIApp_HiltComponents {
   )
   @ActivityScoped
   public abstract static class ActivityC implements MainActivity_GeneratedInjector,
+      com.example.androidproject.presentation.ui.MainActivity_GeneratedInjector,
       ActivityComponent,
       DefaultViewModelFactories.ActivityEntryPoint,
       HiltWrapper_HiltViewModelFactory_ActivityCreatorEntryPoint,
@@ -218,7 +219,8 @@ public final class RehabAIApp_HiltComponents {
       modules = ViewWithFragmentCBuilderModule.class
   )
   @FragmentScoped
-  public abstract static class FragmentC implements FragmentComponent,
+  public abstract static class FragmentC implements HomeFragment_GeneratedInjector,
+      FragmentComponent,
       DefaultViewModelFactories.FragmentEntryPoint,
       ViewComponentManager.ViewWithFragmentComponentBuilderEntryPoint,
       GeneratedComponent {

@@ -4,39 +4,53 @@ package com.example.androidproject.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.fragment.app.FragmentContainerView;
+import androidx.core.widget.NestedScrollView;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.example.androidproject.R;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import java.lang.NullPointerException;
 import java.lang.Override;
 import java.lang.String;
 
 public final class FragmentHomeBinding implements ViewBinding {
   @NonNull
-  private final ConstraintLayout rootView;
+  private final NestedScrollView rootView;
 
   @NonNull
-  public final BottomNavigationView bottomNavigationView;
+  public final RecyclerView dietRecyclerView;
 
   @NonNull
-  public final FragmentContainerView navHostFragment;
+  public final TextView dietTitleTextView;
 
-  private FragmentHomeBinding(@NonNull ConstraintLayout rootView,
-      @NonNull BottomNavigationView bottomNavigationView,
-      @NonNull FragmentContainerView navHostFragment) {
+  @NonNull
+  public final RecyclerView exerciseRecyclerView;
+
+  @NonNull
+  public final TextView exerciseTitleTextView;
+
+  @NonNull
+  public final ProgressBar loadingProgressBar;
+
+  private FragmentHomeBinding(@NonNull NestedScrollView rootView,
+      @NonNull RecyclerView dietRecyclerView, @NonNull TextView dietTitleTextView,
+      @NonNull RecyclerView exerciseRecyclerView, @NonNull TextView exerciseTitleTextView,
+      @NonNull ProgressBar loadingProgressBar) {
     this.rootView = rootView;
-    this.bottomNavigationView = bottomNavigationView;
-    this.navHostFragment = navHostFragment;
+    this.dietRecyclerView = dietRecyclerView;
+    this.dietTitleTextView = dietTitleTextView;
+    this.exerciseRecyclerView = exerciseRecyclerView;
+    this.exerciseTitleTextView = exerciseTitleTextView;
+    this.loadingProgressBar = loadingProgressBar;
   }
 
   @Override
   @NonNull
-  public ConstraintLayout getRoot() {
+  public NestedScrollView getRoot() {
     return rootView;
   }
 
@@ -61,20 +75,38 @@ public final class FragmentHomeBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
-      id = R.id.bottomNavigationView;
-      BottomNavigationView bottomNavigationView = ViewBindings.findChildViewById(rootView, id);
-      if (bottomNavigationView == null) {
+      id = R.id.dietRecyclerView;
+      RecyclerView dietRecyclerView = ViewBindings.findChildViewById(rootView, id);
+      if (dietRecyclerView == null) {
         break missingId;
       }
 
-      id = R.id.nav_host_fragment;
-      FragmentContainerView navHostFragment = ViewBindings.findChildViewById(rootView, id);
-      if (navHostFragment == null) {
+      id = R.id.dietTitleTextView;
+      TextView dietTitleTextView = ViewBindings.findChildViewById(rootView, id);
+      if (dietTitleTextView == null) {
         break missingId;
       }
 
-      return new FragmentHomeBinding((ConstraintLayout) rootView, bottomNavigationView,
-          navHostFragment);
+      id = R.id.exerciseRecyclerView;
+      RecyclerView exerciseRecyclerView = ViewBindings.findChildViewById(rootView, id);
+      if (exerciseRecyclerView == null) {
+        break missingId;
+      }
+
+      id = R.id.exerciseTitleTextView;
+      TextView exerciseTitleTextView = ViewBindings.findChildViewById(rootView, id);
+      if (exerciseTitleTextView == null) {
+        break missingId;
+      }
+
+      id = R.id.loadingProgressBar;
+      ProgressBar loadingProgressBar = ViewBindings.findChildViewById(rootView, id);
+      if (loadingProgressBar == null) {
+        break missingId;
+      }
+
+      return new FragmentHomeBinding((NestedScrollView) rootView, dietRecyclerView,
+          dietTitleTextView, exerciseRecyclerView, exerciseTitleTextView, loadingProgressBar);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

@@ -11,7 +11,7 @@ import com.example.androidproject.data.repository.UserRepositoryImpl;
 import com.example.androidproject.domain.repository.AIApiRepository;
 import com.example.androidproject.domain.repository.UserRepository;
 import com.example.androidproject.domain.usecase.GetAIRecommendationUseCase;
-import com.example.androidproject.presentation.ui.MainActivity;
+import com.example.androidproject.presentation.main.HomeFragment;
 import com.example.androidproject.presentation.viewmodel.RehabViewModel;
 import com.example.androidproject.presentation.viewmodel.RehabViewModel_HiltModules_KeyModule_ProvideFactory;
 import dagger.hilt.android.ActivityRetainedLifecycle;
@@ -316,6 +316,10 @@ public final class DaggerRehabAIApp_HiltComponents_SingletonC {
     }
 
     @Override
+    public void injectHomeFragment(HomeFragment homeFragment) {
+    }
+
+    @Override
     public DefaultViewModelFactories.InternalFactoryFactory getHiltInternalFactoryFactory() {
       return activityCImpl.getHiltInternalFactoryFactory();
     }
@@ -362,6 +366,11 @@ public final class DaggerRehabAIApp_HiltComponents_SingletonC {
 
     @Override
     public void injectMainActivity(MainActivity mainActivity) {
+    }
+
+    @Override
+    public void injectMainActivity(
+        com.example.androidproject.presentation.ui.MainActivity mainActivity) {
     }
 
     @Override

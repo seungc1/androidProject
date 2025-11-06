@@ -3210,6 +3210,8 @@ id design_navigation_view
 id dialog_button
 id dietCaloriesTextView
 id dietNameTextView
+id dietRecyclerView
+id dietTitleTextView
 id dimensions
 id direct
 id disableHome
@@ -3240,7 +3242,9 @@ id enterAlways
 id enterAlwaysCollapsed
 id exerciseDetailTextView
 id exerciseNameTextView
+id exerciseRecyclerView
 id exerciseStatusCheckBox
+id exerciseTitleTextView
 id exitUntilCollapsed
 id expand_activities_button
 id expanded_menu
@@ -3302,6 +3306,7 @@ id line3
 id linear
 id listMode
 id list_item
+id loadingProgressBar
 id locale
 id ltr
 id m3_side_sheet
@@ -3365,6 +3370,7 @@ id mtrl_picker_title_text
 id mtrl_view_tag_bottom_padding
 id multiply
 id nav_controller_view_tag
+id nav_graph
 id nav_host_fragment
 id nav_host_fragment_container
 id navigation_bar_item_active_indicator_view
@@ -3701,7 +3707,9 @@ layout design_navigation_menu
 layout design_navigation_menu_item
 layout design_text_input_end_icon
 layout design_text_input_start_icon
+layout fragment_history_placeholder
 layout fragment_home
+layout fragment_profile_placeholder
 layout item_diet
 layout item_exercise
 layout m3_alert_dialog
@@ -3768,6 +3776,7 @@ layout support_simple_spinner_dropdown_item
 menu bottom_nav_menu
 mipmap ic_launcher
 mipmap ic_launcher_round
+navigation nav_graph
 plurals mtrl_badge_content_description
 string abc_action_bar_home_description
 string abc_action_bar_up_description

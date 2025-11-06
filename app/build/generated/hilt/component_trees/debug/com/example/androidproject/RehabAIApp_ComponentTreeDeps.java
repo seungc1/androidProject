@@ -17,8 +17,10 @@ import dagger.hilt.processor.internal.definecomponent.codegen._dagger_hilt_andro
 import dagger.hilt.processor.internal.definecomponent.codegen._dagger_hilt_android_internal_builders_ViewModelComponentBuilder;
 import dagger.hilt.processor.internal.definecomponent.codegen._dagger_hilt_android_internal_builders_ViewWithFragmentComponentBuilder;
 import dagger.hilt.processor.internal.definecomponent.codegen._dagger_hilt_components_SingletonComponent;
+import hilt_aggregated_deps._com_example_androidproject_MainActivity_GeneratedInjector;
 import hilt_aggregated_deps._com_example_androidproject_RehabAIApp_GeneratedInjector;
 import hilt_aggregated_deps._com_example_androidproject_di_RepositoryModule;
+import hilt_aggregated_deps._com_example_androidproject_presentation_main_HomeFragment_GeneratedInjector;
 import hilt_aggregated_deps._com_example_androidproject_presentation_ui_MainActivity_GeneratedInjector;
 import hilt_aggregated_deps._com_example_androidproject_presentation_viewmodel_RehabViewModel_HiltModules_BindsModule;
 import hilt_aggregated_deps._com_example_androidproject_presentation_viewmodel_RehabViewModel_HiltModules_KeyModule;
@@ -61,8 +63,10 @@ import hilt_aggregated_deps._dagger_hilt_android_internal_modules_HiltWrapper_Ac
         _dagger_hilt_components_SingletonComponent.class
     },
     aggregatedDeps = {
+        _com_example_androidproject_MainActivity_GeneratedInjector.class,
         _com_example_androidproject_RehabAIApp_GeneratedInjector.class,
         _com_example_androidproject_di_RepositoryModule.class,
+        _com_example_androidproject_presentation_main_HomeFragment_GeneratedInjector.class,
         _com_example_androidproject_presentation_ui_MainActivity_GeneratedInjector.class,
         _com_example_androidproject_presentation_viewmodel_RehabViewModel_HiltModules_BindsModule.class,
         _com_example_androidproject_presentation_viewmodel_RehabViewModel_HiltModules_KeyModule.class,
