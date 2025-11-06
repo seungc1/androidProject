@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  [파일 1/2] - item_exercise.xml
+  운동 목록(RecyclerView)의 각 항목(한 줄) UI입니다.
+  경로: res/layout/item_exercise.xml
+--><androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingVertical="8dp"
+    android:background="?attr/selectableItemBackground"> <!-- 클릭 피드백을 위한 배경 --><!-- 운동 이름 (예: 벤치 프레스) --><TextView
+    android:id="@+id/exerciseNameTextView"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toStartOf="@+id/exerciseStatusCheckBox"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintBottom_toTopOf="@+id/exerciseDetailTextView"
+    tools:text="벤치 프레스" />
+
+    <!-- 운동 상세 (예: 3세트 10회) --><TextView
+        android:id="@+id/exerciseDetailTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+        android:textColor="?android:attr/textColorSecondary"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/exerciseStatusCheckBox"
+        app:layout_constraintTop_toBottomOf="@+id/exerciseNameTextView"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="3세트 10회" />
+
+    <!-- 운동 완료 체크박스 --><CheckBox
+        android:id="@+id/exerciseStatusCheckBox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:checked="false"
+        tools:checked="true" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,71 @@
+모든 빌드 결과, 캐시, IDE 생성 파일을 제외합니다.
+
+=================================================================
+
+--- 1. 운영체제 및 IDE 관련 (Local Files) ---
+
+.DS_Store             # macOS 임시 파일
+Thumbs.db             # Windows 임시 파일
+
+IntelliJ/Android Studio 로컬 설정 및 캐시 (개인 환경)
+
+.idea/
+.idea/workspace.xml   # 열었던 파일, 창 위치 등
+.idea/libraries       # Gradle에 의해 재생성되는 라이브러리 목록
+.idea/modules.xml     # 프로젝트 모듈 구성 (재생성됨)
+.idea/codeStyles
+.idea/gradle.xml
+.idea/vcs.xml
+
+--- 2. Gradle 및 빌드 캐시 (Build Artifacts) ---
+
+Gradle 캐시 파일 및 Version Catalog Accessor 클래스 (스크린샷 오류 파일 포함)
+
+.gradle/               # 모든 Gradle 캐시 (스크린샷 오류의 근원)
+/local.properties      # 사용자 환경 경로 설정 (민감 정보 포함 가능)
+/gradle-wrapper.properties.bak
+/gradle-wrapper.jar    # Wrapper jar 파일은 제외 (소스 트래킹 X)
+
+--- 3. 컴파일 및 빌드 결과 ---
+
+*.iml                  # IntelliJ/Android Studio 모듈 파일 (IDE가 재생성)
+*.apk
+*.ap_
+*.dex
+*.db                   # SQLite DB 파일
+*.sqlite
+*.class                # 컴파일된 클래스 파일
+
+/build                 # 프로젝트 전체 빌드 결과
+/app/build/**         # 앱 모듈 빌드 결과
+/out/                  # 오래된 컴파일 결과물 경로
+/captures              # 스크린샷 및 기타 캡처 파일
+/app/app.iml           # 모듈 파일
+
+--- 4. KAPT / Hilt / Room 자동 생성 파일 (핵심 제외) ---
+
+Kapt (Annotation Processor Tool) 생성 파일
+
+/app/build/generated/source/kapt/
+/app/build/generated/hilt/
+/app/build/generated/ap_generated_sources/
+/app/build/generated/  # 재정의 (generated 폴더 전체)
+/app/build/tmp/
+/app/build/intermediates/ # 빌드 중간 파일 (스크린샷 오류의 근원)
+
+Hilt 및 Dagger/Kapt 내부 임시 파일 상세 경로 (intermediates 하위에 포함되지만 명시적으로 다시 추가)
+
+/app/build/intermediates/javac/
+/app/build/intermediates/tmp/
+/app/build/intermediates/classes/
+/app/build/intermediates/dex_archive/
+/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/
+
+--- 5. 네이티브 및 테스트 관련 ---
+
+.externalNativeBuild
+.cxx
+/app/lint-results.xml
+/app/lint-results.html
+/app/jacoco/
+/app/test-results/

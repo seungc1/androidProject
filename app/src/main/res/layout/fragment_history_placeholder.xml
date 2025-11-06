@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  [오류 수정 4/4] (선택 사항)
+  'nav_graph.xml'의 미리보기(tools) 오류를
+  해결하기 위한 임시 레이아웃입니다.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="기록 화면 (History) 임시"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline4" />
+</FrameLayout>
