@@ -1,10 +1,10 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.androidproject.app-mergeDebugResources-53:/values-w480dp-port-v13/values-w480dp-port-v13.xml",
+            "outputFile": "com.example.androidproject.app-mergeDebugResources-44:/values-w480dp-port-v13/values-w480dp-port-v13.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\a\\.gradle\\caches\\transforms-4\\12ed90b8888099fb55ed23419a85f0ea\\transformed\\material-1.9.0\\res\\values-w480dp-port-v13\\values-w480dp-port-v13.xml",
+                    "source": "C:\\Users\\a\\.gradle\\caches\\transforms-4\\4d4fa18035cfb3cf14ea6c7fbdef0e8a\\transformed\\material-1.9.0\\res\\values-w480dp-port-v13\\values-w480dp-port-v13.xml",
                     "from": {
                         "startLines": "2,3,4,5,6,7,8,9",
                         "startColumns": "4,4,4,4,4,4,4,4",
