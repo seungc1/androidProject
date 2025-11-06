@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 
-// Hilt를 사용하는 MainActivity라면 @AndroidEntryPoint 어노테이션도 다시 추가해주세요.
+// Hilt를 사용하는 MainActivity라면  @AndroidEntryPoint 어노테이션도 다시 추가해주세요.
 // @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
