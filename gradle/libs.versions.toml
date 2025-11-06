@@ -1,0 +1,82 @@
+# gradle/libs.versions.toml 파일
+
+[versions]
+agp = "8.6.0"
+kotlin = "1.8.20"
+coreKtx = "1.10.0"
+junit = "4.13.2"
+junitVersion = "1.1.5"
+espressoCore = "3.5.1"
+appcompat = "1.6.1"
+material = "1.9.0"
+activity = "1.7.0"
+constraintlayout = "2.1.4"
+
+# --- 추가된 버전 정의 시작 ---
+
+# Kotlin Coroutines (비동기 처리)
+kotlinCoroutines = "1.7.1" # 코루틴 라이브러리 버전
+
+# Architecture Components (ViewModel & LiveData: UI 생명주기 관련 데이터 관리)
+lifecycle = "2.6.1" # Lifecycle 관련 라이브러리(ViewModel, LiveData, Runtime) 버전
+
+# Hilt (Dependency Injection: 의존성 주입 프레임워크)
+hilt = "2.44"          # Hilt 핵심 라이브러리 버전
+hiltCompiler = "1.0.0" # Hilt Android Compiler 및 Navigation Fragment 통합 버전
+
+# Retrofit (네트워크 통신)
+retrofit = "2.9.0"      # Retrofit 핵심 라이브러리 버전
+converterGson = "2.9.0" # Gson 컨버터 라이브러리 버전 (Retrofit과 동일 버전 사용 권장)
+
+# Room Database (로컬 데이터베이스)
+room = "2.5.2"
+junitJunit = "4.12"          # Room Database 라이브러리 버전
+
+# --- 추가된 버전 정의 끝 ---
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+
+
+# Kotlin Coroutines
+kotlin-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinCoroutines" }
+kotlin-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinCoroutines" }
+
+# Architecture Components (ViewModel & LiveData)
+androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-livedata-ktx = { group = "androidx.lifecycle", name = "lifecycle-livedata-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+
+# Hilt (Dependency Injection)
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+androidx-hilt-navigation-fragment = { group = "androidx.hilt", name = "hilt-navigation-fragment", version.ref = "hiltCompiler" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hiltCompiler" }
+hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
+
+
+# Retrofit (네트워크 통신)
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converterGson" }
+
+# Room Database (로컬 DB)
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+junit-junit = { group = "junit", name = "junit", version.ref = "junitJunit" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+
+# Hilt Gradle 플러그인 (루트 build.gradle.kts 에서 `apply false`로 사용됨)
+hilt-android-gradle-plugin = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+
+
