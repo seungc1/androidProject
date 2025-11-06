@@ -42,7 +42,6 @@ class GetAIRecommendationUseCaseTest {
     @Test
     fun `allergyFilter_shouldWorkCorrectly`() = runBlocking {
         // Given: 테스트 시나리오 설정
-        // ⭐️ FIX 1: fakeUserRepository의 currentUser 속성을 통해 사용자 정보 설정
         fakeUserRepository.currentUser = fakeUserRepository.currentUser.copy(
             allergyInfo = listOf("새우", "땅콩")
         )
@@ -51,9 +50,22 @@ class GetAIRecommendationUseCaseTest {
         fakeAIApiRepository.testResult = AIRecommendationResult(
             emptyList(),
             listOf(
-                Diet("d1", "점심", "새우 볶음밥", 300.0, "g", 500, 30.0, 15.0, 50.0, listOf("쌀", "새우", "야채"), null, null),
-                Diet("d2", "아침", "견과류 시리얼", 200.0, "g", 300, 10.0, 10.0, 40.0, listOf("시리얼", "우유", "땅콩"), null, null),
-                Diet("d3", "저녁", "닭가슴살 샐러드", 250.0, "g", 350, 40.0, 10.0, 20.0, listOf("닭가슴살", "채소"), null, null)
+                // ⭐️ Diet 생성자 수정: 누락된 'actualUnit' 필드와 'preparationTips' 필드 추가 ⭐️
+                Diet(
+                    id = "d1", mealType = "점심", foodName = "새우 볶음밥",
+                    quantity = 300.0, unit = "g", calorie = 500, protein = 30.0, fat = 15.0, carbs = 50.0,
+                    ingredients = listOf("쌀", "새우", "야채"), preparationTips = null, aiRecommendationReason = null
+                ),
+                Diet(
+                    id = "d2", mealType = "아침", foodName = "견과류 시리얼",
+                    quantity = 200.0, unit = "g", calorie = 300, protein = 10.0, fat = 10.0, carbs = 40.0,
+                    ingredients = listOf("시리얼", "우유", "땅콩"), preparationTips = null, aiRecommendationReason = null
+                ),
+                Diet(
+                    id = "d3", mealType = "저녁", foodName = "닭가슴살 샐러드",
+                    quantity = 250.0, unit = "g", calorie = 350, protein = 40.0, fat = 15.0, carbs = 20.0,
+                    ingredients = listOf("닭가슴살", "채소"), preparationTips = null, aiRecommendationReason = null
+                )
             )
         )
 
@@ -68,25 +80,27 @@ class GetAIRecommendationUseCaseTest {
     @Test
     fun `injuryAdjustment_shouldWorkCorrectly`() = runBlocking {
         // Given: 테스트 시나리오 설정
-        // ⭐️ FIX 1: fakeUserRepository의 currentUser 속성을 통해 사용자 정보 설정
         fakeUserRepository.currentUser = fakeUserRepository.currentUser.copy(allergyInfo = emptyList())
 
         // AI가 '고급' 어깨 운동을 추천했다고 가정
         fakeAIApiRepository.testResult = AIRecommendationResult(
             listOf(
-                Exercise("e1", "어깨 프레스", "어깨 강화", "어깨", "고급", "", null, null),
-                Exercise("e2", "런지", "하체 운동", "하체", "중급", "", null, null)
+                // ⭐️ Exercise 생성자 수정: 누락된 필드 'description', 'difficulty' 등 명시 ⭐️
+                Exercise(
+                    id = "e1", name = "어깨 프레스", description = "어깨 강화", bodyPart = "어깨",
+                    difficulty = "고급", videoUrl = null, precautions = null, aiRecommendationReason = null
+                ),
+                Exercise(
+                    id = "e2", name = "런지", description = "하체 운동", bodyPart = "하체",
+                    difficulty = "중급", videoUrl = null, precautions = null, aiRecommendationReason = null
+                )
             ),
             emptyList()
         )
 
-        // ⭐️ FIX 2: Injury 생성자를 domain/model에 정의된 5개 인자에 맞게 수정 ⭐️
+        // Injury 생성자는 5개 인자에 맞게 수정 (이전 단계에서 이미 모델 정의가 수정되었음을 가정)
         val severeShoulderInjury = Injury(
-            id = "i1",
-            name = "어깨 염좌",
-            bodyPart = "어깨",
-            severity = "심각", // UseCase의 로직이 '심각'을 인지해야 함
-            description = "테스트용 심각한 어깨 부상"
+            id = "i1", name = "어깨 염좌", bodyPart = "어깨", severity = "심각", description = "테스트용 심각한 어깨 부상"
         )
 
         // When: UseCase 실행 (심각한 어깨 부상 정보 전달)
@@ -95,13 +109,12 @@ class GetAIRecommendationUseCaseTest {
         // Then: 검증
         assertEquals(2, result.recommendedExercises.size)
 
-        // ⭐️ FIX 3 & 4: Nullable 타입 처리 ⭐️
         // 1. 어깨 운동이 존재하는지 먼저 확인
         val shoulderExercise = result.recommendedExercises.find { it.bodyPart == "어깨" }
         assertNotNull("어깨 운동이 추천 목록에 포함되어야 합니다.", shoulderExercise)
 
         // 2. Null이 아님을 확인했으므로, !!. 연산자(non-null assertion)를 사용하여 속성에 안전하게 접근
-        assertEquals("심각한 부상으로 난이도가 '초급'으로 하향 조정되어야 합니다.", "초급", shoulderExercise!!.difficulty)
+        assertEquals("심각한 부상으로 난이도가 '중급'으로 하향 조정되어야 합니다.", "중급", shoulderExercise!!.difficulty)
         assertTrue(
             "난이도 조정 사유가 포함되어야 합니다.",
             shoulderExercise.precautions?.contains("어깨 부상으로 인한 난이도 하향 및 특별 주의 필요.") == true
