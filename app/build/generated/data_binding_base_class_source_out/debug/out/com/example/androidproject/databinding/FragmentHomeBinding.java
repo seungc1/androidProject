@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 import androidx.viewbinding.ViewBindings;
 import com.example.androidproject.R;
+import com.google.android.material.card.MaterialCardView;
 import java.lang.NullPointerException;
 import java.lang.Override;
 import java.lang.String;
@@ -22,10 +23,16 @@ public final class FragmentHomeBinding implements ViewBinding {
   private final NestedScrollView rootView;
 
   @NonNull
+  public final MaterialCardView dietCard;
+
+  @NonNull
   public final RecyclerView dietRecyclerView;
 
   @NonNull
   public final TextView dietTitleTextView;
+
+  @NonNull
+  public final MaterialCardView exerciseCard;
 
   @NonNull
   public final RecyclerView exerciseRecyclerView;
@@ -37,12 +44,15 @@ public final class FragmentHomeBinding implements ViewBinding {
   public final ProgressBar loadingProgressBar;
 
   private FragmentHomeBinding(@NonNull NestedScrollView rootView,
-      @NonNull RecyclerView dietRecyclerView, @NonNull TextView dietTitleTextView,
+      @NonNull MaterialCardView dietCard, @NonNull RecyclerView dietRecyclerView,
+      @NonNull TextView dietTitleTextView, @NonNull MaterialCardView exerciseCard,
       @NonNull RecyclerView exerciseRecyclerView, @NonNull TextView exerciseTitleTextView,
       @NonNull ProgressBar loadingProgressBar) {
     this.rootView = rootView;
+    this.dietCard = dietCard;
     this.dietRecyclerView = dietRecyclerView;
     this.dietTitleTextView = dietTitleTextView;
+    this.exerciseCard = exerciseCard;
     this.exerciseRecyclerView = exerciseRecyclerView;
     this.exerciseTitleTextView = exerciseTitleTextView;
     this.loadingProgressBar = loadingProgressBar;
@@ -75,6 +85,12 @@ public final class FragmentHomeBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
+      id = R.id.dietCard;
+      MaterialCardView dietCard = ViewBindings.findChildViewById(rootView, id);
+      if (dietCard == null) {
+        break missingId;
+      }
+
       id = R.id.dietRecyclerView;
       RecyclerView dietRecyclerView = ViewBindings.findChildViewById(rootView, id);
       if (dietRecyclerView == null) {
@@ -84,6 +100,12 @@ public final class FragmentHomeBinding implements ViewBinding {
       id = R.id.dietTitleTextView;
       TextView dietTitleTextView = ViewBindings.findChildViewById(rootView, id);
       if (dietTitleTextView == null) {
+        break missingId;
+      }
+
+      id = R.id.exerciseCard;
+      MaterialCardView exerciseCard = ViewBindings.findChildViewById(rootView, id);
+      if (exerciseCard == null) {
         break missingId;
       }
 
@@ -105,8 +127,9 @@ public final class FragmentHomeBinding implements ViewBinding {
         break missingId;
       }
 
-      return new FragmentHomeBinding((NestedScrollView) rootView, dietRecyclerView,
-          dietTitleTextView, exerciseRecyclerView, exerciseTitleTextView, loadingProgressBar);
+      return new FragmentHomeBinding((NestedScrollView) rootView, dietCard, dietRecyclerView,
+          dietTitleTextView, exerciseCard, exerciseRecyclerView, exerciseTitleTextView,
+          loadingProgressBar);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

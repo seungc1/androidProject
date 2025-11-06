@@ -6,9 +6,11 @@ drawable ic_launcher_background
 drawable ic_launcher_foreground
 id bottomNavigationView
 id dietCaloriesTextView
+id dietCard
 id dietNameTextView
 id dietRecyclerView
 id dietTitleTextView
+id exerciseCard
 id exerciseDetailTextView
 id exerciseNameTextView
 id exerciseRecyclerView

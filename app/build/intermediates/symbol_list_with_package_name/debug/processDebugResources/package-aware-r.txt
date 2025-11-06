@@ -3209,6 +3209,7 @@ id design_menu_item_text
 id design_navigation_view
 id dialog_button
 id dietCaloriesTextView
+id dietCard
 id dietNameTextView
 id dietRecyclerView
 id dietTitleTextView
@@ -3240,6 +3241,7 @@ id end
 id endToStart
 id enterAlways
 id enterAlwaysCollapsed
+id exerciseCard
 id exerciseDetailTextView
 id exerciseNameTextView
 id exerciseRecyclerView
