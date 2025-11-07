@@ -1,19 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  [파일 1/3] - 10차 수정본
+  'app:navGraph' 연결을 포함한 최종본입니다.
+  모든 XML 문법 오류를 수정했습니다.
+  경로: res/layout/activity_main.xml
+-->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"> <!-- (수정) 님의 실제 MainActivity 경로 -->
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!--
+      '홈', '기록', '개인정보' 화면이
+      표시될 메인 컨텐츠 영역(문틀)입니다.
+    -->
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/nav_host_fragment"
+        android:name="androidx.navigation.fragment.NavHostFragment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:defaultNavHost="true"
+        app:layout_constraintBottom_toTopOf="@+id/bottomNavigationView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:navGraph="@navigation/nav_graph"
+        />
+    <!-- (수정) '연결성'을 위해 navGraph 주석을 해제하고 태그 안으로 이동 -->
+
+    <!-- FragmentContainerView 태그가 여기서 닫힙니다. -->
+
+
+    <!--
+      님이 요청하신 하단 툴바 (기록, 홈, 개인정보)입니다.
+    -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigationView"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
+        android:background="?android:attr/windowBackground"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:menu="@menu/bottom_nav_menu"
+        />
+    <!-- (수정) app:menu 속성을 태그 안으로 이동 -->
+
+    <!-- BottomNavigationView 태그가 여기서 닫힙니다. -->
 
 </androidx.constraintlayout.widget.ConstraintLayout>
