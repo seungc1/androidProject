@@ -99,8 +99,19 @@ dependencies {
     testImplementation(libs.hilt.android.testing)
     kaptTest(libs.hilt.compiler) // 'hilt-compiler'를 kaptTest 스코프에서 재사용
 
+    // Lifecycle KTX for viewLifecycleScope
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+// [1, 3]
+// Fragment KTX (viewModels 델리게이트를 사용하기 위해 이미 포함되었을 수 있습니다)
+    implementation("androidx.fragment:fragment-ktx:1.8.1")
+
     // --- 나머지 테스트 종속성 (중복 제거 및 정리) ---
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // LifecycleScope 및 viewLifecycleScope를 사용하기 위해 추가
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2") // 최신 안정화 버전으로 사용하세요
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.2")
+    implementation("androidx.fragment:fragment-ktx:1.7.1")
 }
