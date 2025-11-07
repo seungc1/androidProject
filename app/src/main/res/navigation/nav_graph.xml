@@ -1,40 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  [오류 수정]
-  '다른 페이지에서도 다 똑같은 화면이 뜨는' 오류를
-  수정하기 위한 '올바른' 내비게이션 지도입니다.
+  [파일 6/11] - '내비게이션 지도'
+  (★수정★) '기록' 탭의 '미리보기'(tools:layout)를
+  '임시' UI -> '실제 UI'로 '수정'합니다.
 -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/navigation_home"> <!-- 1. 시작 화면은 '홈' -->
+    app:startDestination="@id/navigation_home">
 
-    <!--
-      (수정) 2. '홈' 버튼은 HomeFragment로 연결
-    -->
+    <!-- 1. '홈' 화면 (ID: navigation_home) -->
     <fragment
         android:id="@+id/navigation_home"
         android:name="com.example.androidproject.presentation.main.HomeFragment"
-        android:label="홈"
+        android:label="@string/title_home"
         tools:layout="@layout/fragment_home" />
 
-    <!--
-      (수정) 3. '기록' 버튼은 HistoryFragment로 연결
-    -->
+    <!-- 2. '기록' 화면 (ID: navigation_history) -->
     <fragment
         android:id="@+id/navigation_history"
         android:name="com.example.androidproject.presentation.history.HistoryFragment"
-        android:label="기록"
-        tools:layout="@layout/fragment_history_placeholder" />
+        android:label="@string/title_history"
+        tools:layout="@layout/fragment_history" /> <!-- (★수정★) ..._placeholder -> fragment_history -->
 
-    <!--
-      (수정) 4. '개인정보' 버튼은 ProfileFragment로 연결
-    -->
+    <!-- 3. '개인정보' 화면 (ID: navigation_profile) -->
     <fragment
         android:id="@+id/navigation_profile"
         android:name="com.example.androidproject.presentation.profile.ProfileFragment"
-        android:label="개인정보"
+        android:label="@string/title_profile"
         tools:layout="@layout/fragment_profile_placeholder" />
 
 </navigation>

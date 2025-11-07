@@ -1,3 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">androidProject</string>
+
+    <!--
+      [오류 수정] 성준민
+      nav_graph.xml이 찾지 못했던(Cannot resolve symbol)
+      '문자열' 3개를 여기에 '선언'합니다.
+    -->
+    <string name="title_home">홈</string>
+    <string name="title_history">기록</string>
+    <string name="title_profile">개인정보</string>
+
 </resources>
