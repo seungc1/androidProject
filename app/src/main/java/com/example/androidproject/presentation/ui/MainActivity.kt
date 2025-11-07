@@ -9,7 +9,7 @@ import com.example.androidproject.presentation.viewmodel.RehabViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint // Hilt가 이 Activity에 의존성을 주입하도록 지시합니다.
-class MainActivity : AppCompatActivity() {
+class ginMainActivity : AppCompatActivity() {
 
     // Hilt를 통해 ViewModel을 주입받습니다.
     private val rehabViewModel: RehabViewModel by viewModels()
