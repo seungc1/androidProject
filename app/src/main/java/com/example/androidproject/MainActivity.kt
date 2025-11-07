@@ -1,3 +1,4 @@
+// app/src/main/java/com/example/androidproject/MainActivity.kt
 package com.example.androidproject
 
 import android.os.Bundle
@@ -13,6 +14,8 @@ import dagger.hilt.android.AndroidEntryPoint
  * '하단 툴바'와 '지도'를 '연결'하는 최종 코드가 포함되어 있습니다.
  */
 @AndroidEntryPoint // Hilt를 사용하기 위한 어노테이션
+// Hilt를 사용하는 MainActivity라면  @AndroidEntryPoint 어노테이션도 다시 추가해주세요.
+// @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     // (성준민 추가) ViewBinding 설정
