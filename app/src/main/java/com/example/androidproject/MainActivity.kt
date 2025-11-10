@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/androidproject/MainActivity.kt
 package com.example.androidproject
 
 import android.os.Bundle
@@ -13,7 +12,7 @@ import dagger.hilt.android.AndroidEntryPoint
  * '껍데기(Activity)'이자 모든 Fragment를 담는 '두뇌'입니다.
  * '하단 툴바'와 '지도'를 '연결'하는 최종 코드가 포함되어 있습니다.
  */
-@AndroidEntryPoint
+@AndroidEntryPoint // Hilt를 사용하기 위한 어노테이션
 class MainActivity : AppCompatActivity() {
 
     // (성준민 추가) ViewBinding 설정
