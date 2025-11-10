@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  [파일 5/11] - '식단' 견본
+  (★오류 수정★)
+  'Unresolved reference: dietDetailTextView' 오류를
+  해결하기 위해, '빠뜨렸던' 'dietDetailTextView' ID를 '추가'합니다.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="12dp"> <!-- (수정) '가시성'을 위해 패딩 조정 -->
+
+    <!-- 식단 이름 (예: 닭가슴살 샐러드) -->
+    <TextView
+        android:id="@+id/dietNameTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+        android:textColor="?android:attr/textColorPrimary"
+        app:layout_constraintEnd_toStartOf="@+id/dietCaloriesTextView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="닭가슴살 샐러드" />
+
+    <!-- (★수정★) 님이 '추가'하신 '식단 상세' 텍스트 -->
+    <TextView
+        android:id="@+id/dietDetailTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="16dp"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+        android:textColor="?android:attr/textColorSecondary"
+        app:layout_constraintEnd_toStartOf="@+id/dietCaloriesTextView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/dietNameTextView"
+        tools:text="점심 / 40g 단백질" /> <!-- (예시 텍스트 수정) -->
+
+    <!-- 칼로리 정보 (예: 300kcal) -->
+    <TextView
+        android:id="@+id/dietCaloriesTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+        android:textColor="?android:attr/textColorSecondary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="450 kcal" /> <!-- (예시 텍스트 수정) -->
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -24,7 +24,11 @@ class UserRepositoryImpl @Inject constructor(
         allergyInfo = listOf("새우", "땅콩"),
         preferredDietType = "일반",
         targetCalories = 2500,
-        currentInjuryId = null
+        currentInjuryId = null,
+        preferredDietaryTypes = listOf("일반", "저염식"), // (예시 값)
+        equipmentAvailable = listOf("덤벨", "요가매트"), // (예시 값)
+        currentPainLevel = 2, // (예시 값, 1-10)
+        additionalNotes = "특별한 사항 없음", // (예시 값)
     )
 
     override suspend fun getUserProfile(userId: String): Flow<User> {
