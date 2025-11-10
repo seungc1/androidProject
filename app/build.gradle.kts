@@ -48,9 +48,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17 // (성준민 수정) '11' -> '17' 버전으로 '올려줘' 요청 반영
     }
 
+    /* (수정 1) '설정 충돌'을 해결하기 위해 '이전' 방법인 'kotlinOptions'를 주석 처리합니다.
+       (jvmToolchain(17)이 이 역할을 대신합니다.)
     kotlinOptions {
         jvmTarget = "17"
     }
+    */
 }
 
 dependencies {
