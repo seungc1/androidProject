@@ -10,7 +10,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(17) // (성준민 수정) '11' -> '17' 버전으로 '올려줘' 요청 반영
 }
 
 android {
@@ -44,8 +44,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_17 // (성준민 수정) '11' -> '17' 버전으로 '올려줘' 요청 반영
+        targetCompatibility = JavaVersion.VERSION_17 // (성준민 수정) '11' -> '17' 버전으로 '올려줘' 요청 반영
     }
 
     kotlinOptions {
@@ -61,6 +61,13 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+
+    // --- (추가) AndroidX Navigation ---
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
+
+    // --- (수정 2) 'RecyclerView' '부품 없음' 오류를 해결하기 위해 '추가'합니다.
+    implementation(libs.androidx.recyclerview)
 
     // --- Kotlin Coroutines ---
     implementation(libs.kotlin.coroutines.core)    // 코루틴 핵심 기능
@@ -96,6 +103,13 @@ dependencies {
     // NavigationUI 클래스를 포함하며, UI 컴포넌트와 NavController를 연결해주는 라이브러리
     implementation("androidx.navigation:navigation-ui-ktx:2.7.7")
 
+    // Lifecycle KTX for viewLifecycleScope
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
+// [1, 3]
+// Fragment KTX (viewModels 델리게이트를 사용하기 위해 이미 포함되었을 수 있습니다)
+    implementation("androidx.fragment:fragment-ktx:1.8.1")
+
+    // --- 나머지 테스트 종속성 (중복 제거 및 정리) ---
     // --- 테스트 종속성 ---
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -104,4 +118,9 @@ dependencies {
     // --- Hilt 테스트 종속성 ---
     testImplementation(libs.hilt.android.testing)
     kaptTest(libs.hilt.compiler)
+
+    // LifecycleScope 및 viewLifecycleScope를 사용하기 위해 추가
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.2") // 최신 안정화 버전으로 사용하세요
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.2")
+    implementation("androidx.fragment:fragment-ktx:1.7.1")
 }
