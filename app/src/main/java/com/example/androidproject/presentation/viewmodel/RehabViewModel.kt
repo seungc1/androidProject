@@ -75,8 +75,6 @@ class RehabViewModel @Inject constructor(
 
             try {
                 // ... (기존 '홈' 화면 더미 데이터 로직 - 생략) ...
-
-                // --- 더미 데이터 (시뮬레이션) ---
                 kotlinx.coroutines.delay(1000) // 1초 로딩 딜레이
 
                 val dummyUser = User(
@@ -84,7 +82,11 @@ class RehabViewModel @Inject constructor(
                     heightCm = 175, weightKg = 70.5, activityLevel = "활동적",
                     fitnessGoal = "근육 증가", allergyInfo = listOf("땅콩"),
                     preferredDietType = "일반", targetCalories = 2500,
-                    currentInjuryId = "injury01"
+                    currentInjuryId = "injury01",
+                    preferredDietaryTypes = listOf("일반식", "저염식"), // 예시 값
+                    equipmentAvailable = listOf("덤벨", "밴드"), // 예시 값
+                    currentPainLevel = 4, // 예시 값 (1-10)
+                    additionalNotes = "부상 회복에 집중하고 싶습니다." // 예시 값
                 )
                 val dummyInjury = Injury(
                     id = "injury01", name = "손목 염좌", bodyPart = "손목",

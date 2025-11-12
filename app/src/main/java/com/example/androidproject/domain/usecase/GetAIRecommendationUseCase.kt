@@ -1,15 +1,18 @@
+// app/src/main/java/com/example/androidproject/domain/usecase/GetAIRecommendationUseCase.kt
+
 package com.example.androidproject.domain.usecase
 
 import com.example.androidproject.domain.model.AIRecommendationResult
 import com.example.androidproject.domain.model.Injury
+import com.example.androidproject.domain.model.RecommendationParams // 추가
 import com.example.androidproject.domain.model.User
 import com.example.androidproject.domain.repository.AIApiRepository
 import com.example.androidproject.domain.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map // Flow의 데이터를 변환하기 위해 필요
-import kotlinx.coroutines.flow.flowOf // 예외 처리 시 빈 Flow 반환을 위해 추가
-import kotlinx.coroutines.flow.catch // 예외 처리 로직 추가
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.catch
+// flowOf는 emit으로 대체되었으므로 제거 가능
 
 import javax.inject.Inject
 
@@ -24,13 +27,32 @@ class GetAIRecommendationUseCase @Inject constructor(
         // 1. UserRepository를 통해 현재 사용자의 최신 프로필 정보(User)를 가져옵니다.
         val currentUser = userRepository.getUserProfile(userId).first() // first()는 Flow에서 첫 번째 값을 가져오고 Flow를 종료합니다.
 
-        // 2. 가져온 User 정보와 injuryInfo를 바탕으로 AIApiRepository에 AI 추천을 요청합니다.
-        return aiApiRepository.getAIRehabAndDietRecommendation(currentUser, injuryInfo)
+        // 2. GPT API 요청을 위한 RecommendationParams 객체 생성
+        val recommendationParams = RecommendationParams(
+            userId = currentUser.id,
+            age = currentUser.age,
+            gender = currentUser.gender,
+            heightCm = currentUser.heightCm,
+            weightKg = currentUser.weightKg,
+            activityLevel = currentUser.activityLevel,
+            fitnessGoal = currentUser.fitnessGoal,
+            dietaryPreferences = currentUser.preferredDietaryTypes, // User 모델에 preferredDietaryTypes가 있다고 가정
+            allergies = currentUser.allergyInfo,
+            equipmentAvailable = currentUser.equipmentAvailable, // User 모델에 equipmentAvailable이 있다고 가정
+            currentPainLevel = currentUser.currentPainLevel, // User 모델에 currentPainLevel이 있다고 가정
+            injuryArea = injuryInfo?.bodyPart,
+            injuryType = injuryInfo?.name,
+            injurySeverity = injuryInfo?.severity,
+            additionalNotes = currentUser.additionalNotes // User 모델에 additionalNotes가 있다고 가정
+        )
+
+        // 3. AIApiRepository를 통해 AI 추천을 요청합니다.
+        return aiApiRepository.getAIRehabAndDietRecommendation(recommendationParams)
             .map { aiResult ->
-                // 3. AI 응답 (AIRecommendationResult)을 받은 후, 추가적인 비즈니스 로직을 적용합니다.
+                // 4. AI 응답 (AIRecommendationResult)을 받은 후, 추가적인 비즈니스 로직을 적용합니다.
                 //    (Domain Layer의 핵심 로직!)
 
-                // 3-1. 알레르기 필터링 (식단)
+                // 4-1. 알레르기 필터링 (식단)
                 val filteredDietsByAllergy = aiResult.recommendedDiets.filter { diet ->
                     // 식단의 재료 중 사용자의 알레르기 정보에 포함된 것이 없는지 확인
                     !currentUser.allergyInfo.any { allergy -> // 사용자의 각 알레르기에 대해
@@ -40,7 +62,7 @@ class GetAIRecommendationUseCase @Inject constructor(
                     }
                 }
 
-                // 3-2. 부상에 따른 운동 제약 조건 확인 및 조정 (운동)
+                // 4-2. 부상에 따른 운동 제약 조건 확인 및 조정 (운동)
                 val adjustedExercises = aiResult.recommendedExercises.map { exercise ->
                     if (injuryInfo != null && // 부상 정보가 있고
                         exercise.bodyPart.equals(injuryInfo.bodyPart, ignoreCase = true) && // 운동 부위가 부상 부위와 같고
@@ -72,11 +94,11 @@ class GetAIRecommendationUseCase @Inject constructor(
                     }
                 }
 
-                // 3-3. 선호 식단 유형 반영 (필터링)
+                // 4-3. 선호 식단 유형 반영 (필터링)
                 val finalDiets = filteredDietsByAllergy.filter { diet ->
-                    when (currentUser.preferredDietType.lowercase()) {
+                    when (currentUser.preferredDietType.lowercase()) { // User 모델에 preferredDietType이 있다고 가정
                         "비건" -> !diet.ingredients.any { it.contains("고기", ignoreCase = true) || it.contains("유제품", ignoreCase = true) || it.contains("계란", ignoreCase = true) }
-                        "저탄수화물" -> diet.carbs <= 50.0 // 예시: 탄수화물 50g 이하. Diet 모델의 carbs가 Double이므로 50.0으로 비교.
+                        "저탄수화물" -> diet.carbs != null && diet.carbs <= 50.0 // null 체크 추가
                         // "케토" -> ... (다른 식단 유형 추가 가능)
                         else -> true // 기타 유형은 추가 필터링 없음
                     }
@@ -85,10 +107,11 @@ class GetAIRecommendationUseCase @Inject constructor(
                 // 최종적으로 필터링 및 조정된 결과 반환
                 AIRecommendationResult(
                     recommendedExercises = adjustedExercises,
-                    recommendedDiets = finalDiets
+                    recommendedDiets = finalDiets,
+                    overallSummary = aiResult.overallSummary // GPT가 생성한 요약도 포함
                 )
             }
-            // 4. 네트워크 또는 API 호출 중 발생할 수 있는 예외 처리
+            // 5. 네트워크 또는 API 호출 중 발생할 수 있는 예외 처리
             .catch { e ->
                 // 실제 앱에서는 로깅 시스템에 오류를 기록하고 (예: Firebase Crashlytics)
                 // 사용자에게는 기본값을 제공하거나, 오류 메시지를 전달할 수 있습니다.

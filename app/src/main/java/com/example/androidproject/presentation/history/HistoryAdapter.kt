@@ -10,11 +10,9 @@ import com.example.androidproject.databinding.ItemDietBinding // (★필수★) 
 import com.example.androidproject.databinding.ItemExerciseBinding // (★필수★) '운동 견본'의 ViewBinding import
 import com.example.androidproject.domain.model.DietSession
 import com.example.androidproject.domain.model.RehabSession
-import java.text.SimpleDateFormat // (★수정★) 'API 레벨 26' 문제 해결을 위해 'SimpleDateFormat' (API 1) 사용
-// import java.time.LocalDateTime // (★수정★)
-// import java.time.format.DateTimeFormatter // (★수정★)
+import java.text.SimpleDateFormat // (★필수★) 'API 레벨 26' 문제 해결을 위해 'SimpleDateFormat' (API 1) 사용
 import java.util.Locale
-import java.util.Date // (★수정★) 님의 '필드값' 및 '가이드라인' 원칙 4에 따라 'Date' 사용
+import java.util.Date // (★필수★) 님의 '필드값' 및 '가이드라인' 원칙 4에 따라 'Date' 사용
 
 /**
  * [새 파일] - '기록' 탭의 '목록 관리자'
@@ -94,14 +92,10 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     val exerciseBinding = binding as ItemExerciseBinding // '형 변환'
                     val session = item.session
 
-                    // (★수정★) '기록' 탭에 맞게 '운동 견본' UI를 '재활용'합니다.
-                    // (임시) 님의 '필드값' Exercise.kt에 'name'이 있으므로,
-                    // '핵심 두뇌'(ViewModel)가 'session.exerciseId'를 '운동 이름'으로 '변환'해줘야 합니다.
+                    // (★수정★) 님의 '실제' 모델('RehabSession.kt')에 맞게 수정
                     exerciseBinding.exerciseNameTextView.text = "운동: ${session.exerciseId}" // (임시 - '운동 이름'으로 '변환' 필요)
-
-                    // (★수정★) 'Unresolved reference 'userFeedback'' 오류 '해결'
                     exerciseBinding.exerciseDetailTextView.text =
-                        "${session.sets} 세트 / ${session.reps} 회" // (피드백: ${session.userFeedback ?: "없음"})"
+                        "${session.sets} 세트 / ${session.reps} 회 (평점: ${session.userRating ?: "없음"})" // (★수정★)
 
                     // '기록' 탭에서는 '체크박스' 대신 '시간'을 보여줍니다.
                     exerciseBinding.exerciseStatusCheckBox.text = timeFormatter.format(session.dateTime) // (★수정★)
@@ -114,12 +108,10 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     val dietBinding = binding as ItemDietBinding // '형 변환'
                     val session = item.session
 
-                    // (★수정★) '기록' 탭에 맞게 '식단 견본' UI를 '재활용'합니다.
-                    // (임시) 님의 '필드값' Diet.kt에 'foodName'이 있으므로,
-                    // '핵심 두뇌'(ViewModel)가 'session.dietId'를 '음식 이름'으로 '변환'해줘야 합니다.
+                    // (★수정★) 님의 '실제' 모델('DietSession.kt')에 맞게 수정
                     dietBinding.dietNameTextView.text = "식단: ${session.dietId}" // (임시 - '음식 이름'으로 '변환' 필요)
                     dietBinding.dietDetailTextView.text =
-                        "섭취량: ${session.actualQuantity} ${session.actualUnit} (만족도: ${session.userSatisfaction ?: "없음"})"
+                        "섭취량: ${session.actualQuantity} ${session.actualUnit} (만족도: ${session.userSatisfaction ?: "없음"})" // (★수정★)
 
                     // '기록' 탭에서는 '칼로리' 대신 '시간'을 보여줍니다.
                     dietBinding.dietCaloriesTextView.text = timeFormatter.format(session.dateTime) // (★수정★)

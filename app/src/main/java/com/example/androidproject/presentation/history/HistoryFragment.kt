@@ -11,44 +11,38 @@ import androidx.fragment.app.viewModels // (★추가★) 'by viewModels()' Hilt
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope // (★추가★) 'lifecycleScope' import
 import androidx.lifecycle.repeatOnLifecycle // (★추가★) 'repeatOnLifecycle' import
-import com.example.androidproject.databinding.FragmentHistoryBinding // (★수정★) '실제 UI'의 ViewBinding import
+import com.example.androidproject.databinding.FragmentHistoryBinding // (★필수★) '실제 UI'의 ViewBinding import
 // (★추가★) '핵심 두뇌' ViewModel import
 import com.example.androidproject.presentation.viewmodel.RehabViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest // (★추가★) 'collectLatest' import
 import kotlinx.coroutines.launch // (★추가★) 'launch' import
 import java.util.Date // (★추가★) 'Date' import
+import java.util.Calendar // (★추가★) Calendar import
 
 /**
  * [파일 9/11] - '기록' 화면 '두뇌'
- * (★수정★) '임시' 텍스트 대신 '실제 UI'(fragment_history.xml)를
- * 사용하도록 'ViewBinding' 코드로 '수정'합니다.
- *
  * (★완성★) '핵심 두뇌'(RehabViewModel)와 '목록 관리자'(HistoryAdapter)를
  * '최종 연결'합니다.
  */
-@AndroidEntryPoint
+@AndroidEntryPoint // (님의 '팀원 1 가이드라인' 원칙 2)
 class HistoryFragment : Fragment() {
 
-    // (★수정★) ViewBinding 설정
+    // (★필수★) ViewBinding 설정
     private var _binding: FragmentHistoryBinding? = null
     private val binding get() = _binding!!
 
-    // (★추가★) '핵심 3: 가이드라인 2' (Hilt 주입)
-    // 'activityViewModels()' 대신 'viewModels()'를 사용하면
-    // '기록' 탭 '전용' ViewModel 인스턴스가 생성됩니다.
-    // 만약 '홈' 탭과 '공유'해야 한다면 'activityViewModels()'를 사용합니다.
-    // (님의 '가이드라인'에는 'by viewModels()'로 명시되어 있습니다.)
+    // (★필수★) '핵심 두뇌' ViewModel '주입' (가이드라인 2)
     private val viewModel: RehabViewModel by viewModels()
 
-    // (★추가★) '기록' 목록 관리자(Adapter) 인스턴스 생성
+    // (★추가★) '기록' 목록 관리자(Adapter) 인스턴스 선언
     private lateinit var historyAdapter: HistoryAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // (★수정★) '실제 UI' (fragment_history.xml)를 연결
+        // (★필수★) '실제 UI' (fragment_history.xml)를 연결
         _binding = FragmentHistoryBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -88,11 +82,21 @@ class HistoryFragment : Fragment() {
      */
     private fun setupCalendarListener() {
         binding.calendarView.setOnDateChangeListener { view, year, month, dayOfMonth ->
-            // (★핵심★) '선택된 날짜'로 'Date' 객체를 '생성'하여 'ViewModel'에 '전달'합니다.
+
+            // 1. 선택된 날짜 (year, month, dayOfMonth)로 'Calendar' 객체를 만듭니다.
+            val selectedCalendar = Calendar.getInstance().apply {
+                set(year, month, dayOfMonth)
+            }
+
+            // 2. (가이드라인 4) 'java.util.Date' 객체로 '변환'합니다.
+            val selectedDate = selectedCalendar.time
+
+            // (디버그용) 날짜가 잘 선택되었는지 'Toast' 메시지를 띄웁니다.
+            // val formattedDate = SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA).format(selectedDate)
+            // Toast.makeText(context, "$formattedDate 기록을 로드합니다.", Toast.LENGTH_SHORT).show()
+
+            // 3. (★핵심★) '핵심 두뇌'(ViewModel)에게 "이 '날짜'의 '기록'을 '가져와'!"라고 '요청'합니다.
             // (가이드라인 1: ViewModel만 참조)
-            val selectedDate = Date(
-                java.util.GregorianCalendar(year, month, dayOfMonth).timeInMillis
-            )
             viewModel.loadHistory(selectedDate)
         }
     }
@@ -109,7 +113,9 @@ class HistoryFragment : Fragment() {
                 // 'viewModel'의 'historyUiState'를 '구독'합니다.
                 viewModel.historyUiState.collectLatest { state ->
                     // (가) '로딩 스피너'의 '표시'/'숨김' 상태를 '업데이트'합니다.
-                    binding.loadingProgressBar.isVisible = state.isLoading
+                    // (참고: 님의 fragment_history.xml에는 로딩 스피너가 빠져있습니다.
+                    //  추후 fragment_home.xml을 참고하여 'loadingProgressBar'를 추가하는 것을 권장합니다.)
+                    // binding.loadingProgressBar.isVisible = state.isLoading
 
                     // (나) '목록 관리자'에게 '새로운 기록 목록'을 '제출'합니다.
                     // (DiffUtil이 '자동'으로 '변경된' 항목만 '새로고침'합니다.)
