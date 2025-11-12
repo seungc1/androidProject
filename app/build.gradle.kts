@@ -1,4 +1,5 @@
 // build.gradle.kts (Module:app)
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -7,6 +8,13 @@ plugins {
     id("org.jetbrains.kotlin.kapt")
     // Hilt 플러그인 적용: 의존성 주입을 위해 필요
     id("com.google.dagger.hilt.android")
+}
+val properties = Properties()
+try {
+    properties.load(project.rootProject.file("local.properties").inputStream())
+} catch (e: Exception) {
+    // 파일이 없어도 빌드는 되도록 예외 처리
+    project.logger.warn("local.properties file not found. API keys will be missing.")
 }
 
 kotlin {
@@ -21,6 +29,7 @@ android {
     // 이 설정이 있어야 XML 레이아웃 파일에 대한 바인딩 클래스(예: FragmentHomeBinding)가 자동으로 생성됩니다.
     buildFeatures {
         viewBinding = true
+        buildConfig = true
     }
 
     defaultConfig {
@@ -31,6 +40,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val gptApiKey = properties.getProperty("GPT_API_KEY") ?: ""
+        buildConfigField("String", "GPT_API_KEY", "\"$gptApiKey\"")
     }
 
     buildTypes {
@@ -85,7 +97,7 @@ dependencies {
     implementation(libs.hilt.android) // Hilt 라이브러리 핵심
     kapt(libs.hilt.compiler)          // Hilt 어노테이션 프로세서 (컴파일 시 코드 생성)
     implementation(libs.androidx.hilt.navigation.fragment) // Fragment에서 ViewModel 주입 (선택 사항)
-    kapt(libs.androidx.hilt.compiler) // Hilt Android 컴파일러 (선택 사항)
+    //kapt(libs.androidx.hilt.compiler) // Hilt Android 컴파일러 (선택 사항)
 
     // (수정됨) Hilt 테스트 및 JUnit 라이브러리는 'implementation' 스코프에 포함되면 안 됩니다.
     // implementation(libs.junit.junit) <-- 삭제
