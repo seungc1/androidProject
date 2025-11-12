@@ -14,6 +14,11 @@
         <action
             android:id="@+id/action_navigation_home_to_exerciseDetailFragment"
             app:destination="@id/exerciseDetailFragment" />
+
+        <action
+            android:id="@+id/action_navigation_home_to_dietDetailFragment"
+            app:destination="@id/dietDetailFragment" />
+
     </fragment>
 
     <fragment
@@ -32,8 +37,18 @@
         android:id="@+id/exerciseDetailFragment"
         android:name="com.example.androidproject.presentation.detail.ExerciseDetailFragment"
         android:label="운동 상세 기록"
-        tools:layout="@layout/fragment_exercise_detail"> <argument
-        android:name="exerciseId"
+        tools:layout="@layout/fragment_exercise_detail">
+        <argument
+            android:name="exerciseId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/dietDetailFragment"
+        android:name="com.example.androidproject.presentation.detail.DietDetailFragment"
+        android:label="식단 상세 정보"
+        tools:layout="@layout/fragment_diet_detail"> <argument
+        android:name="dietId"
         app:argType="string" />
     </fragment>
 

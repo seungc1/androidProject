@@ -13,8 +13,7 @@ import com.example.androidproject.domain.model.User
 import com.example.androidproject.domain.model.DietSession
 import com.example.androidproject.domain.model.RehabSession
 import com.example.androidproject.domain.usecase.GetAIRecommendationUseCase
-// (★추가★) '저장' 시 '시뮬레이션'을 위해 'AddRehabSessionUseCase' import
-// import com.example.androidproject.domain.usecase.AddRehabSessionUseCase
+// import com.example.androidproject.domain.usecase.* // (Hilt가 '실제' UseCase를 주입합니다)
 // (★추가★) '기록' 화면에서 사용할 'HistoryItem' import
 import com.example.androidproject.presentation.history.HistoryItem
 import com.example.androidproject.presentation.main.MainUiState
@@ -23,16 +22,25 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first // (★ 추가 ★) 'first()' import
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
-import java.util.UUID // (★추가★) '시뮬레이션' 저장을 위해 'UUID' import
+import java.util.UUID
 import javax.inject.Inject
 
-// ... (HistoryUiState data class는 그대로) ...
+// (★기존★) '기록' 화면(HistoryFragment)을 위한 UI 상태
 data class HistoryUiState(
     val isLoading: Boolean = false,
     val historyItems: List<HistoryItem> = emptyList(),
+    val errorMessage: String? = null
+)
+
+// (★ 추가 ★) '식단 상세' 화면(DietDetailFragment)을 위한 UI 상태
+data class DietDetailUiState(
+    val isLoading: Boolean = false,
+    val diet: Diet? = null,
+    val alternatives: List<String> = emptyList(),
     val errorMessage: String? = null
 )
 
@@ -53,6 +61,10 @@ class RehabViewModel @Inject constructor(
     // --- '기록' 화면 (History) 상태 관리 ---
     private val _historyUiState = MutableStateFlow(HistoryUiState())
     val historyUiState: StateFlow<HistoryUiState> = _historyUiState.asStateFlow()
+
+    // (★ 추가 ★) --- '식단 상세' 화면 (Diet Detail) 상태 관리 ---
+    private val _dietDetailState = MutableStateFlow(DietDetailUiState())
+    val dietDetailState: StateFlow<DietDetailUiState> = _dietDetailState.asStateFlow()
 
 
     init {
@@ -119,7 +131,7 @@ class RehabViewModel @Inject constructor(
                     isLoading = false,
                     userName = dummyUser.name,
                     currentInjuryName = dummyInjury.name,
-                    todayExercises = dummyExercises.map { TodayExercise(it, false) }, // (★핵심★) UI용 모델로 변환
+                    todayExercises = dummyExercises.map { TodayExercise(it, false) },
                     recommendedDiets = dummyDiets,
                     errorMessage = null
                 )
@@ -131,15 +143,12 @@ class RehabViewModel @Inject constructor(
         }
     }
 
-    /**
-     * (★수정★) 'toggleExerciseCompletion' -> 'setExerciseCompleted'
-     * '홈' 화면의 '운동 완료' '상태'를 '업데이트'합니다. (토글이 아닌 '설정')
-     */
+    // --- '홈' 화면 (Main) 기능 (수정 없음) ---
+
     private fun setExerciseCompleted(exerciseId: String, isCompleted: Boolean) {
         _uiState.update { currentState ->
             val updatedExercises = currentState.todayExercises.map {
                 if (it.exercise.id == exerciseId) {
-                    // (★수정★) '토글'(!it.isCompleted) 대신 '설정'(isCompleted)
                     it.copy(isCompleted = isCompleted)
                 } else {
                     it
@@ -149,48 +158,36 @@ class RehabViewModel @Inject constructor(
         }
     }
 
-    /**
-     * (★추가★) (Goal 2)
-     * '상세' 화면(ExerciseDetailFragment)이 '저장' 버튼을 '누르면' '호출'됩니다.
-     */
     fun saveRehabSessionDetails(exerciseId: String, rating: Int, notes: String) {
         viewModelScope.launch {
-            // (시뮬레이션)
-            // 1. (★필수★) UseCase를 호출하여 '운동 기록'(RehabSession)을 '생성'합니다.
-            //    (님의 '필드값' 모델에 맞춰 'notes'와 'userRating'을 '사용'합니다.)
-
             val session = RehabSession(
-                id = UUID.randomUUID().toString(), // 임시 ID 생성
-                userId = "user01", // (임시) '현재' 사용자 ID
+                id = UUID.randomUUID().toString(),
+                userId = "user01",
                 exerciseId = exerciseId,
-                dateTime = Date(), // (★중요★) '지금' 시간 (가이드라인 4)
-                sets = 3, // (임시) 기본값
-                reps = 10, // (임시) 기본값
-                durationMinutes = 15, // (임시) 기본값
-                notes = notes, // (★핵심★) '상세' 화면에서 '입력'받은 '후기'
-                userRating = rating  // (★핵심★) '상세' 화면에서 '입력'받은 '만족도'
+                dateTime = Date(),
+                sets = 3, reps = 10, durationMinutes = 15,
+                notes = notes,
+                userRating = rating
             )
             // (실제 연동)
             // val result = addRehabSessionUseCase(session)
 
-            // 2. (★핵심★) '저장'에 '성공'했으므로, '홈' 화면 UI '상태'를 '업데이트'합니다.
-            // 'setExerciseCompleted'를 '호출'하여 '체크' 표시를 '켭니다'. (Goal 3)
             setExerciseCompleted(exerciseId, true)
         }
     }
-
 
     fun clearErrorMessage() {
         _uiState.update { it.copy(errorMessage = null) }
     }
 
     // --- '기록' 화면 (History) 기능 (수정 없음) ---
+
     fun loadHistory(date: Date) {
         // ... (기존 loadHistory 함수 내용은 수정 없음) ...
         viewModelScope.launch {
             _historyUiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                kotlinx.coroutines.delay(500) // 0.5초 로딩 딜레이
+                kotlinx.coroutines.delay(500)
 
                 val dummyHistoryItems = listOf(
                     HistoryItem.Exercise(
@@ -235,5 +232,58 @@ class RehabViewModel @Inject constructor(
 
     fun clearHistoryErrorMessage() {
         _historyUiState.update { it.copy(errorMessage = null) }
+    }
+
+
+    // (★ 추가 ★) --- '식단 상세' 화면 (Diet Detail) 기능 ---
+
+    /**
+     * (★ 추가 ★)
+     * '두뇌'(DietDetailFragment)가 '호출'하면, 'AI'에게 '대체 식품'을 '요청' (시뮬레이션)
+     */
+    fun loadDietDetails(dietId: String) {
+        viewModelScope.launch {
+            _dietDetailState.update { it.copy(isLoading = true, errorMessage = null, alternatives = emptyList()) }
+
+            try {
+                // 1. '홈' 화면이 '이미' '가지고 있는' '식단' 정보를 '먼저' '찾습니다'.
+                val currentUiState = _uiState.first() // '홈' 화면의 '현재' 상태를 '가져옵니다'.
+                val foundDiet = currentUiState.recommendedDiets.find { it.id == dietId }
+
+                if (foundDiet == null) {
+                    throw Exception("선택한 식단(ID: $dietId)을 찾을 수 없습니다.")
+                }
+
+                // 2. '식단' 정보는 '즉시' '업데이트'합니다.
+                _dietDetailState.update { it.copy(diet = foundDiet) }
+
+                // 3. (시뮬레이션) 'AI'에게 '대체 식품'을 '요청'하는 '척' 0.5초 '딜레이'
+                kotlinx.coroutines.delay(500)
+
+                // (시뮬레이션) 'AI'가 'ID'에 따라 '다른' '대체 식품'을 '제안'했다고 '가정'합니다.
+                val dummyAlternatives = when (dietId) {
+                    "d001" -> listOf("대체: 그릭 요거트와 견과류", "대체: 통밀빵과 아보카도")
+                    "d002" -> listOf("대체: 두부 샐러드", "대체: 연어 스테이크와 채소 구이")
+                    else -> listOf("추천할 만한 대체 식품이 없습니다.")
+                }
+
+                // 4. '대체 식품' '목록'을 '업데이트'합니다.
+                _dietDetailState.update {
+                    it.copy(isLoading = false, alternatives = dummyAlternatives)
+                }
+
+            } catch (e: Exception) {
+                _dietDetailState.update {
+                    it.copy(isLoading = false, errorMessage = "대체 식품 로드 실패: ${e.message}")
+                }
+            }
+        }
+    }
+
+    /**
+     * (★ 추가 ★) '두뇌'(DietDetailFragment)가 '오류' 메시지를 '처리'한 후 호출합니다.
+     */
+    fun clearDietDetailErrorMessage() {
+        _dietDetailState.update { it.copy(errorMessage = null) }
     }
 }
