@@ -3,17 +3,38 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
-    app:startDestination="@id/navigation_home"> <fragment
-    android:id="@+id/navigation_home"
-    android:name="com.example.androidproject.presentation.main.HomeFragment"
-    android:label="홈"
-    tools:layout="@layout/fragment_home" /> <fragment
-    android:id="@+id/navigation_history"
-    android:name="com.example.androidproject.presentation.history.HistoryFragment"
-    android:label="기록"
-    tools:layout="@layout/fragment_history" /> <fragment
-    android:id="@+id/navigation_profile"
-    android:name="com.example.androidproject.presentation.profile.ProfileFragment"
-    android:label="개인정보"
-    tools:layout="@layout/fragment_history" />
+    app:startDestination="@id/navigation_home">
+
+    <fragment
+        android:id="@+id/navigation_home"
+        android:name="com.example.androidproject.presentation.main.HomeFragment"
+        android:label="@string/title_home"
+        tools:layout="@layout/fragment_home">
+
+        <action
+            android:id="@+id/action_navigation_home_to_exerciseDetailFragment"
+            app:destination="@id/exerciseDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_history"
+        android:name="com.example.androidproject.presentation.history.HistoryFragment"
+        android:label="@string/title_history"
+        tools:layout="@layout/fragment_history" />
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.example.androidproject.presentation.profile.ProfileFragment"
+        android:label="@string/title_profile"
+        tools:layout="@layout/fragment_profile_placeholder" />
+
+    <fragment
+        android:id="@+id/exerciseDetailFragment"
+        android:name="com.example.androidproject.presentation.detail.ExerciseDetailFragment"
+        android:label="운동 상세 기록"
+        tools:layout="@layout/fragment_exercise_detail"> <argument
+        android:name="exerciseId"
+        app:argType="string" />
+    </fragment>
+
 </navigation>

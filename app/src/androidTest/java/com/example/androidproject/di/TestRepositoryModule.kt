@@ -1,10 +1,5 @@
 package com.example.androidproject.di
 
-import com.example.androidproject.data.repository.FakeAIApiRepository
-import com.example.androidproject.data.repository.FakeDietSessionRepository
-import com.example.androidproject.data.repository.FakeRehabRepository
-import com.example.androidproject.data.repository.FakeRehabSessionRepository
-import com.example.androidproject.data.repository.FakeUserRepository
 import com.example.androidproject.domain.repository.AIApiRepository
 import com.example.androidproject.domain.repository.DietSessionRepository
 import com.example.androidproject.domain.repository.RehabRepository
@@ -13,7 +8,6 @@ import com.example.androidproject.domain.repository.UserRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.components.SingletonComponent
-import dagger.hilt.testing.TestInstallIn
 import javax.inject.Singleton
 
 // @TestInstallIn 어노테이션은 이 모듈이 어떤 Hilt 컴포넌트에 설치될지를 지정하며,
