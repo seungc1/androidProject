@@ -22,7 +22,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first // (★ 추가 ★) 'first()' import
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -36,7 +36,7 @@ data class HistoryUiState(
     val errorMessage: String? = null
 )
 
-// (★ 추가 ★) '식단 상세' 화면(DietDetailFragment)을 위한 UI 상태
+// (★기존★) '식단 상세' 화면(DietDetailFragment)을 위한 UI 상태
 data class DietDetailUiState(
     val isLoading: Boolean = false,
     val diet: Diet? = null,
@@ -62,9 +62,15 @@ class RehabViewModel @Inject constructor(
     private val _historyUiState = MutableStateFlow(HistoryUiState())
     val historyUiState: StateFlow<HistoryUiState> = _historyUiState.asStateFlow()
 
-    // (★ 추가 ★) --- '식단 상세' 화면 (Diet Detail) 상태 관리 ---
+    // --- '식단 상세' 화면 (Diet Detail) 상태 관리 ---
     private val _dietDetailState = MutableStateFlow(DietDetailUiState())
     val dietDetailState: StateFlow<DietDetailUiState> = _dietDetailState.asStateFlow()
+
+    // (★ 수정 ★) 'ProfileFragment'가 '참조'할 '더미' 사용자 정보
+    lateinit var dummyUser: User
+
+    // (★ 추가 ★) '더미' 부상 정보도 'ProfileFragment'에서 '참조'할 수 있도록 노출
+    lateinit var dummyInjury: Injury
 
 
     init {
@@ -72,7 +78,6 @@ class RehabViewModel @Inject constructor(
     }
 
     private fun loadMainDashboardData() {
-        // ... (기존 loadMainDashboardData 함수 내용은 수정 없음) ...
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
@@ -80,18 +85,21 @@ class RehabViewModel @Inject constructor(
                 // --- 더미 데이터 (시뮬레이션) ---
                 kotlinx.coroutines.delay(1000) // 1초 로딩 딜레이
 
-                val dummyUser = User(
+                // (★ 수정 ★) 'val dummyUser' -> 'dummyUser' (전역 변수에 '할당')
+                // (★ 수정 ★) 'heightCm'을 'Int'로 변경 (User.kt 모델과 '일치')
+                dummyUser = User(
                     id = "user01", name = "김재활", gender = "남성", age = 30,
                     heightCm = 175, weightKg = 70.5, activityLevel = "활동적",
-                    fitnessGoal = "근육 증가", allergyInfo = listOf("땅콩"),
+                    fitnessGoal = "근육 증가", allergyInfo = listOf("땅콩", "새우"),
                     preferredDietType = "일반", targetCalories = 2500,
                     currentInjuryId = "injury01",
                     preferredDietaryTypes = listOf("일반식", "저염식"),
                     equipmentAvailable = listOf("덤벨", "밴드"),
                     currentPainLevel = 4,
-                    additionalNotes = "부상 회복에 집중하고 싶습니다."
+                    additionalNotes = "부상 회복에 집중하고 싶습니다. 특히 손목에 부담이 가지 않는 운동을 선호합니다."
                 )
-                val dummyInjury = Injury(
+                // (★ 수정 ★) 'val dummyInjury' -> 'dummyInjury' (전역 변수에 '할당')
+                dummyInjury = Injury(
                     id = "injury01", name = "손목 염좌", bodyPart = "손목",
                     severity = "경미", description = "가벼운 통증이 있는 상태"
                 )
@@ -130,7 +138,9 @@ class RehabViewModel @Inject constructor(
                 _uiState.value = MainUiState(
                     isLoading = false,
                     userName = dummyUser.name,
+                    // (★ 수정 ★) 'uiState'에 '환부(부위)'도 '저장'
                     currentInjuryName = dummyInjury.name,
+                    currentInjuryArea = dummyInjury.bodyPart, // (★ 추가 ★)
                     todayExercises = dummyExercises.map { TodayExercise(it, false) },
                     recommendedDiets = dummyDiets,
                     errorMessage = null
@@ -235,39 +245,30 @@ class RehabViewModel @Inject constructor(
     }
 
 
-    // (★ 추가 ★) --- '식단 상세' 화면 (Diet Detail) 기능 ---
+    // --- '식단 상세' 화면 (Diet Detail) 기능 (수정 없음) ---
 
-    /**
-     * (★ 추가 ★)
-     * '두뇌'(DietDetailFragment)가 '호출'하면, 'AI'에게 '대체 식품'을 '요청' (시뮬레이션)
-     */
     fun loadDietDetails(dietId: String) {
         viewModelScope.launch {
             _dietDetailState.update { it.copy(isLoading = true, errorMessage = null, alternatives = emptyList()) }
 
             try {
-                // 1. '홈' 화면이 '이미' '가지고 있는' '식단' 정보를 '먼저' '찾습니다'.
-                val currentUiState = _uiState.first() // '홈' 화면의 '현재' 상태를 '가져옵니다'.
+                val currentUiState = _uiState.first()
                 val foundDiet = currentUiState.recommendedDiets.find { it.id == dietId }
 
                 if (foundDiet == null) {
                     throw Exception("선택한 식단(ID: $dietId)을 찾을 수 없습니다.")
                 }
 
-                // 2. '식단' 정보는 '즉시' '업데이트'합니다.
                 _dietDetailState.update { it.copy(diet = foundDiet) }
 
-                // 3. (시뮬레이션) 'AI'에게 '대체 식품'을 '요청'하는 '척' 0.5초 '딜레이'
                 kotlinx.coroutines.delay(500)
 
-                // (시뮬레이션) 'AI'가 'ID'에 따라 '다른' '대체 식품'을 '제안'했다고 '가정'합니다.
                 val dummyAlternatives = when (dietId) {
                     "d001" -> listOf("대체: 그릭 요거트와 견과류", "대체: 통밀빵과 아보카도")
                     "d002" -> listOf("대체: 두부 샐러드", "대체: 연어 스테이크와 채소 구이")
                     else -> listOf("추천할 만한 대체 식품이 없습니다.")
                 }
 
-                // 4. '대체 식품' '목록'을 '업데이트'합니다.
                 _dietDetailState.update {
                     it.copy(isLoading = false, alternatives = dummyAlternatives)
                 }
@@ -280,10 +281,41 @@ class RehabViewModel @Inject constructor(
         }
     }
 
-    /**
-     * (★ 추가 ★) '두뇌'(DietDetailFragment)가 '오류' 메시지를 '처리'한 후 호출합니다.
-     */
     fun clearDietDetailErrorMessage() {
         _dietDetailState.update { it.copy(errorMessage = null) }
     }
-}
+
+
+    // (★ 수정 ★) --- '개인정보' 화면 (Profile) 기능 ---
+
+    /**
+     * (★ 수정 ★)
+     * '두뇌'(ProfileEditFragment)가 '저장' 버튼을 '누르면' '호출'됩니다.
+     * '환부(부위)'와 '질환명'을 '업데이트'하여 'UI State'를 '갱신'합니다.
+     */
+    fun updateUserProfile(updatedUser: User, updatedInjuryName: String, updatedInjuryArea: String) {
+        viewModelScope.launch {
+            // 1. (시뮬레이션) ViewModel의 '더미' 데이터를 '업데이트'합니다.
+            dummyUser = updatedUser
+            dummyInjury = dummyInjury.copy(
+                name = updatedInjuryName, // '질환명' 업데이트
+                bodyPart = updatedInjuryArea  // '환부(부위)' 업데이트
+            )
+
+            // 2. (시뮬레이션) '홈' 탭과 '개인정보' 탭이 '공유'하는 'UI State'도 '업데이트'합니다.
+            // (UI State를 '관찰'하는 모든 '화면'을 '새로고침'하기 위함입니다.)
+            _uiState.update { currentState ->
+                currentState.copy(
+                    userName = updatedUser.name,
+                    currentInjuryName = updatedInjuryName, // '업데이트'된 '질환명'을 '반영'
+                    currentInjuryArea = updatedInjuryArea  // '업데이트'된 '환부(부위)'를 '반영'
+                )
+            }
+
+            // (실제 앱에서는 이 'updatedUser' 객체를
+            // 'updateUserProfileUseCase(updatedUser)'로 '전달'하여 'DB'에 '저장'합니다.)
+            // (부상 정보도 'updateInjuryUseCase' 등으로 '저장'해야 합니다.)
+        }
+    }
+
+} // (★ 중요 ★) 클래스의 '닫는 괄호'

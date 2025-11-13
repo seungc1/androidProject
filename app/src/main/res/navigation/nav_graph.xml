@@ -31,7 +31,10 @@
         android:id="@+id/navigation_profile"
         android:name="com.example.androidproject.presentation.profile.ProfileFragment"
         android:label="@string/title_profile"
-        tools:layout="@layout/fragment_profile_placeholder" />
+        tools:layout="@layout/fragment_profile"> <action
+        android:id="@+id/action_navigation_profile_to_profileEditFragment"
+        app:destination="@id/profileEditFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/exerciseDetailFragment"
@@ -47,9 +50,14 @@
         android:id="@+id/dietDetailFragment"
         android:name="com.example.androidproject.presentation.detail.DietDetailFragment"
         android:label="식단 상세 정보"
-        tools:layout="@layout/fragment_diet_detail"> <argument
-        android:name="dietId"
-        app:argType="string" />
+        tools:layout="@layout/fragment_diet_detail">
+        <argument
+            android:name="dietId"
+            app:argType="string" />
     </fragment>
 
-</navigation>
+    <fragment
+        android:id="@+id/profileEditFragment"
+        android:name="com.example.androidproject.presentation.profile.ProfileEditFragment"
+        android:label="내 정보 수정"
+        tools:layout="@layout/fragment_profile_edit" /> </navigation>
