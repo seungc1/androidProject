@@ -2,7 +2,7 @@
 
 [versions]
 agp = "8.12.3"
-kotlin = "1.8.20"
+kotlin = "2.0.0" #1.8.20 -> 2.0.0 변경(효원 수정)
 coreKtx = "1.10.0"
 junit = "4.13.2"
 junitVersion = "1.1.5"
@@ -23,12 +23,16 @@ hilt = "2.51.1"
 # (★ 추가 ★) 'Hilt Navigation' 버전을 '별도'로 관리합니다. (예: 1.2.0)
 hiltNavigation = "1.2.0"
 
+# Hilt (Dependency Injection: 의존성 주입 프레임워크)
+hiltCompiler = "1.2.0" # Hilt Android Compiler 및 Navigation Fragment 통합 버전 1.0.0 -> 1.2.0 수정(효원)
 # (★ 추가 ★) 'Fragment-KTX' 버전을 '정의'합니다. (예: 1.7.1)
 fragmentKtx = "1.7.1"
 
 # Retrofit (네트워크 통신)
 retrofit = "2.9.0"
 converterGson = "2.9.0"
+
+okhttp = "4.12.0"
 
 # Room Database (로컬 데이터베이스)
 room = "2.5.2"
@@ -87,11 +91,18 @@ androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview"
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converterGson" }
 
+# OkHttp (효원 추가)
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+okhttp-loggingInterceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+
 # Room Database (로컬 DB)
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 junit-junit = { group = "junit", name = "junit", version.ref = "junitJunit" }
+androidx-room-common-jvm = { group = "androidx.room", name = "room-common", version.ref = "room" } #효원 수정
+
+# --- 추가된 라이브러리 정의 끝 ---
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
