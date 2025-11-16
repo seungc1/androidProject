@@ -1,34 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  [파일 6/11] - '내비게이션 지도'
-  (★수정★) '기록' 탭의 '미리보기'(tools:layout)를
-  '임시' UI -> '실제 UI'로 '수정'합니다.
--->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/nav_graph"
     app:startDestination="@id/navigation_home">
 
-    <!-- 1. '홈' 화면 (ID: navigation_home) -->
     <fragment
         android:id="@+id/navigation_home"
         android:name="com.example.androidproject.presentation.main.HomeFragment"
         android:label="@string/title_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home">
 
-    <!-- 2. '기록' 화면 (ID: navigation_history) -->
+        <action
+            android:id="@+id/action_navigation_home_to_exerciseDetailFragment"
+            app:destination="@id/exerciseDetailFragment" />
+
+        <action
+            android:id="@+id/action_navigation_home_to_dietDetailFragment"
+            app:destination="@id/dietDetailFragment" />
+
+        <action
+            android:id="@+id/action_navigation_home_to_profileEditFragment"
+            app:destination="@id/profileEditFragment" />
+
+    </fragment>
+
     <fragment
         android:id="@+id/navigation_history"
         android:name="com.example.androidproject.presentation.history.HistoryFragment"
         android:label="@string/title_history"
-        tools:layout="@layout/fragment_history" /> <!-- (★수정★) ..._placeholder -> fragment_history -->
+        tools:layout="@layout/fragment_history" />
 
-    <!-- 3. '개인정보' 화면 (ID: navigation_profile) -->
     <fragment
         android:id="@+id/navigation_profile"
         android:name="com.example.androidproject.presentation.profile.ProfileFragment"
         android:label="@string/title_profile"
-        tools:layout="@layout/fragment_profile_placeholder" />
+        tools:layout="@layout/fragment_profile">
+
+        <action
+            android:id="@+id/action_navigation_profile_to_profileEditFragment"
+            app:destination="@id/profileEditFragment" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/exerciseDetailFragment"
+        android:name="com.example.androidproject.presentation.detail.ExerciseDetailFragment"
+        android:label="운동 상세 기록"
+        tools:layout="@layout/fragment_exercise_detail">
+        <argument
+            android:name="exerciseId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/dietDetailFragment"
+        android:name="com.example.androidproject.presentation.detail.DietDetailFragment"
+        android:label="식단 상세 정보"
+        tools:layout="@layout/fragment_diet_detail">
+        <argument
+            android:name="dietId"
+            app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/profileEditFragment"
+        android:name="com.example.androidproject.presentation.profile.ProfileEditFragment"
+        android:label="내 정보 수정"
+        tools:layout="@layout/fragment_profile_edit" />
 
 </navigation>
