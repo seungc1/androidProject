@@ -3,9 +3,9 @@ package com.example.androidproject.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidproject.domain.model.Diet
-import com.example.androidproject.domain.model.DietRecommendation // (★추가★)
+import com.example.androidproject.domain.model.DietRecommendation
 import com.example.androidproject.domain.model.Exercise
-import com.example.androidproject.domain.model.ExerciseRecommendation // (★추가★)
+import com.example.androidproject.domain.model.ExerciseRecommendation
 import com.example.androidproject.domain.model.Injury
 import com.example.androidproject.domain.model.User
 import com.example.androidproject.domain.model.DietSession
@@ -14,6 +14,8 @@ import com.example.androidproject.domain.usecase.GetAIRecommendationUseCase
 import com.example.androidproject.presentation.history.HistoryItem
 import com.example.androidproject.presentation.main.MainUiState
 import com.example.androidproject.presentation.main.TodayExercise
+import com.example.androidproject.domain.model.AIAnalysisResult
+import com.example.androidproject.domain.usecase.GetWeeklyAnalysisUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,7 +33,9 @@ import javax.inject.Inject
 data class HistoryUiState(
     val isLoading: Boolean = false,
     val historyItems: List<HistoryItem> = emptyList(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isAnalyzing: Boolean = false,
+    val analysisResult: AIAnalysisResult? = null
 )
 data class DietDetailUiState(
     val isLoading: Boolean = false,
@@ -43,8 +47,8 @@ data class DietDetailUiState(
 
 @HiltViewModel
 class RehabViewModel @Inject constructor(
-    private val getAIRecommendationUseCase: GetAIRecommendationUseCase
-    // ... (주석 처리된 다른 UseCase들) ...
+    private val getAIRecommendationUseCase: GetAIRecommendationUseCase,
+    private val getWeeklyAnalysisUseCase: GetWeeklyAnalysisUseCase
 ) : ViewModel() {
 
     // (StateFlow 선언부 수정 없음)
@@ -133,6 +137,10 @@ class RehabViewModel @Inject constructor(
      * [AIRecommendationResult]의 List<ExerciseRecommendation>을
      * [MainUiState]의 List<TodayExercise>로 변환합니다.
      */
+    /**
+     * [AIRecommendationResult]의 List<ExerciseRecommendation>을
+     * [MainUiState]의 List<TodayExercise>로 변환합니다.
+     */
     private fun List<ExerciseRecommendation>.toTodayExerciseList(): List<TodayExercise> {
         return this.map { rec ->
             // AI 모델(ExerciseRecommendation)을 Domain 모델(Exercise)로 변환
@@ -142,8 +150,12 @@ class RehabViewModel @Inject constructor(
                 description = rec.description,
                 bodyPart = rec.bodyPart,
                 difficulty = rec.difficulty,
-                videoUrl = rec.imageUrl, // (AI가 준 imageUrl 사용)
-                precautions = null, // (AI가 준 precautions가 있다면 여기에 매핑)
+                videoUrl = rec.imageUrl,
+                precautions = null,
+
+                sets = rec.sets,
+                reps = rec.reps,
+
                 aiRecommendationReason = rec.aiRecommendationReason
             )
             // Domain 모델(Exercise)을 UI 모델(TodayExercise)로 래핑
@@ -265,7 +277,53 @@ class RehabViewModel @Inject constructor(
         _historyUiState.update { it.copy(errorMessage = null) }
     }
 
-    // ... (loadDietDetails, clearDietDetailErrorMessage 함수 수정 없음) ...
+    fun fetchWeeklyAnalysis() {
+        viewModelScope.launch {
+            // 1. AI 분석 시작을 알림 (SwipeRefresh 스피너 표시)
+            _historyUiState.update { it.copy(isAnalyzing = true, analysisResult = null) }
+
+            try {
+                // 2. UseCase 호출 (dummyUser 정보 사용)
+                getWeeklyAnalysisUseCase(dummyUser)
+                    .catch { e ->
+                        // 3. AI 분석 오류 처리
+                        _historyUiState.update {
+                            it.copy(
+                                isAnalyzing = false,
+                                analysisResult = createErrorAnalysisResult("AI 분석 실패: ${e.message}")
+                            )
+                        }
+                    }
+                    .collect { result ->
+                        // 4. AI 분석 성공
+                        _historyUiState.update {
+                            it.copy(isAnalyzing = false, analysisResult = result)
+                        }
+                    }
+            } catch (e: Exception) {
+                // 5. UseCase 자체의 (예: 날짜 계산) 오류 처리
+                _historyUiState.update {
+                    it.copy(
+                        isAnalyzing = false,
+                        analysisResult = createErrorAnalysisResult("분석 준비 중 오류: ${e.message}")
+                    )
+                }
+            }
+        }
+    }
+
+    //  ViewModel에서 분석 오류 시 사용할 임시 객체
+    private fun createErrorAnalysisResult(message: String): AIAnalysisResult {
+        return AIAnalysisResult(
+            summary = message,
+            strengths = emptyList(),
+            areasForImprovement = emptyList(),
+            personalizedTips = emptyList(),
+            nextStepsRecommendation = "오류로 인해 분석을 완료할 수 없습니다.",
+            disclaimer = "오류 발생"
+        )
+    }
+
     fun loadDietDetails(dietId: String) {
         viewModelScope.launch {
             _dietDetailState.update { it.copy(isLoading = true, errorMessage = null, alternatives = emptyList()) }
@@ -298,7 +356,6 @@ class RehabViewModel @Inject constructor(
         _dietDetailState.update { it.copy(errorMessage = null) }
     }
 
-    // ... (updateUserProfile 함수 수정 없음) ...
     fun updateUserProfile(updatedUser: User, updatedInjuryName: String, updatedInjuryArea: String) {
         viewModelScope.launch {
             dummyUser = updatedUser

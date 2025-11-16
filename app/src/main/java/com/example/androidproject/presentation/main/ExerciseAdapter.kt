@@ -35,7 +35,16 @@ class ExerciseAdapter(
         fun bind(todayExercise: TodayExercise) {
             val exercise = todayExercise.exercise
             binding.exerciseNameTextView.text = exercise.name
-            binding.exerciseDetailTextView.text = "부위: ${exercise.bodyPart} / ${exercise.difficulty}"
+
+            // 세트와 횟수를 상세 텍스트에 포함
+            val setsText = exercise.sets?.let { "${it}세트" } ?: ""
+            val repsText = exercise.reps?.let { "${it}회" } ?: ""
+            val detailSeparator = if (setsText.isNotEmpty() && repsText.isNotEmpty()) " / " else ""
+
+            // 예: "손목 / 초급 / 3세트 / 10회"
+            binding.exerciseDetailTextView.text =
+                "부위: ${exercise.bodyPart} / ${exercise.difficulty}" +
+                        (if (setsText.isNotEmpty() || repsText.isNotEmpty()) " / $setsText$detailSeparator$repsText" else "")
 
             binding.exerciseStatusCheckBox.isChecked = todayExercise.isCompleted
         }
