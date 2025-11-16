@@ -10,5 +10,7 @@ data class Exercise(
     val difficulty: String, // 예: "초급", "중급", "고급"
     val videoUrl: String?, // 운동 영상 URL (선택 사항)
     val precautions: String?, // 주의사항 (선택 사항)
+    val sets: Int? = null, //운동 세트수
+    val reps: Int? = null, //운동 수행수
     val aiRecommendationReason: String? = null // AI가 이 운동을 추천한 이유 (선택 사항)
 )

@@ -8,7 +8,6 @@ import org.junit.Before
 import org.junit.Test
 
 // Fake Repositories 임포트 (경로 확인 필수)
-import com.example.androidproject.data.repository.FakeAIApiRepository
 import com.example.androidproject.data.repository.FakeUserRepository
 
 // Domain Models 임포트

@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- (Hilt를 사용하기 위해 님의 'RehabAIApp' 클래스를 name으로 지정) -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".RehabAIApp"
         android:allowBackup="true"
@@ -13,21 +14,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AndroidProject"
+        android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
 
-        <!--
-          [오류 수정]
-          'ClassNotFoundException' (파일 없음) 오류를
-          해결하기 위해, 님의 '실제' MainActivity '주소'로
-          'android:name'을 '수정'합니다.
-        -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
-            <!-- (수정) ".presentation.ui.MainActivity" -> ".MainActivity" -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

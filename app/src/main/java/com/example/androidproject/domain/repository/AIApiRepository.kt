@@ -2,7 +2,9 @@
 
 package com.example.androidproject.domain.repository
 
+import com.example.androidproject.domain.model.AIAnalysisResult
 import com.example.androidproject.domain.model.AIRecommendationResult
+import com.example.androidproject.domain.model.RehabData
 import com.example.androidproject.domain.model.RecommendationParams
 import kotlinx.coroutines.flow.Flow
 
@@ -22,6 +24,5 @@ interface AIApiRepository {
      */
     suspend fun getAIRehabAndDietRecommendation(params: RecommendationParams): Flow<AIRecommendationResult>
 
-    // 필요하다면, AI 진행 상황 분석 등을 위한 함수도 여기에 추가할 수 있습니다.
-    // suspend fun analyzeRehabProgress(rehabData: RehabData): Flow<AIAnalysisResult>
+    suspend fun analyzeRehabProgress(rehabData: RehabData): Flow<AIAnalysisResult>
 }
