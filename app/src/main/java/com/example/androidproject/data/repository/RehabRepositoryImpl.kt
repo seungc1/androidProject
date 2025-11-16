@@ -21,13 +21,6 @@ class RehabRepositoryImpl @Inject constructor(
         return flowOf(exercise)
     }
 
-    // ⭐ 2. getRecommendedExercises 함수 제거 (RehabRepository에서 사라짐) ⭐
-    // ⭐ 3. getAllExercisesByBodyPart 함수 제거 (RehabRepository에서 사라짐) ⭐
-    // 이 두 함수는 이제 RehabRepository 인터페이스에 없으므로 구현체에서도 제거해야 합니다.
-    // 만약 이 기능들이 필요하다면, 새로운 Use Case와 Repository 인터페이스를 정의해야 합니다.
-    // 현재로서는 AIRecommendationResult를 통해 추천을 받는 것이 주 목적입니다.
-
-
     // 더미 데이터 생성 함수 (필드 이름 수정)
     private fun generateDummyExercises(): List<Exercise> {
         return listOf(

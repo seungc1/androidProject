@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.recyclerview) // 목록(RecyclerView)
     implementation(libs.androidx.fragment.ktx)  // Fragment KTX (by viewModels() 등)
+    implementation(libs.androidx.swiperefreshlayout)
 
     // --- 2. Architecture & Coroutines ---
     // Navigation (Fragment 간 이동)
