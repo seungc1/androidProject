@@ -49,4 +49,12 @@ class LocalDataSource @Inject constructor(
     fun getExercisesByBodyPart(bodyPart: String): Flow<List<ExerciseEntity>> {
         return exerciseDao.getExercisesByBodyPart(bodyPart)
     }
+
+    /**
+     * ID로 운동 1개를 Flow 형태로 조회합니다.
+     */
+    fun getExerciseById(exerciseId: String): Flow<ExerciseEntity?> {
+        // ✅ [추가] exerciseDao의 함수를 호출합니다
+        return exerciseDao.getExerciseById(exerciseId)
+    }
 }

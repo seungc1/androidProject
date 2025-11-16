@@ -1,46 +1,48 @@
 package com.example.androidproject.data.repository
 
+// ✅ [추가] LocalDataSource와 Mapper를 import
+import com.example.androidproject.data.local.datasource.LocalDataSource
+import com.example.androidproject.data.mapper.toDomain
+import com.example.androidproject.data.mapper.toEntity
 import com.example.androidproject.domain.model.User
 import com.example.androidproject.domain.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf // Flow를 반환하기 위해 필요
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map // ✅ [추가] Flow.map을 import
 import javax.inject.Inject
 
-// UserRepository 인터페이스의 실제 구현체
+// ✅ [수정] Hilt가 LocalDataSource를 주입하도록 생성자 변경
 class UserRepositoryImpl @Inject constructor(
-    // 나중에 UserLocalDataSource 등을 주입받을 예정
+    private val localDataSource: LocalDataSource // ✅ [추가]
 ) : UserRepository {
 
-    // 더미 사용자 데이터 (초기 개발용)
-    private val dummyUser = User(
-        id = "user001",
-        name = "김재활",
-        gender = "남성",
-        age = 30,
-        heightCm = 175,
-        weightKg = 70.0,
-        activityLevel = "활동적",
-        fitnessGoal = "근육 증가",
-        allergyInfo = listOf("새우", "땅콩"),
-        preferredDietType = "일반",
-        targetCalories = 2500,
-        currentInjuryId = null,
-        preferredDietaryTypes = listOf("일반", "저염식"), // (예시 값)
-        equipmentAvailable = listOf("덤벨", "요가매트"), // (예시 값)
-        currentPainLevel = 2, // (예시 값, 1-10)
-        additionalNotes = "특별한 사항 없음", // (예시 값)
-    )
+    // ❌ --- 'dummyUser' 관련 코드 '전부 삭제' ---
+    // private val dummyUser = User(...)
+    // ❌ ------------------------------------
 
     override suspend fun getUserProfile(userId: String): Flow<User> {
-        // 실제 구현에서는 로컬 DB 또는 서버 API에서 사용자 프로필을 가져옵니다.
-        // 현재는 더미 데이터를 반환합니다.
-        return flowOf(dummyUser)
+        // ✅ [수정] LocalDataSource에서 데이터를 조회하고 'toDomain'으로 번역
+        return localDataSource.getUserById(userId).map { userEntity ->
+            // DB에 유저가 없으면 '임시' 유저를 반환 (혹은 오류 처리)
+            userEntity?.toDomain() ?: getTemporaryUser()
+        }
     }
 
     override suspend fun updateUserProfile(user: User): Flow<Unit> {
-        // 실제 구현에서는 로컬 DB 또는 서버 API에 사용자 프로필을 업데이트합니다.
-        // 현재는 아무 작업도 하지 않는 Unit을 반환합니다.
-        // dummyUser = user // 실제 앱에서는 내부 저장소를 업데이트해야 합니다.
+        // ✅ [수정] Domain 모델(User)을 'toEntity'로 번역하여 DB에 저장
+        localDataSource.upsertUser(user.toEntity())
         return flowOf(Unit) // 성공 시 Unit 반환
+    }
+
+    // ✅ [추가] getUserProfile이 null일 경우를 대비한 임시 유저
+    private fun getTemporaryUser(): User {
+        return User(
+            id = "tempUser", name = "사용자", gender = "", age = 0,
+            heightCm = 0, weightKg = 0.0, activityLevel = "",
+            fitnessGoal = "", allergyInfo = emptyList(),
+            preferredDietType = "", targetCalories = 0,
+            currentInjuryId = null, preferredDietaryTypes = emptyList(),
+            equipmentAvailable = emptyList(), currentPainLevel = 0, additionalNotes = null
+        )
     }
 }

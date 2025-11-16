@@ -7,6 +7,8 @@ import com.example.androidproject.data.remote.dto.ExerciseDto
 import com.example.androidproject.domain.model.AIRecommendationResult
 import com.example.androidproject.domain.model.Diet
 import com.example.androidproject.domain.model.Exercise
+import com.example.androidproject.domain.model.User
+import com.example.androidproject.data.local.entity.UserEntity
 
 /**
  * 데이터 계층(DTO, Entity)의 모델을 도메인 계층(Domain Model)의 모델로
@@ -79,6 +81,56 @@ fun DietDto.toDomain(): Diet {
     )
 }
 
+// --- User Mappers ---
+// (파일 맨 아래에 추가)
+
+/**
+ * UserEntity (DB)를 User (Domain)로 변환합니다.
+ */
+fun UserEntity.toDomain(): User {
+    return User(
+        id = this.id,
+        name = this.name,
+        gender = this.gender,
+        age = this.age,
+        heightCm = this.heightCm,
+        weightKg = this.weightKg,
+        activityLevel = this.activityLevel,
+        fitnessGoal = this.fitnessGoal,
+        // ✅ [수정] DB(String) -> Domain(List<String>)
+        allergyInfo = this.allergyInfo.split(",").map { it.trim() },
+        preferredDietType = this.preferredDietType,
+        targetCalories = this.targetCalories,
+        currentInjuryId = this.currentInjuryId,
+        // ✅ [수정] Domain 모델에 맞춰 '가짜' 기본값 추가 (DB Entity에 이 필드들이 없음)
+        preferredDietaryTypes = emptyList(),
+        equipmentAvailable = emptyList(),
+        currentPainLevel = 0,
+        additionalNotes = null
+    )
+}
+
+/**
+ * User (Domain)를 UserEntity (DB)로 변환합니다.
+ */
+fun User.toEntity(): UserEntity {
+    return UserEntity(
+        id = this.id,
+        name = this.name,
+        gender = this.gender,
+        age = this.age,
+        heightCm = this.heightCm,
+        weightKg = this.weightKg,
+        activityLevel = this.activityLevel,
+        fitnessGoal = this.fitnessGoal,
+        // ✅ [수정] Domain(List<String>) -> DB(String)
+        allergyInfo = this.allergyInfo.joinToString(", "),
+        preferredDietType = this.preferredDietType,
+        targetCalories = this.targetCalories,
+        currentInjuryId = this.currentInjuryId
+    )
+}
+
 
 // --- AI Result Mapper ---
 
@@ -102,4 +154,6 @@ fun AIRecommendationResultDto.toDomain(): AIRecommendationResult {
         overallSummary = "AI 추천을 불러오는 중입니다..." // 임시 요약
     )
     // ⬆️ --- [임시 코드] --- ⬆️
+
 }
+
