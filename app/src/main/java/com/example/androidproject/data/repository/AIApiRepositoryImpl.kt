@@ -2,59 +2,108 @@ package com.example.androidproject.data.repository
 
 import com.example.androidproject.domain.model.AIRecommendationResult
 import com.example.androidproject.domain.model.RecommendationParams
-import com.example.androidproject.domain.model.ExerciseRecommendation // ⭐ Exercise가 아닌 ExerciseRecommendation
-import com.example.androidproject.domain.model.DietRecommendation // ⭐ Diet가 아닌 DietRecommendation
-import com.example.androidproject.domain.repository.AIApiRepository // ⭐ 1. import 문 추가 ⭐
 
+import com.example.androidproject.domain.repository.AIApiRepository
+import com.example.androidproject.data.network.GptApiService
+import com.example.androidproject.data.network.dto.GptMessage
+import com.example.androidproject.data.network.dto.GptRequest
+import com.example.androidproject.data.network.dto.ResponseFormat
+import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 // AIApiRepository 인터페이스를 구현합니다.
 class AIApiRepositoryImpl @Inject constructor(
-    // private val gptApiService: GptApiService
+    private val gptApiService: GptApiService,
+    private val gson: Gson
 ) : AIApiRepository { // AIApiRepository를 구현한다고 명시
 
     override suspend fun getAIRehabAndDietRecommendation(params: RecommendationParams): Flow<AIRecommendationResult> = flow {
 
-        val prompt = createGptPrompt(params)
+        // 1. (수정) GPT 프롬프트를 '시스템' 역할과 '사용자' 역할로 분리
+        val systemPrompt = createGptSystemPrompt()
+        val userPrompt = createGptUserPrompt(params)
 
-        // ... (실제 API 호출 로직은 나중에) ...
-
-        // ⭐ 2. 더미 데이터를 ExerciseRecommendation, DietRecommendation 모델로 생성 ⭐
-        val dummyExercises = listOf(
-            ExerciseRecommendation( // ⭐ Exercise -> ExerciseRecommendation
-                name = "팔굽혀펴기 변형",
-                description = "${params.gender}님, ${params.injuryArea} 부상을 고려한 팔굽혀펴기입니다.",
-                bodyPart = "가슴, 어깨", sets = 3, reps = 10, difficulty = "중급",
-                aiRecommendationReason = "부상 부위 외 주변 근육 강화에 도움을 줍니다.",
-                imageUrl = null // imageUrl 필드 추가
-            )
-        )
-        val dummyDiets = listOf(
-            DietRecommendation( // ⭐ Diet -> DietRecommendation
-                mealType = "점심",
-                foodItems = listOf("닭가슴살 샐러드", "고구마 100g"),
-                ingredients = listOf("닭가슴살", "양상추", "토마토", "고구마"),
-                calories = 400.0, proteinGrams = 30.0, carbs = 40.0, fats = 15.0,
-                aiRecommendationReason = "${params.fitnessGoal}에 필요한 고단백, 저탄수 식단입니다."
-            )
-        )
-        val aiResult = AIRecommendationResult(
-            recommendedExercises = dummyExercises,
-            recommendedDiets = dummyDiets,
-            overallSummary = "${params.gender}님의 ${params.injuryArea} 부상과 ${params.fitnessGoal}을 위한 맞춤형 추천입니다.",
-            disclaimer = "더미 데이터로 생성된 추천입니다."
+        // 2. (추가) GPT API 요청 객체 생성
+        val request = GptRequest(
+            model = "gpt-4-turbo", // (사용할 모델 - JSON 모드 지원 모델)
+            messages = listOf(
+                GptMessage(role = "system", content = systemPrompt),
+                GptMessage(role = "user", content = userPrompt)
+            ),
+            response_format = ResponseFormat(type = "json_object") // JSON 응답 요청
         )
 
-        emit(aiResult) // Flow로 결과 발행
+        try {
+            // 3. (추가) 실제 API 호출
+            val gptResponse = gptApiService.getChatCompletion(request = request)
+
+            // GPT 응답 (JSON 문자열)
+            val jsonResponseString = gptResponse.choices.firstOrNull()?.message?.content
+
+            if (jsonResponseString != null) {
+                // 4. (추가) GPT가 반환한 JSON 문자열을 AIRecommendationResult 객체로 파싱
+                val aiResult = parseGptResponseToAIRecommendationResult(jsonResponseString)
+                emit(aiResult)
+            } else {
+                // 응답이 비어있는 경우
+                emit(createErrorResult("AI 응답이 비어있습니다."))
+            }
+
+        } catch (e: Exception) {
+            // 5. (추가) 네트워크 또는 API 오류 처리
+            e.printStackTrace() // (실제 앱에서는 로깅)
+            emit(createErrorResult("AI 추천을 가져오는 데 실패했습니다: ${e.message}"))
+        }
     }
 
-    // ... (createGptPrompt, parseGptResponseToAIRecommendationResult 함수는 그대로) ...
-    private fun createGptPrompt(params: RecommendationParams): String {
+    /**
+     * (추가) AI의 역할을 정의하는 시스템 프롬프트
+     */
+    private fun createGptSystemPrompt(): String {
         return """
             You are a rehabilitation and diet recommendation AI assistant.
-            Based on the following user information, provide personalized rehabilitation exercises and diet plans in JSON format.
+            Based on the user information, provide personalized rehabilitation exercises and diet plans.
+            You MUST respond in a valid JSON format that matches the following structure:
+            {
+              "recommendedExercises": [
+                {
+                  "name": "String",
+                  "description": "String",
+                  "bodyPart": "String",
+                  "sets": "Int",
+                  "reps": "Int",
+                  "difficulty": "String (초급, 중급, 고급)",
+                  "aiRecommendationReason": "String",
+                  "imageUrl": "String? (can be null)"
+                }
+              ],
+              "recommendedDiets": [
+                {
+                  "mealType": "String (아침, 점심, 저녁, 간식)",
+                  "foodItems": ["String", "String"],
+                  "ingredients": ["String", "String"],
+                  "calories": "Double?",
+                  "proteinGrams": "Double?",
+                  "carbs": "Double?",
+                  "fats": "Double?",
+                  "aiRecommendationReason": "String"
+                }
+              ],
+              "overallSummary": "String?",
+              "disclaimer": "String"
+            }
+            Ensure the response is ONLY the valid JSON object, without any surrounding text or markdown.
+        """.trimIndent()
+    }
+
+    /**
+     * (수정) 기존 createGptPrompt -> createGptUserPrompt로 변경 (사용자 정보만 전달)
+     */
+    private fun createGptUserPrompt(params: RecommendationParams): String {
+        return """
+            Here is the user's information:
             User ID: ${params.userId}
             Age: ${params.age}
             Gender: ${params.gender}
@@ -70,20 +119,37 @@ class AIApiRepositoryImpl @Inject constructor(
             Injury Type: ${params.injuryType ?: "N/A"}
             Injury Severity: ${params.injurySeverity ?: "N/A"}
             Additional Notes: ${params.additionalNotes ?: "None"}
-
-            Provide a JSON response with two lists: "recommendedExercises" and "recommendedDiets".
-            Each exercise should include: name, description, bodyPart, sets, reps, difficulty (초급, 중급, 고급), aiRecommendationReason, and imageUrl (can be null).
-            Each diet item should include: mealType (아침, 점심, 저녁, 간식), foodItems (list of strings), ingredients (list of strings for filtering), calories (Double), proteinGrams (Double), carbs (Double), fats (Double), and aiRecommendationReason.
-            Also include an overallSummary for the recommendation.
-            Ensure the response is a valid JSON.
         """.trimIndent()
     }
 
+    /**
+     * (수정) GPT가 반환한 JSON '문자열'을 '객체'로 변환
+     */
     private fun parseGptResponseToAIRecommendationResult(gptResponse: String): AIRecommendationResult {
+        try {
+            // Gson을 사용하여 JSON 문자열을 AIRecommendationResult 객체로 변환
+            val result = gson.fromJson(gptResponse, AIRecommendationResult::class.java)
+
+            // AI가 disclaimer를 제공하지 않았을 경우를 대비해 기본값 설정
+            return result.copy(
+                disclaimer = result.disclaimer.ifEmpty { "본 추천은 AI에 의해 생성되었으며, 전문 의료인의 진단 및 조언을 대체할 수 없습니다." }
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // JSON 파싱 실패 시
+            return createErrorResult("GPT 응답 JSON 파싱 실패: ${e.message}")
+        }
+    }
+
+    /**
+     * (추가) 오류 발생 시 일관된 AIRecommendationResult를 반환하기 위한 헬퍼 함수
+     */
+    private fun createErrorResult(message: String): AIRecommendationResult {
         return AIRecommendationResult(
             recommendedExercises = emptyList(),
             recommendedDiets = emptyList(),
-            overallSummary = "GPT 응답 파싱 실패 또는 더미 응답입니다."
+            overallSummary = message,
+            disclaimer = "오류가 발생했습니다."
         )
     }
 }
