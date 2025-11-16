@@ -3,9 +3,9 @@ package com.example.androidproject.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidproject.domain.model.Diet
-import com.example.androidproject.domain.model.DietRecommendation // (★추가★)
+import com.example.androidproject.domain.model.DietRecommendation
 import com.example.androidproject.domain.model.Exercise
-import com.example.androidproject.domain.model.ExerciseRecommendation // (★추가★)
+import com.example.androidproject.domain.model.ExerciseRecommendation
 import com.example.androidproject.domain.model.Injury
 import com.example.androidproject.domain.model.User
 import com.example.androidproject.domain.model.DietSession
@@ -14,24 +14,31 @@ import com.example.androidproject.domain.usecase.GetAIRecommendationUseCase
 import com.example.androidproject.presentation.history.HistoryItem
 import com.example.androidproject.presentation.main.MainUiState
 import com.example.androidproject.presentation.main.TodayExercise
+import com.example.androidproject.domain.model.AIAnalysisResult
+import com.example.androidproject.domain.model.ScheduledWorkout
+import com.example.androidproject.domain.usecase.GetWeeklyAnalysisUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch // (★추가★)
-import kotlinx.coroutines.flow.collect // (★추가★)
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Calendar
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 
-// (데이터 클래스 HistoryUiState, DietDetailUiState는 수정 없음)
 data class HistoryUiState(
     val isLoading: Boolean = false,
     val historyItems: List<HistoryItem> = emptyList(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val isAnalyzing: Boolean = false,
+    val analysisResult: AIAnalysisResult? = null
 )
 data class DietDetailUiState(
     val isLoading: Boolean = false,
@@ -43,11 +50,10 @@ data class DietDetailUiState(
 
 @HiltViewModel
 class RehabViewModel @Inject constructor(
-    private val getAIRecommendationUseCase: GetAIRecommendationUseCase
-    // ... (주석 처리된 다른 UseCase들) ...
+    private val getAIRecommendationUseCase: GetAIRecommendationUseCase,
+    private val getWeeklyAnalysisUseCase: GetWeeklyAnalysisUseCase
 ) : ViewModel() {
 
-    // (StateFlow 선언부 수정 없음)
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
@@ -61,17 +67,45 @@ class RehabViewModel @Inject constructor(
     lateinit var dummyInjury: Injury
 
     init {
-        loadMainDashboardData()
+        loadMainDashboardData(forceReload = false)
     }
 
-    // (★★★★★ 여기가 핵심 수정 사항 ★★★★★)
-    private fun loadMainDashboardData() {
+    /**
+     * (★수정★) AI 루틴 로드 로직
+     * 1. forceReload=true (프로필 변경) -> 무조건 AI 호출
+     * 2. forceReload=false (일반 로드)
+     * 2a. 기존 루틴 O, '오늘 운동' O -> 기존 루틴 사용
+     * 2b. 기존 루틴 X, 또는 '오늘 운동' X (루틴 만료) -> AI 호출 (버그 수정)
+     */
+    private fun loadMainDashboardData(forceReload: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
+            // 1. (Check 1) 강제 리로드가 아니고, 기존 루틴이 있다면
+            if (!forceReload && _uiState.value.fullRoutine.isNotEmpty()) {
+                // 2. (Check 2) '오늘의 운동'을 필터링해 봅니다.
+                val todayExercises = filterTodayExercises(_uiState.value.fullRoutine)
+
+                // 3. (Check 3) '오늘의 운동'이 있다면 (루틴이 유효함)
+                if (todayExercises.isNotEmpty()) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            todayExercises = todayExercises
+                        )
+                    }
+                    return@launch // AI 호출 없이 함수 종료
+                }
+                // (만약 'todayExercises'가 비어있다면, 루틴이 만료된 것이므로
+                // 아래 4단계로 넘어가서 AI를 호출합니다.)
+            }
+
+            // 4. (AI 호출)
+            // A) forceReload = true (프로필 수정 시)
+            // B) fullRoutine이 비어있을 때 (첫 실행 시)
+            // C) '오늘의 운동'이 비어있을 때 (루틴이 만료된 경우)
             try {
-                // 1. (유지) 프로필/부상 정보는 아직 로그인/선택 기능이 없으므로
-                //    'ProfileFragment'와 'UseCase'에서 사용할 더미 데이터를 생성합니다.
+                // (유지) 더미 데이터 생성
                 dummyUser = User(
                     id = "user01", name = "김재활", gender = "남성", age = 30,
                     heightCm = 175, weightKg = 70.5, activityLevel = "활동적",
@@ -88,112 +122,105 @@ class RehabViewModel @Inject constructor(
                     severity = "경미", description = "가벼운 통증이 있는 상태"
                 )
 
-                // 2. (★수정★) 'dummyExercises'와 'dummyDiets' 리스트 생성 '삭제'
-                //    대신 'GetAIRecommendationUseCase'를 '호출'합니다.
-
-                // 3단계에서 설정한 Build Variant에 따라
-                // 'debug' 모드면 FakeAIApiRepository가,
-                // 'release' 모드면 AIApiRepositoryImpl이 자동 실행됩니다.
+                // 5. (유지) GetAIRecommendationUseCase 호출
                 getAIRecommendationUseCase(dummyUser.id, dummyInjury)
                     .catch { e ->
-                        // 4. (★추가★) UseCase (Flow) 실행 중 오류 처리
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                userName = dummyUser.name, // 이름은 표시
-                                errorMessage = "AI 추천을 불러오는 중 오류 발생: ${e.message}"
+                                userName = dummyUser.name,
+                                errorMessage = "AI 루틴 생성 중 오류 발생: ${e.message}"
                             )
                         }
                     }
                     .collect { aiResult ->
-                        // 5. (★추가★) UseCase가 성공적으로 AI응답(aiResult)을 가져온 경우
-                        //    Domain 모델(AIResult)을 UI 모델(MainUiState)로 '매핑(변환)'합니다.
+                        // 6. (유지) AI가 반환한 '전체 루틴'과 '오늘의 운동'을 UI 상태에 저장
                         _uiState.value = MainUiState(
                             isLoading = false,
                             userName = dummyUser.name,
                             currentInjuryName = dummyInjury.name,
                             currentInjuryArea = dummyInjury.bodyPart,
-                            // (★핵심★) AI 추천 모델을 UI 모델로 변환
-                            todayExercises = aiResult.recommendedExercises.toTodayExerciseList(),
+                            fullRoutine = aiResult.scheduledWorkouts,
+                            todayExercises = filterTodayExercises(aiResult.scheduledWorkouts),
                             recommendedDiets = aiResult.recommendedDiets.toDietList(),
                             errorMessage = null
                         )
                     }
 
             } catch (e: Exception) {
-                // (유지) 더미 데이터 생성 중 발생할 수 있는 예외 처리 (거의 발생 안 함)
                 _uiState.update { it.copy(isLoading = false, errorMessage = "데이터 로드 실패: ${e.message}") }
             }
         }
     }
 
-    // (★★★★★ 이하 Mapper 함수 2개 추가 ★★★★★)
+    /**
+     * (유지) '전체 루틴'에서 '오늘 날짜' 필터링
+     */
+    private fun filterTodayExercises(fullRoutine: List<ScheduledWorkout>): List<TodayExercise> {
+        val todayDateString = SimpleDateFormat("M월 d일 (E)", Locale.KOREA).format(Date())
+
+        val todayWorkout = fullRoutine.find {
+            it.scheduledDate.contains(todayDateString)
+        }
+
+        return todayWorkout?.exercises?.toTodayExerciseList() ?: emptyList()
+    }
+
 
     /**
-     * [AIRecommendationResult]의 List<ExerciseRecommendation>을
-     * [MainUiState]의 List<TodayExercise>로 변환합니다.
-     */
-    /**
-     * [AIRecommendationResult]의 List<ExerciseRecommendation>을
-     * [MainUiState]의 List<TodayExercise>로 변환합니다.
+     * (유지) ExerciseRecommendation -> TodayExercise 변환 매퍼
      */
     private fun List<ExerciseRecommendation>.toTodayExerciseList(): List<TodayExercise> {
         return this.map { rec ->
-            // AI 모델(ExerciseRecommendation)을 Domain 모델(Exercise)로 변환
             val exercise = Exercise(
-                id = rec.name, // (AI가 ID를 주지 않으므로 이름으로 임시 ID 사용)
+                id = rec.name,
                 name = rec.name,
                 description = rec.description,
                 bodyPart = rec.bodyPart,
                 difficulty = rec.difficulty,
                 videoUrl = rec.imageUrl,
                 precautions = null,
-
                 sets = rec.sets,
                 reps = rec.reps,
-
                 aiRecommendationReason = rec.aiRecommendationReason
             )
-            // Domain 모델(Exercise)을 UI 모델(TodayExercise)로 래핑
             TodayExercise(
                 exercise = exercise,
-                isCompleted = false // (기본값은 '미완료')
+                isCompleted = false
             )
         }
     }
 
     /**
-     * [AIRecommendationResult]의 List<DietRecommendation>을
-     * [MainUiState]의 List<Diet>로 변환합니다.
+     * (유지) DietRecommendation -> Diet 변환 매퍼 (null-safe 처리 포함)
      */
     private fun List<DietRecommendation>.toDietList(): List<Diet> {
         return this.map { rec ->
-            // AI 모델(DietRecommendation)을 Domain 모델(Diet)로 변환
             Diet(
-                id = rec.foodItems.joinToString(), // (AI가 ID를 주지 않으므로 음식 이름 조합으로 임시 ID 사용)
+                id = rec.foodItems?.joinToString() ?: UUID.randomUUID().toString(),
                 mealType = rec.mealType,
-                foodName = rec.foodItems.joinToString(", "),
-                quantity = 1.0, // (AI가 '양'을 주지 않았으므로 기본값 1.0)
-                unit = "인분",  // (AI가 '단위'를 주지 않았으므로 기본값 '인분')
+                foodName = rec.foodItems?.joinToString(", ") ?: "이름 없는 식단",
+                quantity = 1.0,
+                unit = "인분",
                 calorie = rec.calories?.toInt() ?: 0,
                 protein = rec.proteinGrams ?: 0.0,
                 fat = rec.fats ?: 0.0,
                 carbs = rec.carbs ?: 0.0,
-                ingredients = rec.ingredients,
-                preparationTips = null, // (AI가 준 tips가 있다면 여기에 매핑)
+                ingredients = rec.ingredients ?: emptyList(),
+                preparationTips = null,
                 aiRecommendationReason = rec.aiRecommendationReason
             )
         }
     }
 
 
-    // --- (이하 나머지 함수들은 수정 없음) ---
+    // --- (이하 '홈', '기록', '식단 상세' 기능은 수정 없음) ---
 
     private fun setExerciseCompleted(exerciseId: String, isCompleted: Boolean) {
         _uiState.update { currentState ->
             val updatedExercises = currentState.todayExercises.map {
                 if (it.exercise.id == exerciseId) {
-                    it.copy(isCompleted = isCompleted)
+                    it.copy(isCompleted = !it.isCompleted)
                 } else {
                     it
                 }
@@ -213,8 +240,8 @@ class RehabViewModel @Inject constructor(
                 notes = notes,
                 userRating = rating
             )
-            // (실제 연동)
-            // val result = addRehabSessionUseCase(_session)
+            // (실제 연동 시 주석 해제)
+            // addRehabSessionUseCase(_session)
 
             setExerciseCompleted(exerciseId, true)
         }
@@ -224,7 +251,6 @@ class RehabViewModel @Inject constructor(
         _uiState.update { it.copy(errorMessage = null) }
     }
 
-    // ... (loadHistory, clearHistoryErrorMessage 함수 수정 없음) ...
     fun loadHistory(date: Date) {
         viewModelScope.launch {
             _historyUiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -247,15 +273,6 @@ class RehabViewModel @Inject constructor(
                             actualQuantity = 1.0, actualUnit = "그릇",
                             userSatisfaction = 5
                         )
-                    ),
-                    HistoryItem.Exercise(
-                        RehabSession(
-                            id = "session002", userId = "user01", exerciseId = "ex002",
-                            dateTime = date,
-                            sets = 5, reps = 15, durationMinutes = 20,
-                            notes = "완료",
-                            userRating = 5
-                        )
                     )
                 )
                 _historyUiState.update {
@@ -271,6 +288,46 @@ class RehabViewModel @Inject constructor(
 
     fun clearHistoryErrorMessage() {
         _historyUiState.update { it.copy(errorMessage = null) }
+    }
+
+    fun fetchWeeklyAnalysis() {
+        viewModelScope.launch {
+            _historyUiState.update { it.copy(isAnalyzing = true, analysisResult = null) }
+            try {
+                getWeeklyAnalysisUseCase(dummyUser)
+                    .catch { e ->
+                        _historyUiState.update {
+                            it.copy(
+                                isAnalyzing = false,
+                                analysisResult = createErrorAnalysisResult("AI 분석 실패: ${e.message}")
+                            )
+                        }
+                    }
+                    .collect { result ->
+                        _historyUiState.update {
+                            it.copy(isAnalyzing = false, analysisResult = result)
+                        }
+                    }
+            } catch (e: Exception) {
+                _historyUiState.update {
+                    it.copy(
+                        isAnalyzing = false,
+                        analysisResult = createErrorAnalysisResult("분석 준비 중 오류: ${e.message}")
+                    )
+                }
+            }
+        }
+    }
+
+    private fun createErrorAnalysisResult(message: String): AIAnalysisResult {
+        return AIAnalysisResult(
+            summary = message,
+            strengths = emptyList(),
+            areasForImprovement = emptyList(),
+            personalizedTips = emptyList(),
+            nextStepsRecommendation = "오류로 인해 분석을 완료할 수 없습니다.",
+            disclaimer = "오류 발생"
+        )
     }
 
     fun loadDietDetails(dietId: String) {
@@ -305,6 +362,10 @@ class RehabViewModel @Inject constructor(
         _dietDetailState.update { it.copy(errorMessage = null) }
     }
 
+
+    /**
+     * (유지) '개인정보'가 '저장'되면, AI 루틴을 '강제로' '재생성'합니다.
+     */
     fun updateUserProfile(updatedUser: User, updatedInjuryName: String, updatedInjuryArea: String) {
         viewModelScope.launch {
             dummyUser = updatedUser
@@ -312,13 +373,8 @@ class RehabViewModel @Inject constructor(
                 name = updatedInjuryName,
                 bodyPart = updatedInjuryArea
             )
-            _uiState.update { currentState ->
-                currentState.copy(
-                    userName = updatedUser.name,
-                    currentInjuryName = updatedInjuryName,
-                    currentInjuryArea = updatedInjuryArea
-                )
-            }
+
+            loadMainDashboardData(forceReload = true)
         }
     }
 }
