@@ -35,9 +35,9 @@ junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 junitJunit = "4.12"
 
-# --- '달력' '및' '날짜' '라이브러리' ---
+# (★ 추가 ★) '달력' '및' '날짜' '라이브러리' '버전'
 materialcalendarview = "2.0.1"
-threetenabp = "1.4.7" # (★ 추가 ★) 'threeten' '날짜' '라이브러리' '버전'
+threetenabp = "1.4.7"
 
 
 [libraries]
@@ -75,7 +75,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 
-# --- 6. '달력' '및' '날짜' '라이브러리' ---
+# (★ 추가 ★) --- 6. '새' '달력' '라이브러리' ---
 androidx-material-calendarview = { group = "com.github.prolificinteractive", name = "material-calendarview", version.ref = "materialcalendarview" }
 androidx-threetenabp = { group = "com.jakewharton.threetenabp", name = "threetenabp", version.ref = "threetenabp" } # (★ 추가 ★)
 

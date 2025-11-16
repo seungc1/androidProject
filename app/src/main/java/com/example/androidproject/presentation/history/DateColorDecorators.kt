@@ -8,7 +8,7 @@ import com.prolificinteractive.materialcalendarview.CalendarDay
 import com.prolificinteractive.materialcalendarview.DayViewDecorator
 import com.prolificinteractive.materialcalendarview.DayViewFacade
 // (★ 수정 ★) 'HashSet' '대신' '범용' 'Set' 'import'
-import java.util.Set
+import kotlin.collections.Set
 
 /**
  * [수정 파일 4/6] - '날짜' '데코레이터' 1

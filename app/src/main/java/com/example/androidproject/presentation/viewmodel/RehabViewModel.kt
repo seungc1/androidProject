@@ -33,7 +33,8 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
-// (★ 추가 ★) 'threeten' '라이브러리' 'import'
+// (★ 추가 ★) 'threeten' '라이브러리' 'import' (API 26 '오류' '해결')
+import org.threeten.bp.DateTimeUtils // (★ API 26 '오류' '해결'용)
 import org.threeten.bp.Instant
 import org.threeten.bp.LocalDate
 import org.threeten.bp.ZoneId
@@ -235,7 +236,8 @@ class RehabViewModel @Inject constructor(
                 kotlinx.coroutines.delay(500)
 
                 // (★ 수정 ★) 'LocalDate' -> 'java.util.Date'로 '변환' (API 24 '호환')
-                val selectedDate = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
+                // 'Date.from(...)' '대신' 'DateTimeUtils.toDate(...)' '사용'
+                val selectedDate = DateTimeUtils.toDate(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
                 val calendar = Calendar.getInstance().apply { time = selectedDate }
                 val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
 
@@ -380,7 +382,8 @@ class RehabViewModel @Inject constructor(
             val recordedDaysSet = HashSet<CalendarDay>() // 'HashSet' '사용'
             recordedUtilDates.forEach { utilDate ->
                 // (★ 수정 ★) 'java.util.Date' -> 'threeten.LocalDate' -> 'CalendarDay' (API 24 '호환')
-                val instant = Instant.ofEpochMilli(utilDate.time)
+                // 'toInstant()'는 'java.util.Date'의 '메서드' (API 26 '아님')
+                val instant = DateTimeUtils.toInstant(utilDate)
                 val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
                 recordedDaysSet.add(CalendarDay.from(localDate))
             }

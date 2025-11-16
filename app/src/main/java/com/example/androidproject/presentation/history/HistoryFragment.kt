@@ -20,9 +20,9 @@ import kotlinx.coroutines.launch
 // (★ 삭제 ★) 'java.util.Date' '삭제'
 // import java.util.Date
 import java.util.Calendar
-// (★ 수정 ★) 'kotlin.collections.Set' '대신' 'java.util.Set' '사용' '통일'
-import java.util.HashSet
-import java.util.Set
+// (★ 수정 ★) 'java.util.Set' '대신' 'kotlin.collections.Set' '사용'
+import kotlin.collections.Set
+import kotlin.collections.HashSet
 // (★ 추가 ★) 'threeten' '날짜' '타입' 'import'
 import org.threeten.bp.LocalDate
 
@@ -30,6 +30,7 @@ import org.threeten.bp.LocalDate
  * [수정 파일 6/6] - '기록' 화면 '두뇌'
  * (★ 수정 ★) 'java.util.Date' -> 'org.threeten.bp.LocalDate'로 '타입' '변경'
  * (★ 수정 ★) 'Set' '타입' '불일치' '오류' '수정'
+ * (★ 수정 ★) 'Calendar' -> 'LocalDate' '타입' '불일치' '오류' '수정'
  */
 @AndroidEntryPoint
 class HistoryFragment : Fragment() {
@@ -137,19 +138,15 @@ class HistoryFragment : Fragment() {
 
                         // (★ 수정 ★) 'allDaysInMonth'의 '타입'을 'HashSet'으로 '명시'
                         val allDaysInMonth = HashSet<CalendarDay>()
-                        val calendar = Calendar.getInstance()
-                        // (★ 수정 ★) '새' '달력' '라이브러리'의 '월'은 '1'부터 '시작'
-                        calendar.set(currentMonth.year, currentMonth.month - 1, 1)
-                        val maxDay = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+                        // (★ 수정 ★) 'threeten.LocalDate'를 '사용'하여 '월'의 '최대' '일수' '계산'
+                        val maxDay = currentMonth.date.lengthOfMonth()
 
                         for (i in 1..maxDay) {
-                            // (★ 수정 ★) 'LocalDate' '대신' 'Calendar' '객체' '사용'
-                            calendar.set(Calendar.DAY_OF_MONTH, i)
-                            allDaysInMonth.add(CalendarDay.from(calendar))
+                            // (★ 수정 ★) 'LocalDate' '기반'으로 'CalendarDay' '생성'
+                            allDaysInMonth.add(CalendarDay.from(currentMonth.year, currentMonth.month, i))
                         }
 
-                        // (★ 수정 ★) 'recordedDaysSet'을 'HashSet'으로 '변환'하여 '전달'
-                        // (DateColorDecorators '파일'을 'Set'으로 '바꿨기' '때문에' '변환' '불필요')
+                        // (★ 수정 ★) 'DateColorDecorators'가 'Set'을 '받도록' '수정'했으므로 '변환' '불필요'
                         binding.calendarView.addDecorators(
                             DisabledDateDecorator(allDaysInMonth, recordedDaysSet),
                             EnabledDateDecorator(recordedDaysSet)
