@@ -9,6 +9,10 @@ import com.example.androidproject.domain.model.Diet
 import com.example.androidproject.domain.model.Exercise
 import com.example.androidproject.domain.model.User
 import com.example.androidproject.data.local.entity.UserEntity
+import com.example.androidproject.data.local.entity.RehabSessionEntity
+import com.example.androidproject.data.local.entity.DietSessionEntity
+import com.example.androidproject.domain.model.RehabSession
+import com.example.androidproject.domain.model.DietSession
 
 /**
  * 데이터 계층(DTO, Entity)의 모델을 도메인 계층(Domain Model)의 모델로
@@ -149,11 +153,71 @@ fun AIRecommendationResultDto.toDomain(): AIRecommendationResult {
     // 빌드 오류를 해결하기 위해, '진짜' 모델에 맞춰 비어있는 객체를 반환합니다.
     // (팀과 논의 후, 이 코드는 삭제하고 위의 주석을 풀어야 합니다.)
     return AIRecommendationResult(
-        recommendedExercises = emptyList(), // 임시로 비어있는 운동 목록
-        recommendedDiets = emptyList(),     // 임시로 비어있는 식단 목록
-        overallSummary = "AI 추천을 불러오는 중입니다..." // 임시 요약
+        // ✅ [수정] 'recommendedExercises' -> 'scheduledWorkouts'로 변경
+        scheduledWorkouts = emptyList(),
+        recommendedDiets = emptyList(),
+        overallSummary = "AI 추천을 불러오는 중입니다..."
     )
     // ⬆️ --- [임시 코드] --- ⬆️
 
+    // ... (AI Result Mapper 뒤, 파일 맨 끝) ...
 }
+// --- RehabSession Mappers ---
+
+    fun RehabSession.toEntity(): RehabSessionEntity {
+        return RehabSessionEntity(
+            id = this.id,
+            userId = this.userId,
+            exerciseId = this.exerciseId,
+            dateTime = this.dateTime,
+            sets = this.sets,
+            reps = this.reps,
+            durationMinutes = this.durationMinutes,
+            userRating = this.userRating,
+            notes = this.notes
+        )
+    }
+
+    fun RehabSessionEntity.toDomain(): RehabSession {
+        return RehabSession(
+            id = this.id,
+            userId = this.userId,
+            exerciseId = this.exerciseId,
+            dateTime = this.dateTime,
+            sets = this.sets,
+            reps = this.reps,
+            durationMinutes = this.durationMinutes,
+            userRating = this.userRating,
+            notes = this.notes
+        )
+    }
+
+// --- DietSession Mappers ---
+
+    fun DietSession.toEntity(): DietSessionEntity {
+        return DietSessionEntity(
+            id = this.id,
+            userId = this.userId,
+            dietId = this.dietId,
+            dateTime = this.dateTime,
+            actualQuantity = this.actualQuantity,
+            actualUnit = this.actualUnit,
+            userSatisfaction = this.userSatisfaction,
+            notes = this.notes
+        )
+    }
+
+    fun DietSessionEntity.toDomain(): DietSession {
+        return DietSession(
+            id = this.id,
+            userId = this.userId,
+            dietId = this.dietId,
+            dateTime = this.dateTime,
+            actualQuantity = this.actualQuantity,
+            actualUnit = this.actualUnit,
+            userSatisfaction = this.userSatisfaction,
+            notes = this.notes
+        )
+    }
+
 

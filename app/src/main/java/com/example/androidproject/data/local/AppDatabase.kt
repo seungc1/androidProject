@@ -2,25 +2,34 @@ package com.example.androidproject.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters // ✅ [추가] 타입 변환기 import
+import com.example.androidproject.data.local.dao.DietSessionDao // ✅ [추가]
 import com.example.androidproject.data.local.dao.ExerciseDao
+import com.example.androidproject.data.local.dao.RehabSessionDao // ✅ [추가]
 import com.example.androidproject.data.local.dao.UserDao
+import com.example.androidproject.data.local.entity.DietSessionEntity // ✅ [추가]
 import com.example.androidproject.data.local.entity.ExerciseEntity
+import com.example.androidproject.data.local.entity.RehabSessionEntity // ✅ [추가]
 import com.example.androidproject.data.local.entity.UserEntity
 
-// @Database 어노테이션으로 이 클래스가 Room 데이터베이스임을 선언합니다.
 @Database(
-    // 데이터베이스가 포함할 Entity(테이블) 목록을 배열로 전달합니다.
-    entities = [UserEntity::class, ExerciseEntity::class],
-    // 데이터베이스 버전
-    version = 1,
-    // 스키마 정보를 파일로 내보낼지 여부
+    // ✅ [수정] entities 배열에 새로 만든 Entity 2개 추가
+    entities = [
+        UserEntity::class,
+        ExerciseEntity::class,
+        RehabSessionEntity::class,
+        DietSessionEntity::class
+    ],
+    version = 1, // (참고: DB 구조가 바뀌면 'version'을 올려야 하지만, 지금은 1로 유지)
     exportSchema = false
 )
+@TypeConverters(TypeConverters::class) // ✅ [추가] 1단계에서 만든 TypeConverters 등록
 abstract class AppDatabase : RoomDatabase() {
-    //Room이 추상 함수 구현하여 UserDao 인스턴스 제공
+
     abstract fun userDao(): UserDao
-    //Room이 추상 함수 구현하여 ExerciseDao 인스턴스 제공
     abstract fun exerciseDao(): ExerciseDao
 
-    // DiertEntity, RehabSessionEntity 등 추가 예정
+    // ✅ [추가] 새로 만든 DAO 2개를 위한 추상 함수 추가
+    abstract fun rehabSessionDao(): RehabSessionDao
+    abstract fun dietSessionDao(): DietSessionDao
 }

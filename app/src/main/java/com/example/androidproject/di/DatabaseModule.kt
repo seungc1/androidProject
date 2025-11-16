@@ -5,6 +5,8 @@ import androidx.room.Room
 import com.example.androidproject.data.local.AppDatabase
 import com.example.androidproject.data.local.dao.ExerciseDao
 import com.example.androidproject.data.local.dao.UserDao
+import com.example.androidproject.data.local.dao.DietSessionDao
+import com.example.androidproject.data.local.dao.RehabSessionDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -52,5 +54,25 @@ object DatabaseModule {
     @Singleton
     fun provideExerciseDao(database: AppDatabase): ExerciseDao {
         return database.exerciseDao()
+    }
+
+    /**
+     * RehabSessionDao를 제공
+     * Hilt가 위에서 만든 AppDatabase를 여기에 자동으로 주입해 줌.
+     */
+    @Provides
+    @Singleton
+    fun provideRehabSessionDao(database: AppDatabase): RehabSessionDao {
+        return database.rehabSessionDao()
+    }
+
+    /**
+     * DietSessionDao를 제공
+     * Hilt가 위에서 만든 AppDatabase를 여기에 자동으로 주입해 줌.
+     */
+    @Provides
+    @Singleton
+    fun provideDietSessionDao(database: AppDatabase): DietSessionDao {
+        return database.dietSessionDao()
     }
 }
