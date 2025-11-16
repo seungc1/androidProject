@@ -9,17 +9,18 @@
     <string name="history_title">운동 및 식단 기록</string>
     <string name="history_empty_state">선택한 날짜에 기록이 없습니다.</string>
 
+    <string name="history_ai_analysis_title">주간 AI 분석 리포트</string>
+
     <string name="profile_empty_message">환자 정보를 입력해 주세요.</string>
     <string name="profile_empty_button">환자 정보 입력하기</string>
 
     <string name="home_empty_message">AI가 추천을 생성하려면\n개인정보가 필요합니다.</string>
     <string name="home_empty_button_go_to_profile">개인정보 입력하기</string>
+    <string name="home_no_exercises_today">오늘은 추천된 운동이 없습니다.\n내일의 루틴을 확인해주세요.</string>
 
-    <string name="login_username_hint">아이디 (이메일)</string>
+    <string name="login_username_hint">아이디ㅅ</string>
     <string name="login_password_hint">비밀번호</string>
     <string name="login_button_text">로그인</string>
     <string name="login_failed_message">로그인에 실패했습니다.</string>
-
-    <string name="home_no_exercises_today">오늘은 추천된 운동이 없습니다.\n내일의 루틴을 확인해주세요.</string>
 
 </resources>
