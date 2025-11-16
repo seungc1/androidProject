@@ -48,7 +48,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="오늘의 운동 (to-do 리스트)"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleLarge" />
+                    android:textAppearance="@style/TextAppearance.App.TitleLarge" />
 
                 <LinearLayout
                     android:id="@+id/emptyViewExercise"
@@ -65,7 +65,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/home_empty_message"
                         android:textAlignment="center"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
+                        android:textAppearance="@style/TextAppearance.App.BodyLarge" />
 
                     <Button
                         android:id="@+id/goToProfileFromExerciseButton"
@@ -73,7 +73,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="@string/home_empty_button_go_to_profile" />
+                        android:text="@string/home_empty_button_go_to_profile"
+                        android:textAppearance="@style/TextAppearance.App.LabelLarge" />
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
@@ -116,7 +117,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="AI 추천 식단"
-                    android:textAppearance="@style/TextAppearance.Material3.TitleLarge" />
+                    android:textAppearance="@style/TextAppearance.App.TitleLarge" />
 
                 <LinearLayout
                     android:id="@+id/emptyViewDiet"
@@ -133,7 +134,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/home_empty_message"
                         android:textAlignment="center"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
+                        android:textAppearance="@style/TextAppearance.App.BodyLarge" />
 
                     <Button
                         android:id="@+id/goToProfileFromDietButton"
@@ -141,7 +142,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="@string/home_empty_button_go_to_profile" />
+                        android:text="@string/home_empty_button_go_to_profile"
+                        android:textAppearance="@style/TextAppearance.App.LabelLarge" />
 
                 </LinearLayout>
 

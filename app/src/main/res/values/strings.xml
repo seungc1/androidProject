@@ -15,4 +15,9 @@
     <string name="home_empty_message">AI가 추천을 생성하려면\n개인정보가 필요합니다.</string>
     <string name="home_empty_button_go_to_profile">개인정보 입력하기</string>
 
+    <string name="login_username_hint">아이디 (이메일)</string>
+    <string name="login_password_hint">비밀번호</string>
+    <string name="login_button_text">로그인</string>
+    <string name="login_failed_message">로그인에 실패했습니다.</string>
+
 </resources>
