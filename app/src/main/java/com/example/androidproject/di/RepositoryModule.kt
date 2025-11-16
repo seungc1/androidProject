@@ -1,14 +1,12 @@
 package com.example.androidproject.di
 
 // Data Layer의 Repository 구현체들을 import
-import com.example.androidproject.data.repository.AIApiRepositoryImpl
 import com.example.androidproject.data.repository.DietSessionRepositoryImpl
 import com.example.androidproject.data.repository.RehabRepositoryImpl
 import com.example.androidproject.data.repository.RehabSessionRepositoryImpl
 import com.example.androidproject.data.repository.UserRepositoryImpl
 
 // Domain Layer의 Repository 인터페이스들을 import
-import com.example.androidproject.domain.repository.AIApiRepository
 import com.example.androidproject.domain.repository.DietSessionRepository
 import com.example.androidproject.domain.repository.RehabRepository
 import com.example.androidproject.domain.repository.RehabSessionRepository
@@ -38,13 +36,6 @@ abstract class RepositoryModule { //  RepositoryModule 클래스 선언은 여�
     abstract fun bindUserRepository(
         userRepositoryImpl: UserRepositoryImpl
     ): UserRepository
-
-    // AIApiRepository 인터페이스에 AIApiRepositoryImpl 구현체를 바인딩
-    @Binds
-    @Singleton
-    abstract fun bindAIApiRepository(
-        aiApiRepositoryImpl: AIApiRepositoryImpl
-    ): AIApiRepository
 
     // RehabSessionRepository 인터페이스에 RehabSessionRepositoryImpl 구현체를 바인딩
     @Binds
