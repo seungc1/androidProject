@@ -105,10 +105,13 @@ dependencies {
     implementation(libs.androidx.room.ktx) // 코루틴 지원
     kapt(libs.androidx.room.compiler)
 
-    // --- 6. 유닛 테스트 ---
+    // (★ 추가 ★) --- 6. '새' '달력' '라이브러리' '설치' ---
+    implementation(libs.androidx.material.calendarview)
+
+    // --- 7. 유닛 테스트 ---
     testImplementation(libs.junit)
 
-    // --- 7. 안드로이드 UI 테스트 ---
+    // --- 8. 안드로이드 UI 테스트 ---
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     // Hilt 테스트 지원
