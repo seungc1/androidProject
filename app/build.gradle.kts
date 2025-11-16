@@ -105,8 +105,9 @@ dependencies {
     implementation(libs.androidx.room.ktx) // 코루틴 지원
     kapt(libs.androidx.room.compiler)
 
-    // (★ 추가 ★) --- 6. '새' '달력' '라이브러리' '설치' ---
+    // --- 6. '달력' '및' '날짜' '라이브러리' ---
     implementation(libs.androidx.material.calendarview)
+    implementation(libs.androidx.threetenabp) // (★ 추가 ★) 'threeten' '설치'
 
     // --- 7. 유닛 테스트 ---
     testImplementation(libs.junit)

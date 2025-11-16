@@ -10,8 +10,8 @@ material = "1.9.0"
 activity = "1.7.0"
 constraintlayout = "2.1.4"
 recyclerview = "1.3.2"
-swiperefreshlayout = "1.1.0" # (기존) AI 리포트 새로고침용
-fragmentKtx = "1.7.1"      # (기존) by viewModels() 등 KTX 지원
+swiperefreshlayout = "1.1.0"
+fragmentKtx = "1.7.1"
 
 # --- Architecture Components ---
 kotlinCoroutines = "1.7.1"
@@ -20,7 +20,7 @@ navigation = "2.7.7"
 
 # --- Dependency Injection (Hilt) ---
 hilt = "2.51.1"
-hiltNavigation = "1.2.0" # Hilt와 Navigation 통합 버전
+hiltNavigation = "1.2.0"
 
 # --- Networking (Retrofit) ---
 retrofit = "2.9.0"
@@ -35,8 +35,9 @@ junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 junitJunit = "4.12"
 
-# (★ 추가 ★) '새' '달력' '라이브러리' '버전'
+# --- '달력' '및' '날짜' '라이브러리' ---
 materialcalendarview = "2.0.1"
+threetenabp = "1.4.7" # (★ 추가 ★) 'threeten' '날짜' '라이브러리' '버전'
 
 
 [libraries]
@@ -74,8 +75,9 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 
-# (★ 추가 ★) --- 6. '새' '달력' '라이브러리' ---
+# --- 6. '달력' '및' '날짜' '라이브러리' ---
 androidx-material-calendarview = { group = "com.github.prolificinteractive", name = "material-calendarview", version.ref = "materialcalendarview" }
+androidx-threetenabp = { group = "com.jakewharton.threetenabp", name = "threetenabp", version.ref = "threetenabp" } # (★ 추가 ★)
 
 # --- 7. Testing ---
 junit = { group = "junit", name = "junit", version.ref = "junit" }

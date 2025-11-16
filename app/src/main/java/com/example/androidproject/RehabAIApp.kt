@@ -2,6 +2,7 @@
 package com.example.androidproject
 
 import android.app.Application
+import com.jakewharton.threetenabp.AndroidThreeTen // (★ 추가 ★) 'threeten' '초기화' 'import'
 import dagger.hilt.android.HiltAndroidApp
 import kotlin.text.Typography.dagger
 
@@ -14,6 +15,8 @@ class RehabAIApp : Application() {
         // if (BuildConfig.DEBUG) {
         //     Timber.plant(Timber.DebugTree())
         // }
+        // (★ 추가 ★) 'threeten' '날짜' '라이브러리'를 '앱' '시작' '시' '초기화'합니다.
+        AndroidThreeTen.init(this)
     }
 }
 

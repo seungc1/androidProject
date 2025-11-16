@@ -7,16 +7,17 @@ import android.text.style.StyleSpan
 import com.prolificinteractive.materialcalendarview.CalendarDay
 import com.prolificinteractive.materialcalendarview.DayViewDecorator
 import com.prolificinteractive.materialcalendarview.DayViewFacade
-import java.util.HashSet
+// (★ 수정 ★) 'HashSet' '대신' '범용' 'Set' 'import'
+import java.util.Set
 
 /**
- * [새 파일 4/6] - '날짜' '데코레이터' 1
- * '데이터가 있는' 날짜의 '글자'를 '검은색'과 '굵게' '표시'합니다.
+ * [수정 파일 4/6] - '날짜' '데코레이터' 1
+ * (★ 수정 ★) 'HashSet<CalendarDay>' -> 'Set<CalendarDay>'로 '변경'
  */
-class EnabledDateDecorator(private val dates: HashSet<CalendarDay>) : DayViewDecorator {
+class EnabledDateDecorator(private val dates: Set<CalendarDay>) : DayViewDecorator {
 
     override fun shouldDecorate(day: CalendarDay): Boolean {
-        return dates.contains(day) // '데이터가 있는' '목록'에 '포함'된 '날'만 '꾸미기'
+        return dates.contains(day)
     }
 
     override fun decorate(view: DayViewFacade) {
@@ -26,12 +27,12 @@ class EnabledDateDecorator(private val dates: HashSet<CalendarDay>) : DayViewDec
 }
 
 /**
- * [새 파일 5/6] - '날짜' '데코레이터' 2
- * '데이터가 없는' 날짜의 '글자'를 '연한 회색'으로 '표시'합니다.
+ * [수정 파일 5/6] - '날짜' '데코레이터' 2
+ * (★ 수정 ★) 'HashSet<CalendarDay>' -> 'Set<CalendarDay>'로 '변경'
  */
 class DisabledDateDecorator(
-    private val allDaysInMonth: HashSet<CalendarDay>,
-    private val recordedDays: HashSet<CalendarDay>
+    private val allDaysInMonth: Set<CalendarDay>,
+    private val recordedDays: Set<CalendarDay>
 ) : DayViewDecorator {
 
     override fun shouldDecorate(day: CalendarDay): Boolean {
@@ -41,6 +42,5 @@ class DisabledDateDecorator(
 
     override fun decorate(view: DayViewFacade) {
         view.addSpan(ForegroundColorSpan(Color.LTGRAY))
-        // (클릭은 '막지' '않음' - 빈 '기록'을 '보여줘야' '함')
     }
 }
