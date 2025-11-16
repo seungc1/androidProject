@@ -99,9 +99,7 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.fragment) // Fragment에서 ViewModel 주입 (선택 사항)
     //kapt(libs.androidx.hilt.compiler) // Hilt Android 컴파일러 (선택 사항)
 
-    // (수정됨) Hilt 테스트 및 JUnit 라이브러리는 'implementation' 스코프에 포함되면 안 됩니다.
-    // implementation(libs.junit.junit) <-- 삭제
-    // implementation(libs.hilt.android.testing) <-- 삭제
+
 
     // --- Retrofit (네트워크 통신) ---
     implementation(libs.retrofit)               // Retrofit 핵심 라이브러리
