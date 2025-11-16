@@ -133,6 +133,10 @@ class RehabViewModel @Inject constructor(
      * [AIRecommendationResult]의 List<ExerciseRecommendation>을
      * [MainUiState]의 List<TodayExercise>로 변환합니다.
      */
+    /**
+     * [AIRecommendationResult]의 List<ExerciseRecommendation>을
+     * [MainUiState]의 List<TodayExercise>로 변환합니다.
+     */
     private fun List<ExerciseRecommendation>.toTodayExerciseList(): List<TodayExercise> {
         return this.map { rec ->
             // AI 모델(ExerciseRecommendation)을 Domain 모델(Exercise)로 변환
@@ -142,8 +146,12 @@ class RehabViewModel @Inject constructor(
                 description = rec.description,
                 bodyPart = rec.bodyPart,
                 difficulty = rec.difficulty,
-                videoUrl = rec.imageUrl, // (AI가 준 imageUrl 사용)
-                precautions = null, // (AI가 준 precautions가 있다면 여기에 매핑)
+                videoUrl = rec.imageUrl,
+                precautions = null,
+
+                sets = rec.sets,
+                reps = rec.reps,
+
                 aiRecommendationReason = rec.aiRecommendationReason
             )
             // Domain 모델(Exercise)을 UI 모델(TodayExercise)로 래핑
@@ -265,7 +273,6 @@ class RehabViewModel @Inject constructor(
         _historyUiState.update { it.copy(errorMessage = null) }
     }
 
-    // ... (loadDietDetails, clearDietDetailErrorMessage 함수 수정 없음) ...
     fun loadDietDetails(dietId: String) {
         viewModelScope.launch {
             _dietDetailState.update { it.copy(isLoading = true, errorMessage = null, alternatives = emptyList()) }
@@ -298,7 +305,6 @@ class RehabViewModel @Inject constructor(
         _dietDetailState.update { it.copy(errorMessage = null) }
     }
 
-    // ... (updateUserProfile 함수 수정 없음) ...
     fun updateUserProfile(updatedUser: User, updatedInjuryName: String, updatedInjuryArea: String) {
         viewModelScope.launch {
             dummyUser = updatedUser
