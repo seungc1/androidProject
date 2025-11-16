@@ -5,15 +5,18 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.example.androidproject.databinding.ItemDietBinding // (★필수★) '한 줄 견본'의 ViewBinding import
+import com.example.androidproject.databinding.ItemDietBinding
 import com.example.androidproject.domain.model.Diet
 
 /**
  * [파일 4/11] - '식단' 목록 관리자
- * 'AI 추천 식단' ('RecyclerView')의 '목록 관리자'입니다.
- * 'Diet' 데이터('필드값')를 'item_diet.xml' ('한 줄 견본')에 '연결'합니다.
+ * (★수정★) '아이템 클릭' 시 '상세' 화면으로 '이동'하기 위해
+ * 생성자에서 'onItemClick' 람다를 '전달'받습니다.
  */
-class DietAdapter : ListAdapter<Diet, DietAdapter.DietViewHolder>(DietDiffCallback()) {
+class DietAdapter(
+    // (★ 추가 ★) '아이템 클릭' 람다
+    private val onItemClick: (Diet) -> Unit
+) : ListAdapter<Diet, DietAdapter.DietViewHolder>(DietDiffCallback()) {
 
     /**
      * '한 줄 견본'(item_diet.xml)을 '생성'합니다.
@@ -37,22 +40,19 @@ class DietAdapter : ListAdapter<Diet, DietAdapter.DietViewHolder>(DietDiffCallba
 
         // (★핵심★) '카드 터치' 기능 (팀원 1의 로드맵 Phase 2)
         init {
+            // (★ 수정 ★) '아이템 전체' (binding.root) 클릭 리스너
             binding.root.setOnClickListener {
-                // 나중에 '두뇌'(HomeFragment)에게 '상세보기' 클릭을 '알려주는'
-                // 람다(lambda) 코드를 여기에 추가할 수 있습니다.
-                // (예: onItemClick?.invoke(getItem(adapterPosition)))
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    // (★ 수정 ★) 'onItemClick' 람다를 '호출'하고 'Diet' '객체'를 '전달'합니다.
+                    onItemClick(getItem(adapterPosition))
+                }
             }
         }
 
         /**
          * '데이터'('필드값')를 'UI'('한 줄 견본')에 '연결'합니다.
-         *
-         * (★원상 복구★)
-         * '빌드'가 '성공'했으므로, '자동 생성'된 'ItemDietBinding'이
-         * 'dietDetailTextView' 등을 '인식'할 수 있습니다.
          */
         fun bind(diet: Diet) {
-            // (★원상 복구★) '진짜' 연결 코드를 '복구'합니다.
             binding.dietNameTextView.text = diet.foodName
             binding.dietDetailTextView.text = "${diet.mealType} / ${diet.protein}g 단백질"
             binding.dietCaloriesTextView.text = "${diet.calorie} kcal"
