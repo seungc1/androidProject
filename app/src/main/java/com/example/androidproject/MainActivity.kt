@@ -8,10 +8,7 @@ import com.example.androidproject.databinding.ActivityMainBinding
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
- * [오류 수정 2/2]
- * '껍데기(Activity)'이자 모든 Fragment를 담는 '두뇌'입니다.
- *
- * (★수정★) '상세' 화면에서 '하단 툴바'의 '홈' 버튼을 '다시' 눌렀을 때,
+ * '상세' 화면에서 '하단 툴바'의 '홈' 버튼을 '다시' 눌렀을 때,
  * '홈' 화면으로 '복귀'하도록 'setOnItemReselectedListener'를 '추가'합니다.
  */
 @AndroidEntryPoint // Hilt를 사용하기 위한 어노테이션
@@ -30,7 +27,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * (★수정★)
      * '하단 툴바'(BottomNavigationView)와 '내비게이션 지도'(nav_graph)를
      * '연결'하고, '재선택' 이벤트를 '처리'합니다.
      */

@@ -1,7 +1,7 @@
 // app/src/main/java/com/example/androidproject/domain/model/RecommendationParams.kt
-
 package com.example.androidproject.domain.model
 
+import com.example.androidproject.domain.model.RehabSession
 /**
  * AI (GPT) 모델에 재활 운동 및 식단 추천을 요청하기 위한 파라미터.
  * 사용자의 현재 상태와 목표에 대한 상세 정보를 포함합니다.
@@ -22,5 +22,6 @@ data class RecommendationParams(
     val injuryArea: String? = null, // 예: "Left Knee", "Shoulder"
     val injuryType: String? = null, // 예: "Ligament Sprain", "Post-surgery recovery"
     val injurySeverity: String? = null, // 예: "심각", "보통", "경미"
-    val additionalNotes: String? = null // GPT에게 전달할 추가적인 자유 형식 정보
+    val additionalNotes: String? = null, // GPT에게 전달할 추가적인 자유 형식 정보
+    val pastSessions: List<RehabSession>
 )
