@@ -15,4 +15,6 @@
     <string name="home_empty_message">AI가 추천을 생성하려면\n개인정보가 필요합니다.</string>
     <string name="home_empty_button_go_to_profile">개인정보 입력하기</string>
 
+    <string name="home_no_exercises_today">오늘은 추천된 운동이 없습니다.\n내일의 루틴을 확인해주세요.</string>
+
 </resources>

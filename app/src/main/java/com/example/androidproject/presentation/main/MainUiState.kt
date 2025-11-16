@@ -2,6 +2,7 @@ package com.example.androidproject.presentation.main
 
 import com.example.androidproject.domain.model.Diet
 import com.example.androidproject.domain.model.Exercise
+import com.example.androidproject.domain.model.ScheduledWorkout
 
 /**
  * [새 파일 1/5]
@@ -32,6 +33,9 @@ data class MainUiState(
 
     /** (★ 추가 ★) 현재 재활 중인 환부 (예: 손목) */
     val currentInjuryArea: String? = null,
+
+    /**AI가 생성한 '전체' 멀티-데이 루틴 */
+    val fullRoutine: List<ScheduledWorkout> = emptyList(),
 
     /** '오늘의 운동' Todo 리스트 */
     val todayExercises: List<TodayExercise> = emptyList(),

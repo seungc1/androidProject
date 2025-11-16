@@ -1,8 +1,6 @@
 package com.example.androidproject.domain.model
 
 // AIRecommendationResult.kt 파일에 정의된 클래스들을 Import하여 사용합니다.
-import com.example.androidproject.domain.model.ExerciseRecommendation
-import com.example.androidproject.domain.model.DietRecommendation
 
 
 /**
