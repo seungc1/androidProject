@@ -62,7 +62,6 @@ android {
 dependencies {
 
     // --- 1. AndroidX Core & UI ---
-    // (★ 수정 ★) 'core-ktx'에서 '충돌' '라이브러리' '제외'
     implementation(libs.androidx.core.ktx) {
         exclude(group = "androidx.legacy", module = "legacy-support-v4")
     }
@@ -98,11 +97,10 @@ dependencies {
     kapt(libs.androidx.room.compiler)
 
     // --- 6. '달력' '및' '날짜' '라이브러리' ---
-    // (★ 수정 ★) '달력' '라이브러리'에서 '충돌' '라이브러리' '제외'
     implementation(libs.androidx.material.calendarview) {
         exclude(group = "androidx.legacy", module = "legacy-support-v4")
     }
-    implementation(libs.androidx.threetenabp) // (★ 추가 ★) 'threeten' '설치'
+    implementation(libs.androidx.threetenabp)
 
     // --- 7. 유닛 테스트 ---
     testImplementation(libs.junit)

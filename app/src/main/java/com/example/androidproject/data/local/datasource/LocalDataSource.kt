@@ -1,26 +1,22 @@
 package com.example.androidproject.data.local.datasource
 
-import com.example.androidproject.data.local.dao.DietSessionDao
-import com.example.androidproject.data.local.dao.ExerciseDao
-import com.example.androidproject.data.local.dao.RehabSessionDao
-import com.example.androidproject.data.local.dao.UserDao
-import com.example.androidproject.data.local.entity.DietSessionEntity
-import com.example.androidproject.data.local.entity.ExerciseEntity
-import com.example.androidproject.data.local.entity.RehabSessionEntity
-import com.example.androidproject.data.local.entity.UserEntity
+import com.example.androidproject.data.local.dao.* // 👈 [수정] Wildcard import
+import com.example.androidproject.data.local.entity.* // 👈 [수정] Wildcard import
 import kotlinx.coroutines.flow.Flow
 import java.util.Date
 import javax.inject.Inject
 
 /**
- * [수정 파일 8/8] 'LocalDataSource'
- * (★ 추가 ★) 'getUserCountById' '함수' '추가'
+ * 모든 DAO를 실제로 호출하여 Local(로컬 DB) 데이터를 관리하는 클래스입니다.
+ * Hilt가 모든 DAO를 여기에 주입(@Inject)해 줍니다.
  */
+// ✅ [수정] 생성자에서 새로 만든 DAO 2개를 주입받습니다.
 class LocalDataSource @Inject constructor(
     private val userDao: UserDao,
     private val exerciseDao: ExerciseDao,
     private val rehabSessionDao: RehabSessionDao,
-    private val dietSessionDao: DietSessionDao
+    private val dietSessionDao: DietSessionDao,
+    private val scheduledWorkoutDao: ScheduledWorkoutDao
 ) {
 
     // --- UserDao 관련 함수 ---
@@ -69,5 +65,16 @@ class LocalDataSource @Inject constructor(
     }
     fun getDietSessionsBetween(userId: String, startDate: Date, endDate: Date): Flow<List<DietSessionEntity>> {
         return dietSessionDao.getSessionsBetween(userId, startDate, endDate)
+    }
+    suspend fun upsertWorkouts(workouts: List<ScheduledWorkoutEntity>) {
+        scheduledWorkoutDao.upsertWorkouts(workouts)
+    }
+
+    fun getWorkouts(userId: String): Flow<List<ScheduledWorkoutEntity>> {
+        return scheduledWorkoutDao.getWorkouts(userId)
+    }
+
+    suspend fun clearWorkouts(userId: String) {
+        scheduledWorkoutDao.clearWorkouts(userId)
     }
 }

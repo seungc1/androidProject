@@ -17,6 +17,7 @@ import com.example.androidproject.presentation.main.TodayExercise
 import com.example.androidproject.domain.model.AIAnalysisResult
 import com.example.androidproject.domain.model.ScheduledWorkout
 import com.example.androidproject.domain.usecase.GetWeeklyAnalysisUseCase
+import com.example.androidproject.domain.usecase.AddRehabSessionUseCase
 import com.prolificinteractive.materialcalendarview.CalendarDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,10 +58,9 @@ data class DietDetailUiState(
 @HiltViewModel
 class RehabViewModel @Inject constructor(
     private val getAIRecommendationUseCase: GetAIRecommendationUseCase,
-    private val getWeeklyAnalysisUseCase: GetWeeklyAnalysisUseCase
+    private val getWeeklyAnalysisUseCase: GetWeeklyAnalysisUseCase,
+    private val addRehabSessionUseCase: AddRehabSessionUseCase
 ) : ViewModel() {
-
-    // (StateFlow 선언부 수정 없음)
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
@@ -77,17 +77,12 @@ class RehabViewModel @Inject constructor(
     lateinit var dummyUser: User
     lateinit var dummyInjury: Injury
 
-    // (★ 삭제 ★) 'init' '블록'을 '삭제'합니다.
-    /*
     init {
+        // (★참고★: DB 연결 후, 'dummyUser'는 '로그인' 시점에 설정되어야 합니다.)
         loadMainDashboardData(forceReload = false)
     }
-    */
 
-    /**
-     * (★ 수정 ★) 'MainActivity'가 '로그인' '성공' '후' '호출'할 '함수'
-     */
-    fun loadDataForUser(userId: String, forceReload: Boolean = false) {
+    fun loadMainDashboardData(forceReload: Boolean) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
@@ -100,13 +95,12 @@ class RehabViewModel @Inject constructor(
                             todayExercises = todayExercises
                         )
                     }
-                    loadAllSessionDates(dummyUser.id)
+                    loadAllSessionDates(dummyUser.id) // (DB 캐싱 구현 시 이 위치가 적절)
                     return@launch
                 }
             }
 
             try {
-                // (★ 수정 ★) 'User' '모델'에 'password' '필드' '추가'
                 dummyUser = User(
                     id = userId, // (★ 수정 ★) '로그인'한 'userId' '사용'
                     password = "1234", // ('DB' '연동' '전' '임시' '비밀번호')
@@ -206,12 +200,11 @@ class RehabViewModel @Inject constructor(
     }
 
 
-    // (setExerciseCompleted, saveRehabSessionDetails, clearErrorMessage - 수정 없음)
     private fun setExerciseCompleted(exerciseId: String, isCompleted: Boolean) {
         _uiState.update { currentState ->
             val updatedExercises = currentState.todayExercises.map {
                 if (it.exercise.id == exerciseId) {
-                    it.copy(isCompleted = !it.isCompleted)
+                    it.copy(isCompleted = isCompleted)
                 } else {
                     it
                 }
@@ -221,15 +214,25 @@ class RehabViewModel @Inject constructor(
     }
     fun saveRehabSessionDetails(exerciseId: String, rating: Int, notes: String) {
         viewModelScope.launch {
-            val _session = RehabSession(
+            val session = RehabSession(
                 id = UUID.randomUUID().toString(),
-                userId = "user01",
+                userId = dummyUser.id, // (★수정★) "user01" -> dummyUser.id
                 exerciseId = exerciseId,
                 dateTime = Date(),
-                sets = 3, reps = 10, durationMinutes = 15,
+                sets = 3, reps = 10, durationMinutes = 15, // (★개선 필요★: 이 값도 AI 추천값으로)
                 notes = notes,
                 userRating = rating
             )
+
+            // 🚨 [수정] UseCase를 '실제' '호출'하여 DB에 '저장'합니다.
+            // (경고가 사라졌습니다)
+            addRehabSessionUseCase(session).collect()
+
+            // (★중요★) 운동 '기록'이 '저장'되었으므로,
+            // '기록' 탭의 '달력'을 '새로고침'하여 '오늘' 날짜에 '점'을 '표시'합니다.
+            loadAllSessionDates(dummyUser.id)
+
+            // (기존) UI '체크' 상태 '업데이트'
             setExerciseCompleted(exerciseId, true)
         }
     }
@@ -242,8 +245,9 @@ class RehabViewModel @Inject constructor(
         viewModelScope.launch {
             _historyUiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                kotlinx.coroutines.delay(500)
+                kotlinx.coroutines.delay(500) // (시뮬레이션 딜레이)
 
+                // (★ 수정 ★) 'LocalDate' -> 'java.util.Date'로 '변환' (API 24 '호환')
                 val selectedDate = DateTimeUtils.toDate(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
                 val calendar = Calendar.getInstance().apply { time = selectedDate }
                 val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
@@ -327,7 +331,6 @@ class RehabViewModel @Inject constructor(
         )
     }
 
-    // (loadDietDetails, clearDietDetailErrorMessage - 수정 없음)
     fun loadDietDetails(dietId: String) {
         viewModelScope.launch {
             _dietDetailState.update { it.copy(isLoading = true, errorMessage = null, alternatives = emptyList()) }
@@ -375,6 +378,7 @@ class RehabViewModel @Inject constructor(
     // (loadAllSessionDates - 'threeten' '사용' '유지')
     fun loadAllSessionDates(userId: String) {
         viewModelScope.launch {
+
             val recordedUtilDates = mutableListOf<Date>()
             val calendar = Calendar.getInstance()
 
@@ -383,7 +387,14 @@ class RehabViewModel @Inject constructor(
             calendar.set(Calendar.DAY_OF_MONTH, 15); recordedUtilDates.add(calendar.time)
 
             val recordedDaysSet = HashSet<CalendarDay>()
+            // (★중요★) 'saveRehabSessionDetails'에서 '방금' '저장'한 '오늘' 날짜 '추가'
+            // (DB에서 '직접' '조회'하면 이 코드는 '필요 없습니다')
+            recordedUtilDates.add(Date())
+
+            // (★ 핵심 ★) 'java.util.Date' '목록'을 'CalendarDay' '목록'으로 '변환'
+            val recordedDaysSet = HashSet<CalendarDay>() // 'HashSet' '사용'
             recordedUtilDates.forEach { utilDate ->
+                // (★ 수정 ★) 'java.util.Date' -> 'threeten.LocalDate' -> 'CalendarDay' (API 24 '호환')
                 val instant = DateTimeUtils.toInstant(utilDate)
                 val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
                 recordedDaysSet.add(CalendarDay.from(localDate))
