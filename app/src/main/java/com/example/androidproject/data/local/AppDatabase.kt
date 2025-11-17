@@ -14,9 +14,10 @@ import com.example.androidproject.data.local.entity.* // 👈 [수정] Wildcard 
         RehabSessionEntity::class,
         DietSessionEntity::class,
         InjuryEntity::class,
-        DietEntity::class
+        DietEntity::class,
+        ScheduledWorkoutEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)
@@ -30,4 +31,5 @@ abstract class AppDatabase : RoomDatabase() {
     // 🚨 [추가] 2개의 새 DAO 등록
     abstract fun injuryDao(): InjuryDao
     abstract fun dietDao(): DietDao
+    abstract fun scheduledWorkoutDao(): ScheduledWorkoutDao
 }

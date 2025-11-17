@@ -4,11 +4,12 @@ import com.example.androidproject.data.local.datasource.LocalDataSource
 import com.example.androidproject.data.mapper.toDomain
 import com.example.androidproject.data.mapper.toEntity
 import com.example.androidproject.domain.model.Diet
-import com.example.androidproject.domain.repository.DietRepository
+import com.example.androidproject.domain.repository.DietRepository // 👈 (Interface import)
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
+// 🚨 [해결책] ': DietRepository' 부분이 빠졌는지 확인하세요.
 class DietRepositoryImpl @Inject constructor(
     private val localDataSource: LocalDataSource
 ) : DietRepository {

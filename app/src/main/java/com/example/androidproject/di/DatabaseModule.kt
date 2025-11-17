@@ -62,4 +62,9 @@ object DatabaseModule {
     fun provideDietDao(database: AppDatabase): DietDao {
         return database.dietDao()
     }
+    @Provides
+    @Singleton
+    fun provideScheduledWorkoutDao(database: AppDatabase): ScheduledWorkoutDao {
+        return database.scheduledWorkoutDao()
+    }
 }
