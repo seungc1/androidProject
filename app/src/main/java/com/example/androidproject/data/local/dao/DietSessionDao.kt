@@ -11,7 +11,7 @@ import java.util.Date
 @Dao
 interface DietSessionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun addDietSession(session: DietSessionEntity)
+    suspend fun addDietSession(session: DietSessionEntity) : Long
 
     @Query("SELECT * FROM diet_session_table WHERE userId = :userId ORDER BY dateTime DESC")
     fun getDietHistory(userId: String): Flow<List<DietSessionEntity>>

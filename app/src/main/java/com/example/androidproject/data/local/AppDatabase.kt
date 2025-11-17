@@ -3,6 +3,7 @@ package com.example.androidproject.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters // ✅ [추가] 타입 변환기 import
+import com.example.androidproject.data.local.TypeConverters as AppTypeConverters
 import com.example.androidproject.data.local.dao.DietSessionDao // ✅ [추가]
 import com.example.androidproject.data.local.dao.ExerciseDao
 import com.example.androidproject.data.local.dao.RehabSessionDao // ✅ [추가]
@@ -23,7 +24,7 @@ import com.example.androidproject.data.local.entity.UserEntity
     version = 1, // (참고: DB 구조가 바뀌면 'version'을 올려야 하지만, 지금은 1로 유지)
     exportSchema = false
 )
-@TypeConverters(TypeConverters::class) // ✅ [추가] 1단계에서 만든 TypeConverters 등록
+@TypeConverters(AppTypeConverters::class) // ✅ [추가] 1단계에서 만든 TypeConverters 등록
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun userDao(): UserDao

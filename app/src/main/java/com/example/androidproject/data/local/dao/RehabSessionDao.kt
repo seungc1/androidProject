@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.example.androidproject.data.local.entity.RehabSessionEntity
 import kotlinx.coroutines.flow.Flow
+import java.util.Date
 
 @Dao
 interface RehabSessionDao {
