@@ -31,7 +31,9 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "rehab_ai_db" // DB 파일 이름
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     /**

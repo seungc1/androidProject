@@ -94,6 +94,7 @@ fun DietDto.toDomain(): Diet {
 fun UserEntity.toDomain(): User {
     return User(
         id = this.id,
+        password = this.password,
         name = this.name,
         gender = this.gender,
         age = this.age,
@@ -120,6 +121,7 @@ fun UserEntity.toDomain(): User {
 fun User.toEntity(): UserEntity {
     return UserEntity(
         id = this.id,
+        password = this.password,
         name = this.name,
         gender = this.gender,
         age = this.age,

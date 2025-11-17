@@ -21,7 +21,7 @@ import com.example.androidproject.data.local.entity.UserEntity
         RehabSessionEntity::class,
         DietSessionEntity::class
     ],
-    version = 1, // (참고: DB 구조가 바뀌면 'version'을 올려야 하지만, 지금은 1로 유지)
+    version = 2, // (참고: DB 구조가 바뀌면 'version'을 올려야 하지만, 지금은 1로 유지)
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class) // ✅ [추가] 1단계에서 만든 TypeConverters 등록
