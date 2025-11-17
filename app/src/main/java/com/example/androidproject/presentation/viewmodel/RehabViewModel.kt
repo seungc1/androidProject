@@ -103,7 +103,7 @@ class RehabViewModel @Inject constructor(
 
             try {
                 dummyUser = User(
-                    id = "user01", name = "김재활", gender = "남성", age = 30,
+                    id = "user01", password = "1234", name = "김재활", gender = "남성", age = 30,
                     heightCm = 175, weightKg = 70.5, activityLevel = "활동적",
                     fitnessGoal = "근육 증가", allergyInfo = listOf("땅콩", "새우"),
                     preferredDietType = "일반", targetCalories = 2500,

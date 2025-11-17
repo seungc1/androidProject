@@ -167,6 +167,9 @@ fabric.properties
 
 !/gradle/wrapper/gradle-wrapper.jar
 
+# macOS system files
+*.DS_Store
+
 # End of https://www.toptal.com/developers/gitignore/api/androidstudio,java,kotlingi
 
 # NDK

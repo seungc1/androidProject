@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.example.androidproject.domain.usecase.LoginUseCase
 
 /**
  * [새 파일 1/6] - '인증' (Auth) 핵심 두뇌
@@ -31,7 +32,7 @@ sealed class AuthState {
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    // (미래) private val loginUseCase: LoginUseCase,
+    private val loginUseCase: LoginUseCase // ✅ [추가] UseCase 주입
     // (미래) private val checkLoginStatusUseCase: CheckLoginStatusUseCase
 ) : ViewModel() {
 
@@ -69,13 +70,15 @@ class AuthViewModel @Inject constructor(
             _loginState.value = LoginState.Loading
             delay(500) // (시뮬레이션) 0.5초간 '로그인' '시도'
 
-            // (★ 시뮬레이션 ★) '간단한' '더미' '로그인' '로직'
-            if (username.equals("test", ignoreCase = true) && password == "1234") {
-                // (미래) loginUseCase(username, password).collect { ... }
+            // 로그인 시도 UseCase 호출
+            val isSuccess = loginUseCase(username, password)
+
+            if (isSuccess) {
                 _loginState.value = LoginState.Success
             } else {
-                _loginState.value = LoginState.Error("아이디 또는 비밀번호가 일치하지 않습니다.")
+                _loginState.value = LoginState.Error("비밀번호가 일치하지 않습니다.")
             }
+
         }
     }
 }

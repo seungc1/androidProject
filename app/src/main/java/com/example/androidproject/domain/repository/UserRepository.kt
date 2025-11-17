@@ -9,4 +9,7 @@ interface UserRepository {
 
     // 사용자 프로필 정보 업데이트
     suspend fun updateUserProfile(user: User): Flow<Unit> // Unit은 성공/실패 여부만 반환할 때 사용
+
+    // 로그인 시도 (성공 여부 반환)
+    suspend fun login(id: String, password: String): Boolean
 }

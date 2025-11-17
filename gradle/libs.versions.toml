@@ -1,9 +1,9 @@
 [versions]
 # --- Core Plugins ---
 agp = "8.12.3"
-kotlin = "1.8.20"
 
 # --- AndroidX Core & UI ---
+kotlin = "2.0.0" #1.8.20 -> 2.0.0 변경(효원 수정)
 coreKtx = "1.10.0"
 appcompat = "1.6.1"
 material = "1.9.0"
@@ -27,7 +27,10 @@ retrofit = "2.9.0"
 converterGson = "2.9.0"
 
 # --- Database (Room) ---
-room = "2.5.2"
+okhttp = "4.12.0"
+
+# Room Database (로컬 데이터베이스)
+room = "2.6.1"
 
 # --- Testing ---
 junit = "4.13.2"
@@ -71,6 +74,11 @@ retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = 
 retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converterGson" }
 
 # --- 5. Database (Room) ---
+# OkHttp (효원 추가)
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+okhttp-loggingInterceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+
+# Room Database (로컬 DB)
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
@@ -85,6 +93,9 @@ junit-junit = { group = "junit", name = "junit", version.ref = "junitJunit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 
+androidx-room-common-jvm = { group = "androidx.room", name = "room-common", version.ref = "room" } #효원 수정
+
+# --- 추가된 라이브러리 정의 끝 ---
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
