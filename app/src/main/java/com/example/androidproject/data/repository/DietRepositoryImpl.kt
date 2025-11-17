@@ -4,10 +4,11 @@ import com.example.androidproject.data.local.datasource.LocalDataSource
 import com.example.androidproject.data.mapper.toDomain
 import com.example.androidproject.data.mapper.toEntity
 import com.example.androidproject.domain.model.Diet
-import com.example.androidproject.domain.repository.DietRepository // 👈 (Interface import)
+import com.example.androidproject.domain.repository.DietRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+
 class DietRepositoryImpl @Inject constructor(
     private val localDataSource: LocalDataSource
 ) : DietRepository {

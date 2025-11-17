@@ -23,8 +23,4 @@ class RehabRepositoryImpl @Inject constructor(
                 ?: throw NoSuchElementException("Exercise with id $exerciseId not found")
         }
     }
-
-    // ❌ --- 'generateDummyExercises()' 함수 '전부 삭제' ---
-    // private fun generateDummyExercises(): List<Exercise> { ... }
-    // ❌ ---------------------------------------------
 }

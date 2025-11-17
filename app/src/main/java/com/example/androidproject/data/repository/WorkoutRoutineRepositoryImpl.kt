@@ -2,31 +2,24 @@ package com.example.androidproject.data.repository
 
 import com.example.androidproject.data.local.datasource.LocalDataSource
 import com.example.androidproject.data.local.entity.ScheduledWorkoutEntity
-import com.example.androidproject.domain.model.AIRecommendationResult
-import com.example.androidproject.domain.model.ExerciseRecommendation // 👈 [추가] import
-import com.example.androidproject.domain.model.Injury
-import com.example.androidproject.domain.model.RecommendationParams
-import com.example.androidproject.domain.model.ScheduledWorkout
-import com.example.androidproject.domain.model.User
-import com.example.androidproject.domain.repository.AIApiRepository // 👈 [추가] import
-import com.example.androidproject.domain.repository.RehabSessionRepository // 👈 [추가] import
-import com.example.androidproject.domain.repository.WorkoutRoutineRepository
-import com.google.gson.Gson // 👈 [추가] import
-import com.google.gson.reflect.TypeToken // 👈 [추가] import
+import com.example.androidproject.domain.model.*
+import com.example.androidproject.domain.repository.AIApiRepository
+import com.example.androidproject.domain.repository.RehabSessionRepository
+import com.example.androidproject.domain.repository.WorkoutRoutineRepository // 👈 (Interface import)
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
+// 🚨 [해결책] ': WorkoutRoutineRepository' 부분이 빠졌는지 확인하세요.
 class WorkoutRoutineRepositoryImpl @Inject constructor(
     private val localDataSource: LocalDataSource,
     private val aiApiRepository: AIApiRepository,
     private val rehabSessionRepository: RehabSessionRepository
 ) : WorkoutRoutineRepository {
 
-    /**
-     * 🚨 [수정] 'override'만 남기고 'suspend'는 '삭제'된 상태인지 확인
-     */
     override fun getWorkoutRoutine(
         forceReload: Boolean,
         user: User,
@@ -46,25 +39,17 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             return@flow
         }
 
-        // AI 학습을 위해 '실제' 과거 기록 조회
         val pastSessions = rehabSessionRepository.getRehabHistory(userId).first()
 
         val recommendationParams = RecommendationParams(
-            userId = user.id,
-            age = user.age,
-            gender = user.gender,
-            heightCm = user.heightCm,
-            weightKg = user.weightKg,
-            activityLevel = user.activityLevel,
-            fitnessGoal = user.fitnessGoal,
+            userId = user.id, age = user.age, gender = user.gender,
+            heightCm = user.heightCm, weightKg = user.weightKg,
+            activityLevel = user.activityLevel, fitnessGoal = user.fitnessGoal,
             dietaryPreferences = user.preferredDietaryTypes,
-            allergies = user.allergyInfo,
-            equipmentAvailable = user.equipmentAvailable,
+            allergies = user.allergyInfo, equipmentAvailable = user.equipmentAvailable,
             currentPainLevel = user.currentPainLevel,
-            injuryArea = injury?.bodyPart,
-            injuryType = injury?.name,
-            injurySeverity = injury?.severity,
-            additionalNotes = user.additionalNotes,
+            injuryArea = injury?.bodyPart, injuryType = injury?.name,
+            injurySeverity = injury?.severity, additionalNotes = user.additionalNotes,
             pastSessions = pastSessions
         )
 
@@ -100,7 +85,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
         }
         return AIRecommendationResult(
             scheduledWorkouts = workouts,
-            recommendedDiets = emptyList(), // (식단은 이 Repository가 관리하지 않음)
+            recommendedDiets = emptyList(),
             overallSummary = workouts.firstOrNull()?.exercises?.firstOrNull()?.aiRecommendationReason
         )
     }
