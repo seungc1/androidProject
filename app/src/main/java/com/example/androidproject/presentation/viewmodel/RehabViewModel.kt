@@ -120,7 +120,6 @@ class RehabViewModel @Inject constructor(
                     severity = "경미", description = "가벼운 통증이 있는 상태"
                 )
 
-                // (★ 수정 ★) 'UseCase' '호출' '시' '로그인'한 'userId' '전달'
                 getAIRecommendationUseCase(userId, dummyInjury)
                     .catch { e ->
                         _uiState.update {
@@ -331,6 +330,7 @@ class RehabViewModel @Inject constructor(
         )
     }
 
+    // (loadDietDetails, clearDietDetailErrorMessage - 'min' 버전 유지, 동일함)
     fun loadDietDetails(dietId: String) {
         viewModelScope.launch {
             _dietDetailState.update { it.copy(isLoading = true, errorMessage = null, alternatives = emptyList()) }
