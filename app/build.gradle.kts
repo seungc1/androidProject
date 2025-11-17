@@ -90,6 +90,8 @@ dependencies {
     // --- 4. 네트워킹 (Retrofit) ---
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.loggingInterceptor)
 
     // --- 5. 로컬 데이터베이스 (Room) ---
     implementation(libs.androidx.room.runtime)
