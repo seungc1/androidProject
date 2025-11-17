@@ -13,12 +13,25 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.androidproject.databinding.FragmentHistoryBinding
 import com.example.androidproject.presentation.viewmodel.RehabViewModel
+import com.prolificinteractive.materialcalendarview.CalendarDay
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.util.Date
+// (★ 삭제 ★) 'java.util.Date' '삭제'
+// import java.util.Date
 import java.util.Calendar
+// (★ 수정 ★) 'java.util.Set' '대신' 'kotlin.collections.Set' '사용'
+import kotlin.collections.Set
+import kotlin.collections.HashSet
+// (★ 추가 ★) 'threeten' '날짜' '타입' 'import'
+import org.threeten.bp.LocalDate
 
+/**
+ * [수정 파일 6/6] - '기록' 화면 '두뇌'
+ * (★ 수정 ★) 'java.util.Date' -> 'org.threeten.bp.LocalDate'로 '타입' '변경'
+ * (★ 수정 ★) 'Set' '타입' '불일치' '오류' '수정'
+ * (★ 수정 ★) 'Calendar' -> 'LocalDate' '타입' '불일치' '오류' '수정'
+ */
 @AndroidEntryPoint
 class HistoryFragment : Fragment() {
 
@@ -44,10 +57,15 @@ class HistoryFragment : Fragment() {
         setupCalendarListener()
         setupSwipeToRefresh()
         observeUiState()
+        observeRecordedDates()
 
+        // (★ 수정 ★) 'CalendarDay.today().date' ('LocalDate')를 '사용'
+        val today = CalendarDay.today()
+        binding.calendarView.setCurrentDate(today)
+        binding.calendarView.setSelectedDate(today)
 
-        // 화면이 처음 열릴 때 '오늘 날짜 기록'과 'AI 주간 분석'을  호출합니다.
-        viewModel.loadHistory(Date(binding.calendarView.date))
+        // (★ 수정 ★) 'today.date' ('LocalDate')를 '전달'
+        viewModel.loadHistory(today.date)
         viewModel.fetchWeeklyAnalysis()
     }
 
@@ -62,32 +80,27 @@ class HistoryFragment : Fragment() {
         }
     }
 
+    /**
+     * (★ 수정 ★) '리스너' '파라미터' '`date`'의 '타입'이 '`CalendarDay`' '임을' '명시'
+     */
     private fun setupCalendarListener() {
-        binding.calendarView.setOnDateChangeListener { view, year, month, dayOfMonth ->
-            val selectedCalendar = Calendar.getInstance().apply {
-                set(year, month, dayOfMonth)
-            }
-            val selectedDate = selectedCalendar.time
+        binding.calendarView.setOnDateChangedListener { widget, date: CalendarDay, selected ->
+            // (★ 수정 ★) 'date.date' ('LocalDate')를 '직접' '전달'
+            val selectedLocalDate = date.date
 
-            // (날짜별 기록만 새로 불러옴)
-            viewModel.loadHistory(selectedDate)
+            viewModel.loadHistory(selectedLocalDate)
         }
     }
 
-    // UI 상태 관찰 로직은 AI 리포트가 오면 알아서 표시하도록 이미 구현되어 있습니다.
+    // (observeUiState - 수정 없음)
     private fun observeUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
                 viewModel.historyUiState.collectLatest { state ->
-
-                    // 1. (일반 로딩) 날짜별 기록 로딩 스피너
                     binding.loadingProgressBar.isVisible = state.isLoading
-
-                    // 2. (AI 로딩) SwipeRefresh 스피너
                     binding.swipeRefreshLayout.isRefreshing = state.isAnalyzing
 
-                    // 3. (AI 리포트) AI 분석 결과가 있으면 카드 표시
                     if (state.analysisResult != null) {
                         binding.analysisCard.isVisible = true
                         binding.analysisSummaryTextView.text = state.analysisResult.summary
@@ -95,15 +108,12 @@ class HistoryFragment : Fragment() {
                         binding.analysisCard.isVisible = false
                     }
 
-                    // 4. (기록 목록)
                     val hasHistory = state.historyItems.isNotEmpty()
                     binding.historyRecyclerView.isVisible = hasHistory && !state.isLoading
                     binding.emptyViewHistory.isVisible = !hasHistory && !state.isLoading
 
-                    // 5. (데이터)
                     historyAdapter.submitList(state.historyItems)
 
-                    // 6. (오류)
                     state.errorMessage?.let { message ->
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                         viewModel.clearHistoryErrorMessage()
@@ -113,9 +123,43 @@ class HistoryFragment : Fragment() {
         }
     }
 
+    /**
+     * (★ 수정 ★) 'HashSet' '타입' '불일치' '오류' '수정'
+     */
+    private fun observeRecordedDates() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+
+                // 'recordedDaysSet'은 'Set<CalendarDay>' '타입'
+                viewModel.recordedDates.collectLatest { recordedDaysSet ->
+                    if (recordedDaysSet.isNotEmpty()) {
+
+                        val currentMonth = binding.calendarView.currentDate
+
+                        // (★ 수정 ★) 'allDaysInMonth'의 '타입'을 'HashSet'으로 '명시'
+                        val allDaysInMonth = HashSet<CalendarDay>()
+                        // (★ 수정 ★) 'threeten.LocalDate'를 '사용'하여 '월'의 '최대' '일수' '계산'
+                        val maxDay = currentMonth.date.lengthOfMonth()
+
+                        for (i in 1..maxDay) {
+                            // (★ 수정 ★) 'LocalDate' '기반'으로 'CalendarDay' '생성'
+                            allDaysInMonth.add(CalendarDay.from(currentMonth.year, currentMonth.month, i))
+                        }
+
+                        // (★ 수정 ★) 'DateColorDecorators'가 'Set'을 '받도록' '수정'했으므로 '변환' '불필요'
+                        binding.calendarView.addDecorators(
+                            DisabledDateDecorator(allDaysInMonth, recordedDaysSet),
+                            EnabledDateDecorator(recordedDaysSet)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding = null
+        _binding = null // 메모리 누수 방지
     }
 }

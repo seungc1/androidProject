@@ -4,40 +4,45 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
     android:paddingStart="16dp"
+    android:paddingTop="8dp"
     android:paddingEnd="16dp"
-    android:paddingVertical="8dp"
-    android:background="?attr/selectableItemBackground"> <TextView
-    android:id="@+id/exerciseNameTextView"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"
-    android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toStartOf="@+id/exerciseStatusCheckBox"
-    app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintBottom_toTopOf="@+id/exerciseDetailTextView"
-    tools:text="벤치 프레스" />
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:id="@+id/exerciseNameTextView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.App.BodyLarge"
+        app:layout_constraintBottom_toTopOf="@+id/exerciseDetailTextView"
+        app:layout_constraintEnd_toStartOf="@+id/exerciseStatusCheckBox"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="벤치 프레스" />
 
     <TextView
         android:id="@+id/exerciseDetailTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+        android:textAppearance="@style/TextAppearance.App.TitleSmall"
         android:textColor="?android:attr/textColorSecondary"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/exerciseStatusCheckBox"
-        app:layout_constraintTop_toBottomOf="@+id/exerciseNameTextView"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/exerciseStatusCheckBox"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/exerciseNameTextView"
         tools:text="3세트 10회" />
 
     <CheckBox
         android:id="@+id/exerciseStatusCheckBox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:checked="false"
+        android:clickable="false"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:checked="false"
-        tools:checked="true"
-        android:clickable="false" /> </androidx.constraintlayout.widget.ConstraintLayout>
+        tools:checked="true" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -6,44 +6,36 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import com.example.androidproject.databinding.ItemDietBinding // (★필수★) '식단 견본'의 ViewBinding import
-import com.example.androidproject.databinding.ItemExerciseBinding // (★필수★) '운동 견본'의 ViewBinding import
+import com.example.androidproject.databinding.ItemDietBinding
+import com.example.androidproject.databinding.ItemExerciseBinding
 import com.example.androidproject.domain.model.DietSession
 import com.example.androidproject.domain.model.RehabSession
-import java.text.SimpleDateFormat // (★필수★) 'API 레벨 26' 문제 해결을 위해 'SimpleDateFormat' (API 1) 사용
+import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.Date // (★필수★) 님의 '필드값' 및 '가이드라인' 원칙 4에 따라 'Date' 사용
+import java.util.Date
 
 /**
  * [새 파일] - '기록' 탭의 '목록 관리자'
- * '운동 기록'(RehabSession)과 '식단 기록'(DietSession)을
- * '하나의' '목록'(RecyclerView)에 '둘 다' '표시'하기 위한 '스마트' 어댑터입니다.
- * (팀원 1의 로드맵 Phase 4)
  */
 
-// 1. '데이터 묶음' 정의: '운동'이거나 '식단'일 수 있는 '봉투'
-// (★수정★) '필드값' 모델('Date')과 '타입'을 '일치'시킵니다.
+// 1. '데이터 묶음' 정의
 sealed class HistoryItem {
     data class Exercise(val session: RehabSession) : HistoryItem() {
         override val id: String = session.id
-        override val dateTime: Date = session.dateTime // (★수정★) LocalDateTime -> Date
+        override val dateTime: Date = session.dateTime
     }
     data class Diet(val session: DietSession) : HistoryItem() {
         override val id: String = session.id
-        override val dateTime: Date = session.dateTime // (★수정★) LocalDateTime -> Date
+        override val dateTime: Date = session.dateTime
     }
 
-    // (★핵심★) 'DiffUtil'과 '정렬'을 위해 '공통' 필드를 '추상화'합니다.
     abstract val id: String
-    abstract val dateTime: Date // (★수정★) LocalDateTime -> Date
+    abstract val dateTime: Date
 }
 
 // 2. '목록 관리자' (Adapter) 정의
 class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder>(HistoryDiffCallback()) {
 
-    /**
-     * '데이터'가 '운동'인지 '식단'인지 '구별'해서 '타입'을 '반환'합니다.
-     */
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
             is HistoryItem.Exercise -> VIEW_TYPE_EXERCISE
@@ -52,12 +44,8 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
         }
     }
 
-    /**
-     * '타입'에 맞는 '한 줄 견본'(XML)을 '생성'합니다.
-     */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder {
         val inflater = LayoutInflater.from(parent.context)
-        // '타입'이 '운동'이면 'item_exercise.xml'을, '식단'이면 'item_diet.xml'을 '사용'합니다.
         val binding = when (viewType) {
             VIEW_TYPE_EXERCISE -> ItemExerciseBinding.inflate(inflater, parent, false)
             VIEW_TYPE_DIET -> ItemDietBinding.inflate(inflater, parent, false)
@@ -66,61 +54,45 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
         return HistoryViewHolder(binding)
     }
 
-    /**
-     * '데이터'('HistoryItem')를 '한 줄 견본'(ViewHolder)에 '연결'합니다.
-     */
     override fun onBindViewHolder(holder: HistoryViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
 
-    /**
-     * '한 줄 견본'(XML)의 UI 요소들을 '관리'하는 '뷰 홀더'입니다.
-     * (★핵심★) 'ViewBinding'의 '공통 부모'인 'ViewBinding'을 '사용'합니다.
-     */
     inner class HistoryViewHolder(private val binding: ViewBinding) : RecyclerView.ViewHolder(binding.root) {
 
-        // (★수정★) 'SimpleDateFormat' '포맷터'로 '변경' (예: "오후 3:05")
         private val timeFormatter = SimpleDateFormat("a h:mm", Locale.KOREA)
 
-        /**
-         * '데이터'('HistoryItem')를 'UI'('한 줄 견본')에 '연결'합니다.
-         */
         fun bind(item: HistoryItem) {
             when (item) {
-                // '운동' 데이터가 '운동' 견본에 '연결'되는 경우
+                // '운동' 데이터
                 is HistoryItem.Exercise -> {
-                    val exerciseBinding = binding as ItemExerciseBinding // '형 변환'
+                    val exerciseBinding = binding as ItemExerciseBinding
                     val session = item.session
 
-                    // (★수정★) 님의 '실제' 모델('RehabSession.kt')에 맞게 수정
-                    exerciseBinding.exerciseNameTextView.text = "운동: ${session.exerciseId}" // (임시 - '운동 이름'으로 '변환' 필요)
+                    exerciseBinding.exerciseNameTextView.text = "운동: ${session.exerciseId}" // (임시)
                     exerciseBinding.exerciseDetailTextView.text =
-                        "${session.sets} 세트 / ${session.reps} 회 (평점: ${session.userRating ?: "없음"})" // (★수정★)
+                        "${session.sets} 세트 / ${session.reps} 회 (평점: ${session.userRating ?: "없음"})"
 
-                    // '기록' 탭에서는 '체크박스' 대신 '시간'을 보여줍니다.
-                    exerciseBinding.exerciseStatusCheckBox.text = timeFormatter.format(session.dateTime) // (★수정★)
-                    exerciseBinding.exerciseStatusCheckBox.isClickable = false // (체크 불가능)
-                    exerciseBinding.exerciseStatusCheckBox.isChecked = false // (체크 상태 해제)
+                    exerciseBinding.exerciseStatusCheckBox.text = timeFormatter.format(session.dateTime)
+                    exerciseBinding.exerciseStatusCheckBox.isClickable = false
+                    exerciseBinding.exerciseStatusCheckBox.isChecked = false
                 }
 
-                // '식단' 데이터가 '식단' 견본에 '연결'되는 경우
+                // '식단' 데이터
                 is HistoryItem.Diet -> {
-                    val dietBinding = binding as ItemDietBinding // '형 변환'
+                    val dietBinding = binding as ItemDietBinding
                     val session = item.session
 
-                    // (★수정★) 님의 '실제' 모델('DietSession.kt')에 맞게 수정
-                    dietBinding.dietNameTextView.text = "식단: ${session.dietId}" // (임시 - '음식 이름'으로 '변환' 필요)
+                    dietBinding.dietNameTextView.text = "식단: ${session.dietId}" // (임시)
                     dietBinding.dietDetailTextView.text =
-                        "섭취량: ${session.actualQuantity} ${session.actualUnit} (만족도: ${session.userSatisfaction ?: "없음"})" // (★수정★)
+                        "섭취량: ${session.actualQuantity} ${session.actualUnit} (만족도: ${session.userSatisfaction ?: "없음"})"
 
-                    // '기록' 탭에서는 '칼로리' 대신 '시간'을 보여줍니다.
-                    dietBinding.dietCaloriesTextView.text = timeFormatter.format(session.dateTime) // (★수정★)
+                    dietBinding.dietCaloriesTextView.text = timeFormatter.format(session.dateTime)
                 }
             }
         }
     }
 
-    // (★수정★) 'const val' '문법 오류' 해결을 위해 'companion object'를 '적용'합니다.
     companion object {
         private const val VIEW_TYPE_EXERCISE = 1
         private const val VIEW_TYPE_DIET = 2
@@ -128,11 +100,11 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
 }
 
 /**
- * '목록'이 '효율적으로' '새로고침'될 수 있도록 돕는 'DiffUtil'입니다.
+ * 'DiffUtil'
  */
 class HistoryDiffCallback : DiffUtil.ItemCallback<HistoryItem>() {
     override fun areItemsTheSame(oldItem: HistoryItem, newItem: HistoryItem): Boolean {
-        return oldItem.id == newItem.id // '추상화'한 'id'로 '비교'
+        return oldItem.id == newItem.id
     }
 
     override fun areContentsTheSame(oldItem: HistoryItem, newItem: HistoryItem): Boolean {

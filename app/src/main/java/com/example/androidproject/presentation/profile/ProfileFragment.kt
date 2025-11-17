@@ -4,36 +4,36 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible // (★ 필수 ★) 'isVisible' 확장 함수 import
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController // (★ 추가 ★) '내비게이션'을 위해 import
-import com.example.androidproject.R // (★ 추가 ★) 'R.id' (내비게이션 'action')을 '참조'
-import com.example.androidproject.databinding.FragmentProfileBinding // (★ 수정 ★) 'FragmentProfileBinding' import
+import androidx.navigation.fragment.findNavController // (★ 필수 ★) '내비게이션'을 위해 import
+import com.example.androidproject.R // (★ 필수 ★) 'R.id' (내비게이션 'action')을 '참조'
+import com.example.androidproject.databinding.FragmentProfileBinding
 import com.example.androidproject.presentation.viewmodel.RehabViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /**
- * [수정 파일 6/7] - '개인정보' Fragment (두뇌)
+ * [수정 파일 3/3] - '개인정보' Fragment (두뇌)
  *
- * (★ 수정 ★) '읽기 전용' UI에 '데이터'를 '표시'하고,
- * '수정' 버튼 '클릭' 시 'ProfileEditFragment'로 '이동'하도록 '변경'합니다.
+ * (★ 수정 ★) '데이터가 없을 때' '입력'을 '유도'하는
+ * '빈 화면'(emptyProfileView)을 '표시'하는 '로직'을 '추가'합니다.
+ * (★ 수정 ★) '__binding' '오타'를 '_binding'으로 '수정'합니다.
  */
 @AndroidEntryPoint
 class ProfileFragment : Fragment() {
 
-    // (★ 수정 ★) '읽기 전용' UI (fragment_profile.xml)의 'Binding'
     private var _binding: FragmentProfileBinding? = null
+    // (★ 수정 ★) '치명적인' '오타' '수정' (__binding -> _binding)
     private val binding get() = _binding!!
 
     // ViewModel은 '공유'
     private val viewModel: RehabViewModel by activityViewModels()
-
-    // (★ 삭제 ★) 'isEditMode' 변수 '제거' ('ProfileEditFragment'로 '이동')
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -46,33 +46,45 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // (★ 수정 ★) '수정' 버튼 '클릭' 시 '수정' 페이지로 '이동'
+        // 1. (★ 수정 ★) '수정' 버튼 '클릭' 시 '수정' 페이지로 '이동'
         binding.editButton.setOnClickListener {
-            // 'nav_graph.xml'에 '새로 추가'한 'action' ID를 '사용'하여 '이동'
             findNavController().navigate(R.id.action_navigation_profile_to_profileEditFragment)
         }
 
-        // (★ 수정 ★) 'UI 상태'를 '관찰'하여 'TextView'에 '표시'
+        // 2. (★ 추가 ★) '환자 정보 입력하기' 버튼 '클릭' 시 '수정' 페이지로 '이동'
+        binding.navigateToEditButton.setOnClickListener {
+            findNavController().navigate(R.id.action_navigation_profile_to_profileEditFragment)
+        }
+
+        // 3. (★ 수정 ★) 'UI 상태'를 '관찰'하여 '3가지' '화면'('로딩', '빈 화면', '데이터')을 '제어'
         observeUiState()
     }
 
-    // (★ 삭제 ★) 'setupEditSaveButton', 'toggleEditMode', 'saveProfileChanges' 함수 '모두' '제거'
-    // (이 로직들은 'ProfileEditFragment'로 '이동'되었습니다.)
-
-
     /**
      * '핵심 두뇌'(ViewModel)의 'uiState'를 '관찰'합니다.
-     * (★ 수정 ★) 'EditText' 대신 'TextView'에 '데이터'를 '설정'합니다.
+     * (★ 수정 ★) '로딩', '빈 화면', '데이터 있음' '상태'를 '제어'합니다.
      */
     private fun observeUiState() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
                 viewModel.uiState.collectLatest { state ->
-                    if (!state.isLoading) {
+
+                    // 1. '로딩' 상태 '제어'
+                    binding.profileLoadingSpinner.isVisible = state.isLoading
+
+                    // 2. (★ 핵심 ★) '빈 화면' '상태' '제어'
+                    val isEmpty = state.userName.isEmpty() && !state.isLoading
+                    binding.emptyProfileView.isVisible = isEmpty
+
+                    // 3. (★ 핵심 ★) '데이터 있음' '상태' '제어'
+                    val hasData = state.userName.isNotEmpty() && !state.isLoading
+                    binding.profileDataView.isVisible = hasData
+
+                    // '데이터가 있을' 경우에만 'TextView'에 '값'을 '설정'
+                    if (hasData) {
                         val user = viewModel.dummyUser // (ViewModel의 '최신' 더미 데이터)
 
-                        // (★ 수정 ★) '읽기 전용' TextView에 '데이터' '표시'
                         binding.nameTextView.text = user.name
                         binding.ageTextView.text = user.age.toString()
                         binding.genderTextView.text = user.gender
@@ -81,7 +93,6 @@ class ProfileFragment : Fragment() {
                         binding.allergyTextView.text =
                             user.allergyInfo.joinToString(", ").ifEmpty { "없음" }
 
-                        // (★ 수정 ★) '환부'와 '질환명'을 '분리'하여 '표시'
                         binding.injuryAreaTextView.text = state.currentInjuryArea ?: "정보 없음"
                         binding.injuryNameTextView.text = state.currentInjuryName ?: "정보 없음"
 
