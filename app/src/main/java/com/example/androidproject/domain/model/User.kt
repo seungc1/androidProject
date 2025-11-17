@@ -2,6 +2,7 @@ package com.example.androidproject.domain.model
 
 data class User(
     val id: String,
+    val password: String,
     val name: String,
     val gender: String,
     val age: Int,

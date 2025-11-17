@@ -85,6 +85,7 @@ class ProfileEditFragment : Fragment() {
             // (1) 'EditText'에서 '현재' 입력된 '값'들을 '가져옵니다'.
             val updatedUser = User(
                 id = viewModel.dummyUser.id,
+                password = viewModel.dummyUser.password,
                 name = binding.nameEditText.text.toString(),
                 gender = binding.genderEditText.text.toString(),
                 age = binding.ageEditText.text.toString().toIntOrNull() ?: 0,
