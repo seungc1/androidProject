@@ -33,8 +33,7 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
-// (★ 추가 ★) 'threeten' '라이브러리' 'import' (API 26 '오류' '해결')
-import org.threeten.bp.DateTimeUtils // (★ API 26 '오류' '해결'용)
+import org.threeten.bp.DateTimeUtils
 import org.threeten.bp.Instant
 import org.threeten.bp.LocalDate
 import org.threeten.bp.ZoneId
@@ -78,12 +77,17 @@ class RehabViewModel @Inject constructor(
     lateinit var dummyUser: User
     lateinit var dummyInjury: Injury
 
+    // (★ 삭제 ★) 'init' '블록'을 '삭제'합니다.
+    /*
     init {
         loadMainDashboardData(forceReload = false)
     }
+    */
 
-    // (loadMainDashboardData - 수정 없음)
-    fun loadMainDashboardData(forceReload: Boolean) {
+    /**
+     * (★ 수정 ★) 'MainActivity'가 '로그인' '성공' '후' '호출'할 '함수'
+     */
+    fun loadDataForUser(userId: String, forceReload: Boolean = false) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
 
@@ -102,8 +106,12 @@ class RehabViewModel @Inject constructor(
             }
 
             try {
+                // (★ 수정 ★) 'User' '모델'에 'password' '필드' '추가'
                 dummyUser = User(
-                    id = "user01", password = "1234", name = "김재활", gender = "남성", age = 30,
+                    id = userId, // (★ 수정 ★) '로그인'한 'userId' '사용'
+                    password = "1234", // ('DB' '연동' '전' '임시' '비밀번호')
+                    name = "김재활 (로그인 됨)", // (이름 '수정')
+                    gender = "남성", age = 30,
                     heightCm = 175, weightKg = 70.5, activityLevel = "활동적",
                     fitnessGoal = "근육 증가", allergyInfo = listOf("땅콩", "새우"),
                     preferredDietType = "일반", targetCalories = 2500,
@@ -111,14 +119,15 @@ class RehabViewModel @Inject constructor(
                     preferredDietaryTypes = listOf("일반식", "저염식"),
                     equipmentAvailable = listOf("덤벨", "밴드"),
                     currentPainLevel = 4,
-                    additionalNotes = "부상 회복에 집중하고 싶습니다. 특히 손목에 부담이 가지 않는 운동을 선호합니다."
+                    additionalNotes = "부상 회복에 집중하고 싶습니다."
                 )
                 dummyInjury = Injury(
                     id = "injury01", name = "손목 염좌", bodyPart = "손목",
                     severity = "경미", description = "가벼운 통증이 있는 상태"
                 )
 
-                getAIRecommendationUseCase(dummyUser.id, dummyInjury)
+                // (★ 수정 ★) 'UseCase' '호출' '시' '로그인'한 'userId' '전달'
+                getAIRecommendationUseCase(userId, dummyInjury)
                     .catch { e ->
                         _uiState.update {
                             it.copy(
@@ -228,26 +237,23 @@ class RehabViewModel @Inject constructor(
         _uiState.update { it.copy(errorMessage = null) }
     }
 
-    // (★ 수정 ★) 'loadHistory' - 'LocalDate'를 'Date'로 '변환'하는 '로직' '추가'
-    fun loadHistory(date: LocalDate) { // (★ 수정 ★) 'Date' -> 'LocalDate'
+    // (loadHistory - 'LocalDate' '타입' '사용' '유지')
+    fun loadHistory(date: LocalDate) {
         viewModelScope.launch {
             _historyUiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 kotlinx.coroutines.delay(500)
 
-                // (★ 수정 ★) 'LocalDate' -> 'java.util.Date'로 '변환' (API 24 '호환')
-                // 'Date.from(...)' '대신' 'DateTimeUtils.toDate(...)' '사용'
                 val selectedDate = DateTimeUtils.toDate(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
                 val calendar = Calendar.getInstance().apply { time = selectedDate }
                 val dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH)
 
-                // (시뮬레이션) '5일', '10일', '15일'에만 '데이터'가 '있다고' '가정'
                 val dummyHistoryItems = if (dayOfMonth == 5 || dayOfMonth == 10 || dayOfMonth == 15) {
                     listOf(
                         HistoryItem.Exercise(
                             RehabSession(
                                 id = "session001", userId = "user01", exerciseId = "ex001",
-                                dateTime = selectedDate, // '변환'된 'Date' '객체' '사용'
+                                dateTime = selectedDate,
                                 sets = 3, reps = 10, durationMinutes = 15,
                                 notes = "조금 아팠음",
                                 userRating = 3
@@ -256,14 +262,14 @@ class RehabViewModel @Inject constructor(
                         HistoryItem.Diet(
                             DietSession(
                                 id = "dietSession001", userId = "user01", dietId = "d001",
-                                dateTime = selectedDate, // '변환'된 'Date' '객체' '사용'
+                                dateTime = selectedDate,
                                 actualQuantity = 1.0, actualUnit = "그릇",
                                 userSatisfaction = 5
                             )
                         )
                     )
                 } else {
-                    emptyList() // '그' '외'의 '날짜'는 '빈' '목록'
+                    emptyList()
                 }
 
                 _historyUiState.update {
@@ -353,7 +359,7 @@ class RehabViewModel @Inject constructor(
         _dietDetailState.update { it.copy(errorMessage = null) }
     }
 
-    // (updateUserProfile - 수정 없음)
+    // (updateUserProfile - 'forceReload' '값' '수정')
     fun updateUserProfile(updatedUser: User, updatedInjuryName: String, updatedInjuryArea: String) {
         viewModelScope.launch {
             dummyUser = updatedUser
@@ -361,16 +367,14 @@ class RehabViewModel @Inject constructor(
                 name = updatedInjuryName,
                 bodyPart = updatedInjuryArea
             )
-            loadMainDashboardData(forceReload = true)
+            // (★ 수정 ★) 'loadMainDashboardData' -> 'loadDataForUser'
+            loadDataForUser(updatedUser.id, forceReload = true)
         }
     }
 
-    // (★ 수정 ★) 'loadAllSessionDates' - 'java.util.Date' -> 'LocalDate' '변환' '로직' '추가'
+    // (loadAllSessionDates - 'threeten' '사용' '유지')
     fun loadAllSessionDates(userId: String) {
         viewModelScope.launch {
-            // (미래) 'getAllSessionDatesUseCase(userId)' '호출' (이 '함수'는 'Date' '목록'을 '반환'한다고 '가정')
-
-            // (시뮬레이션) 'java.util.Date' '목록' '생성'
             val recordedUtilDates = mutableListOf<Date>()
             val calendar = Calendar.getInstance()
 
@@ -378,11 +382,8 @@ class RehabViewModel @Inject constructor(
             calendar.set(Calendar.DAY_OF_MONTH, 10); recordedUtilDates.add(calendar.time)
             calendar.set(Calendar.DAY_OF_MONTH, 15); recordedUtilDates.add(calendar.time)
 
-            // (★ 핵심 ★) 'java.util.Date' '목록'을 'CalendarDay' '목록'으로 '변환'
-            val recordedDaysSet = HashSet<CalendarDay>() // 'HashSet' '사용'
+            val recordedDaysSet = HashSet<CalendarDay>()
             recordedUtilDates.forEach { utilDate ->
-                // (★ 수정 ★) 'java.util.Date' -> 'threeten.LocalDate' -> 'CalendarDay' (API 24 '호환')
-                // 'toInstant()'는 'java.util.Date'의 '메서드' (API 26 '아님')
                 val instant = DateTimeUtils.toInstant(utilDate)
                 val localDate = instant.atZone(ZoneId.systemDefault()).toLocalDate()
                 recordedDaysSet.add(CalendarDay.from(localDate))
