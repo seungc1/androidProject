@@ -1,5 +1,4 @@
 // app/src/main/java/com/example/androidproject/domain/repository/AIApiRepository.kt
-
 package com.example.androidproject.domain.repository
 
 import com.example.androidproject.domain.model.AIAnalysisResult

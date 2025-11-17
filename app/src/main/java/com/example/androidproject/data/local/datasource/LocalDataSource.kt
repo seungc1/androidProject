@@ -1,15 +1,9 @@
 package com.example.androidproject.data.local.datasource
 
-import com.example.androidproject.data.local.dao.DietSessionDao // ✅ [추가]
-import com.example.androidproject.data.local.dao.ExerciseDao
-import com.example.androidproject.data.local.dao.RehabSessionDao // ✅ [추가]
-import com.example.androidproject.data.local.dao.UserDao
-import com.example.androidproject.data.local.entity.DietSessionEntity // ✅ [추가]
-import com.example.androidproject.data.local.entity.ExerciseEntity
-import com.example.androidproject.data.local.entity.RehabSessionEntity // ✅ [추가]
-import com.example.androidproject.data.local.entity.UserEntity
+import com.example.androidproject.data.local.dao.* // 👈 [수정] Wildcard import
+import com.example.androidproject.data.local.entity.* // 👈 [수정] Wildcard import
 import kotlinx.coroutines.flow.Flow
-import java.util.Date // ✅ [추가]
+import java.util.Date
 import javax.inject.Inject
 
 /**
@@ -21,7 +15,8 @@ class LocalDataSource @Inject constructor(
     private val userDao: UserDao,
     private val exerciseDao: ExerciseDao,
     private val rehabSessionDao: RehabSessionDao,
-    private val dietSessionDao: DietSessionDao
+    private val dietSessionDao: DietSessionDao,
+    private val scheduledWorkoutDao: ScheduledWorkoutDao
 ) {
 
     // --- UserDao 관련 함수 ---
@@ -87,5 +82,16 @@ class LocalDataSource @Inject constructor(
      */
     fun getDietSessionsBetween(userId: String, startDate: Date, endDate: Date): Flow<List<DietSessionEntity>> { // ✅ [추가]
         return dietSessionDao.getSessionsBetween(userId, startDate, endDate)
+    }
+    suspend fun upsertWorkouts(workouts: List<ScheduledWorkoutEntity>) {
+        scheduledWorkoutDao.upsertWorkouts(workouts)
+    }
+
+    fun getWorkouts(userId: String): Flow<List<ScheduledWorkoutEntity>> {
+        return scheduledWorkoutDao.getWorkouts(userId)
+    }
+
+    suspend fun clearWorkouts(userId: String) {
+        scheduledWorkoutDao.clearWorkouts(userId)
     }
 }

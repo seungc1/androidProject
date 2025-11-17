@@ -3,10 +3,7 @@ package com.example.androidproject.di
 import android.content.Context
 import androidx.room.Room
 import com.example.androidproject.data.local.AppDatabase
-import com.example.androidproject.data.local.dao.ExerciseDao
-import com.example.androidproject.data.local.dao.UserDao
-import com.example.androidproject.data.local.dao.DietSessionDao
-import com.example.androidproject.data.local.dao.RehabSessionDao
+import com.example.androidproject.data.local.dao.*
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -76,5 +73,11 @@ object DatabaseModule {
     @Singleton
     fun provideDietSessionDao(database: AppDatabase): DietSessionDao {
         return database.dietSessionDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideScheduledWorkoutDao(database: AppDatabase): ScheduledWorkoutDao {
+        return database.scheduledWorkoutDao()
     }
 }

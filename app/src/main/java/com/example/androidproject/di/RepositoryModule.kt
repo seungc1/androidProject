@@ -18,6 +18,8 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import com.example.androidproject.data.repository.WorkoutRoutineRepositoryImpl
+import com.example.androidproject.domain.repository.WorkoutRoutineRepository
 
 @Module // 이 클래스가 Hilt 모듈임을 나타냅니다.
 @InstallIn(SingletonComponent::class) // 이 모듈의 바인딩이 앱의 생명주기 전체에 걸쳐 유효하도록 합니다.
@@ -50,4 +52,10 @@ abstract class RepositoryModule { //  RepositoryModule 클래스 선언은 여�
     abstract fun bindDietSessionRepository(
         dietSessionRepositoryImpl: DietSessionRepositoryImpl
     ): DietSessionRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindWorkoutRoutineRepository(
+        workoutRoutineRepositoryImpl: WorkoutRoutineRepositoryImpl
+    ): WorkoutRoutineRepository
 }
