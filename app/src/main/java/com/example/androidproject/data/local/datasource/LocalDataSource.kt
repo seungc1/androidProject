@@ -7,16 +7,18 @@ import java.util.Date
 import javax.inject.Inject
 
 /**
- * 모든 DAO를 실제로 호출하여 Local(로컬 DB) 데이터를 관리하는 클래스입니다.
- * Hilt가 모든 DAO를 여기에 주입(@Inject)해 줍니다.
+ * (★수정★)
+ * Hilt가 모든 DAO 6개(User, Exercise, RehabSession, DietSession, Injury, Diet)를
+ * 생성자에 주입합니다.
  */
-// ✅ [수정] 생성자에서 새로 만든 DAO 2개를 주입받습니다.
 class LocalDataSource @Inject constructor(
     private val userDao: UserDao,
     private val exerciseDao: ExerciseDao,
     private val rehabSessionDao: RehabSessionDao,
     private val dietSessionDao: DietSessionDao,
-    private val scheduledWorkoutDao: ScheduledWorkoutDao
+    private val injuryDao: InjuryDao,           // 👈 🚨 [추가]
+    private val dietDao: DietDao,               // 👈 🚨 [추가]
+    private val scheduledWorkoutDao: ScheduledWorkoutDao // 👈 🚨 [추가]
 ) {
 
     // --- UserDao 관련 함수 ---
@@ -66,14 +68,34 @@ class LocalDataSource @Inject constructor(
     fun getDietSessionsBetween(userId: String, startDate: Date, endDate: Date): Flow<List<DietSessionEntity>> {
         return dietSessionDao.getSessionsBetween(userId, startDate, endDate)
     }
+
+    // 🚨 [추가] --- InjuryDao 관련 함수 ---
+    suspend fun upsertInjury(injury: InjuryEntity) {
+        injuryDao.upsertInjury(injury)
+    }
+    fun getInjuryById(injuryId: String): Flow<InjuryEntity?> {
+        return injuryDao.getInjuryById(injuryId)
+    }
+    // 🚨 [오류 해결] 'getInjuriesForUser' 함수를 추가합니다.
+    fun getInjuriesForUser(userId: String): Flow<List<InjuryEntity>> {
+        return injuryDao.getInjuriesForUser(userId)
+    }
+
+    // 🚨 [추가] --- DietDao 관련 함수 ---
+    suspend fun upsertDiets(diets: List<DietEntity>) {
+        dietDao.upsertDiets(diets)
+    }
+    fun getDietById(dietId: String): Flow<DietEntity?> {
+        return dietDao.getDietById(dietId)
+    }
+
+    // 🚨 [추가] --- ScheduledWorkoutDao 관련 함수 ---
     suspend fun upsertWorkouts(workouts: List<ScheduledWorkoutEntity>) {
         scheduledWorkoutDao.upsertWorkouts(workouts)
     }
-
     fun getWorkouts(userId: String): Flow<List<ScheduledWorkoutEntity>> {
         return scheduledWorkoutDao.getWorkouts(userId)
     }
-
     suspend fun clearWorkouts(userId: String) {
         scheduledWorkoutDao.clearWorkouts(userId)
     }

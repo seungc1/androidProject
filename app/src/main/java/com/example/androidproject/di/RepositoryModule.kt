@@ -1,57 +1,71 @@
 package com.example.androidproject.di
 
-// Data Layer의 Repository 구현체들을 import
+// (Data Layer)
 import com.example.androidproject.data.repository.DietSessionRepositoryImpl
 import com.example.androidproject.data.repository.RehabRepositoryImpl
 import com.example.androidproject.data.repository.RehabSessionRepositoryImpl
 import com.example.androidproject.data.repository.UserRepositoryImpl
+import com.example.androidproject.data.repository.InjuryRepositoryImpl     // 👈 [추가]
+import com.example.androidproject.data.repository.DietRepositoryImpl      // 👈 [추가]
+import com.example.androidproject.data.repository.WorkoutRoutineRepositoryImpl // 👈 [추가]
 
-// Domain Layer의 Repository 인터페이스들을 import
+// (Domain Layer)
 import com.example.androidproject.domain.repository.DietSessionRepository
 import com.example.androidproject.domain.repository.RehabRepository
 import com.example.androidproject.domain.repository.RehabSessionRepository
 import com.example.androidproject.domain.repository.UserRepository
+import com.example.androidproject.domain.repository.InjuryRepository     // 👈 [추가]
+import com.example.androidproject.domain.repository.DietRepository      // 👈 [추가]
+import com.example.androidproject.domain.repository.WorkoutRoutineRepository // 👈 [추가]
 
-// Dagger/Hilt 관련 import
+// (Dagger/Hilt)
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import com.example.androidproject.data.repository.WorkoutRoutineRepositoryImpl
-import com.example.androidproject.domain.repository.WorkoutRoutineRepository
 
-@Module // 이 클래스가 Hilt 모듈임을 나타냅니다.
-@InstallIn(SingletonComponent::class) // 이 모듈의 바인딩이 앱의 생명주기 전체에 걸쳐 유효하도록 합니다.
-abstract class RepositoryModule { //  RepositoryModule 클래스 선언은 여기에 단 한 번만 있어야 합니다.
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class RepositoryModule {
 
-    // RehabRepository 인터페이스가 요청될 때 RehabRepositoryImpl 구현체를 제공하도록 Hilt에 지시합니다.
     @Binds
-    @Singleton // RehabRepository 인스턴스가 앱 전체에서 단일 인스턴스로 유지되도록 합니다.
+    @Singleton
     abstract fun bindRehabRepository(
         rehabRepositoryImpl: RehabRepositoryImpl
     ): RehabRepository
 
-    // UserRepository 인터페이스에 UserRepositoryImpl 구현체를 바인딩
     @Binds
     @Singleton
     abstract fun bindUserRepository(
         userRepositoryImpl: UserRepositoryImpl
     ): UserRepository
 
-    // RehabSessionRepository 인터페이스에 RehabSessionRepositoryImpl 구현체를 바인딩
     @Binds
     @Singleton
     abstract fun bindRehabSessionRepository(
         rehabSessionRepositoryImpl: RehabSessionRepositoryImpl
     ): RehabSessionRepository
 
-    // DietSessionRepository 인터페이스에 DietSessionRepositoryImpl 구현체를 바인딩
     @Binds
     @Singleton
     abstract fun bindDietSessionRepository(
         dietSessionRepositoryImpl: DietSessionRepositoryImpl
     ): DietSessionRepository
+
+    // 🚨 [추가] 3개의 새 Repository 바인딩
+
+    @Binds
+    @Singleton
+    abstract fun bindInjuryRepository(
+        injuryRepositoryImpl: InjuryRepositoryImpl
+    ): InjuryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDietRepository(
+        dietRepositoryImpl: DietRepositoryImpl
+    ): DietRepository
 
     @Binds
     @Singleton
