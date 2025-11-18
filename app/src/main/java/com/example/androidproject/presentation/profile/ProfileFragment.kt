@@ -55,16 +55,20 @@ class ProfileFragment : Fragment() {
             findNavController().navigate(R.id.action_navigation_profile_to_profileEditFragment)
         }
 
-        // 3. (★ 추가 ★) '계정 변경 (로그아웃)' 버튼 클릭 리스너
+        // 3. (★ 수정 ★) '계정 변경 (로그아웃)' 버튼 클릭 리스너
         binding.accountChangeButton.setOnClickListener {
             // (1) 세션 및 데이터 초기화
             viewModel.logout()
 
             // (2) 로그인 화면으로 이동
-            val intent = Intent(requireContext(), LoginActivity::class.java)
-            // 이전 화면 스택을 모두 지우고 새로 시작
+            // requireContext() 대신 requireActivity()를 사용하여 더 안전하게 이동합니다.
+            val intent = Intent(requireActivity(), LoginActivity::class.java)
+
+            // (중요) 이전 화면 스택을 모두 지우고 새로 시작해야 뒤로가기 했을 때 다시 프로필로 안 돌아옵니다.
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
             startActivity(intent)
+
             // (3) 현재 액티비티(MainActivity) 종료
             requireActivity().finish()
         }
