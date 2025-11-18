@@ -241,6 +241,17 @@
                     android:textAppearance="@style/TextAppearance.App.BodyLarge"
                     tools:text="땅콩, 새우" />
             </LinearLayout>
+
+            <Button
+                android:id="@+id/accountChangeButton"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="16dp"
+                android:text="계정 변경 (로그아웃)"
+                android:textColor="?android:attr/textColorPrimary" />
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
@@ -270,6 +281,7 @@
             android:layout_marginTop="16dp"
             android:text="@string/profile_empty_button"
             android:textAppearance="@style/TextAppearance.App.LabelLarge" />
+
     </LinearLayout>
 
     <ProgressBar

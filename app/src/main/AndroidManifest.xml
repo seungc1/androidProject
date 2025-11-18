@@ -20,18 +20,25 @@
         <activity
             android:name=".presentation.auth.SplashActivity"
             android:exported="true"
-            android:theme="@style/Theme.AndroidProject"> <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
+            android:theme="@style/Theme.AndroidProject">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
         </activity>
 
         <activity
             android:name=".presentation.auth.LoginActivity"
-            android:exported="false" /> <activity
-        android:name=".MainActivity"
-        android:exported="true">
-    </activity>
+            android:exported="false" />
+
+        <activity
+            android:name=".presentation.auth.SignupActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+        </activity>
     </application>
 
 </manifest>

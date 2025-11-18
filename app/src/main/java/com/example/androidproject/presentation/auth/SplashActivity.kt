@@ -9,10 +9,8 @@ import com.example.androidproject.databinding.ActivitySplashBinding
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
- * [새 파일 3/6] - '스플래시(시작)' 화면 '두뇌'
- * 경로: presentation/auth/SplashActivity.kt
- * 앱의 '새로운' '시작 지점'(Launcher)입니다.
- * '로그인' '상태'를 '확인'하고 '적절한' '화면'으로 '이동'시킵니다.
+ * [수정 파일 1/2] - '스플래시(시작)' 화면 '두뇌'
+ * (★ 수정 ★) '자동 로그인' '성공' '시' 'MainActivity'에 'userId'를 '전달'
  */
 @AndroidEntryPoint
 class SplashActivity : AppCompatActivity() {
@@ -25,10 +23,7 @@ class SplashActivity : AppCompatActivity() {
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // 1. 'ViewModel'의 '로그인' '상태' '확인' '결과'를 '관찰'
         observeAuthState()
-
-        // 2. 'ViewModel'에게 '로그인' '상태' '확인'을 '요청'
         viewModel.checkLoginStatus()
     }
 
@@ -36,25 +31,33 @@ class SplashActivity : AppCompatActivity() {
         viewModel.authState.observe(this) { state ->
             when (state) {
                 is AuthState.Loading -> {
-                    // '로딩' 중 (아무것도 하지 않고 '스피너'만 '표시')
+                    // (로딩 중)
                 }
                 is AuthState.Authenticated -> {
                     // '로그인' 됨: 'MainActivity'로 '이동'
-                    navigateTo(MainActivity::class.java)
+                    // (★ 수정 ★) 'userId'를 'Intent'에 '담아' '전달'
+                    navigateTo(MainActivity::class.java, state.userId)
                 }
                 is AuthState.Unauthenticated -> {
                     // '로그인' 안 됨: 'LoginActivity'로 '이동'
-                    navigateTo(LoginActivity::class.java)
+                    navigateTo(LoginActivity::class.java, null)
                 }
             }
         }
     }
 
     /**
-     * '목표' 'Activity'로 '이동'하고 '현재' 'Activity'를 '종료'
+     * (★ 수정 ★) 'userId'를 '전달'하는 'navigateTo' '함수'
      */
-    private fun navigateTo(activityClass: Class<*>) {
-        val intent = Intent(this, activityClass)
+    private fun navigateTo(activityClass: Class<*>, userId: String?) {
+        val intent = Intent(this, activityClass).apply {
+            // (★ 추가 ★) 'userId'가 '있다면' 'Intent'에 '추가'
+            if (userId != null) {
+                putExtra("USER_ID", userId)
+            }
+            // (★ 추가 ★) '뒤로가기' '버튼' '시' '로그인' '화면'이 '다시' '뜨지' '않도록' '스택' '정리'
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
         startActivity(intent)
         finish()
     }

@@ -38,7 +38,7 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val gptApiKey = properties.getProperty("GPT_API_KEY")?.trim('"') ?: ""
+        val gptApiKey = properties.getProperty("GPT_API_KEY")?.trim()?.trim('"') ?: ""
         buildConfigField("String", "GPT_API_KEY", "\"$gptApiKey\"")
     }
 
@@ -90,6 +90,8 @@ dependencies {
     // --- 4. 네트워킹 (Retrofit) ---
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.loggingInterceptor)
 
     // --- 5. 로컬 데이터베이스 (Room) ---
     implementation(libs.androidx.room.runtime)
