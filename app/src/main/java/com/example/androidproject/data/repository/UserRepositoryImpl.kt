@@ -98,11 +98,20 @@ class UserRepositoryImpl @Inject constructor(
         return localFlow
     }
 
+    // (★ 수정 ★) 프로필 업데이트 시 서버 동기화 추가
     override suspend fun updateUserProfile(user: User): Flow<Unit> {
-        // 로컬 업데이트
-        localDataSource.upsertUser(user.toEntity())
-        // (선택) 서버 업데이트 로직 필요 시 여기에 추가 (firebaseDataSource.updateUser...)
-        return flowOf(Unit)
+        return try {
+            // 1. 서버(Firebase)에 먼저 업데이트 시도
+            firebaseDataSource.updateUser(user)
+
+            // 2. 성공 시 로컬(Room)에도 저장 (화면 갱신)
+            localDataSource.upsertUser(user.toEntity())
+
+            flowOf(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            throw e
+        }
     }
 
     override suspend fun checkUserExists(id: String): Boolean {
