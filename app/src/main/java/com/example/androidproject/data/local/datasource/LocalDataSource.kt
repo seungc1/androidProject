@@ -1,5 +1,6 @@
 package com.example.androidproject.data.local.datasource
 
+import com.example.androidproject.data.local.AppDatabase
 import com.example.androidproject.data.local.dao.* // 👈 [수정] Wildcard import
 import com.example.androidproject.data.local.entity.* // 👈 [수정] Wildcard import
 import kotlinx.coroutines.flow.Flow
@@ -12,6 +13,7 @@ import javax.inject.Inject
  * 생성자에 주입합니다.
  */
 class LocalDataSource @Inject constructor(
+    private val database: AppDatabase,
     private val userDao: UserDao,
     private val exerciseDao: ExerciseDao,
     private val rehabSessionDao: RehabSessionDao,
@@ -20,6 +22,9 @@ class LocalDataSource @Inject constructor(
     private val dietDao: DietDao,               // 👈 🚨 [추가]
     private val scheduledWorkoutDao: ScheduledWorkoutDao // 👈 🚨 [추가]
 ) {
+    suspend fun clearAllData() {
+        database.clearAllTables()
+    }
 
     // --- UserDao 관련 함수 ---
     suspend fun upsertUser(user: UserEntity) {

@@ -1,42 +1,57 @@
 package com.example.androidproject.data.repository
 
-import com.example.androidproject.data.local.datasource.LocalDataSource // ✅ [추가]
-import com.example.androidproject.data.mapper.toDomain // ✅ [추가] (3-1단계에서 만듦)
-import com.example.androidproject.data.mapper.toEntity // ✅ [추가] (3-1단계에서 만듦)
+import com.example.androidproject.data.local.datasource.LocalDataSource
+import com.example.androidproject.data.remote.datasource.FirebaseDataSource // (★ 추가)
+import com.example.androidproject.data.mapper.toDomain
+import com.example.androidproject.data.mapper.toEntity
 import com.example.androidproject.domain.model.RehabSession
 import com.example.androidproject.domain.repository.RehabSessionRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map // ✅ [추가]
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-// ✅ [수정] Hilt가 LocalDataSource를 주입하도록 생성자 변경
 class RehabSessionRepositoryImpl @Inject constructor(
-    private val localDataSource: LocalDataSource
+    private val localDataSource: LocalDataSource,
+    private val firebaseDataSource: FirebaseDataSource // (★ 추가 주입)
 ) : RehabSessionRepository {
 
-    // ❌ --- 'MutableStateFlow' (더미 데이터) 관련 코드 '전부 삭제' ---
-    // private val _rehabSessions = ...
-    // ❌ ----------------------------------------------------
-
     override suspend fun addRehabSession(session: RehabSession): Flow<Unit> {
-        // ✅ [수정] Domain 모델(Session)을 Entity로 '번역'하여 LocalDataSource에 전달
+        // 1. Firebase 저장
+        firebaseDataSource.addRehabSession(session)
+        // 2. Local 저장
         localDataSource.addRehabSession(session.toEntity())
-        return flowOf(Unit) // 성공 반환
+        return flowOf(Unit)
     }
 
     override suspend fun getRehabHistory(userId: String): Flow<List<RehabSession>> {
-        // ✅ [수정] LocalDataSource에서 Entity 리스트를 받아 Domain 리스트로 '번역'하여 반환
-        return localDataSource.getRehabHistory(userId).map { entityList ->
-            entityList.map { it.toDomain() } // it == RehabSessionEntity
+        // 1. 로컬 데이터 구독
+        val localData = localDataSource.getRehabHistory(userId).map { entityList ->
+            entityList.map { it.toDomain() }
         }
+
+        // 2. 서버 데이터 동기화
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val remoteSessions = firebaseDataSource.getRehabHistory(userId)
+                remoteSessions.forEach { session ->
+                    localDataSource.addRehabSession(session.toEntity())
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return localData
     }
 
     override suspend fun getRehabSessionsBetween(userId: String, startDate: Date, endDate: Date): Flow<List<RehabSession>> {
-        // ✅ [수정] LocalDataSource에서 기간별 Entity 리스트를 받아 Domain 리스트로 '번역'
+        // (기간 조회는 보통 분석용이므로 로컬 데이터만 사용하거나, 필요 시 별도 동기화 로직 추가)
         return localDataSource.getRehabSessionsBetween(userId, startDate, endDate).map { entityList ->
             entityList.map { it.toDomain() }
         }

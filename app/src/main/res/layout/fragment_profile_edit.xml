@@ -50,14 +50,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            app:expandedHintEnabled="false"
             android:hint="환부 (예: 손목, 어깨)">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/injuryAreaEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textCapSentences"
-                tools:text="손목" />
+                android:inputType="textCapSentences" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -66,31 +66,52 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            app:expandedHintEnabled="false"
             android:hint="질환명 (예: 손목 염좌)">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/injuryNameEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textCapSentences"
-                tools:text="손목 염좌" />
+                android:inputType="textCapSentences" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/painLevelInputLayout"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:hint="현재 통증 수준 (1-10)">
+            android:layout_marginTop="16dp"
+            android:orientation="vertical">
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/painLevelEditText"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="현재 통증 수준 (0: 없음 ~ 10: 극심함)"
+                android:textAppearance="@style/TextAppearance.App.TitleSmall"
+                android:textColor="?android:attr/textColorSecondary" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/painLevelSlider"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number"
-                tools:text="4" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:contentDescription="현재 통증 수준"
+                android:stepSize="1.0"
+                android:valueFrom="0.0"
+                android:valueTo="10.0"
+                android:value="4.0"
+                app:thumbRadius="10dp"
+                app:tickVisible="true" />
+
+            <TextView
+                android:id="@+id/painLevelValueTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="4"
+                android:textStyle="bold"
+                android:textAppearance="@style/TextAppearance.App.TitleSmall"
+                android:textColor="?attr/colorPrimary" />
+        </LinearLayout>
+
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/additionalNotesInputLayout"
@@ -98,6 +119,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            app:expandedHintEnabled="false"
             android:hint="AI에게 전달할 추가 요청 사항">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -105,8 +127,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textMultiLine"
-                android:minLines="3"
-                tools:text="부상 회복에 집중하고 싶습니다." />
+                android:minLines="3" />
         </com.google.android.material.textfield.TextInputLayout>
 
 
@@ -123,14 +144,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            app:expandedHintEnabled="false"
             android:hint="이름">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/nameEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textCapSentences"
-                tools:text="김재활" />
+                android:inputType="textCapSentences" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -139,14 +159,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            app:expandedHintEnabled="false"
             android:hint="나이">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/ageEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number"
-                tools:text="30" />
+                android:inputType="number" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -155,14 +174,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            app:expandedHintEnabled="false"
             android:hint="성별">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/genderEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textCapSentences"
-                tools:text="남성" />
+                android:inputType="textCapSentences" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -171,14 +189,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            app:expandedHintEnabled="false"
             android:hint="키 (cm)">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/heightEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number"
-                tools:text="175" />
+                android:inputType="number" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -187,14 +204,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            app:expandedHintEnabled="false"
             android:hint="몸무게 (kg)">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/weightEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="numberDecimal"
-                tools:text="70.5" />
+                android:inputType="numberDecimal" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -203,14 +219,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            app:expandedHintEnabled="false"
             android:hint="알레르기 정보 (쉼표로 구분)">
-
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/allergyEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="textCapSentences"
-                tools:text="땅콩, 새우" />
+                android:inputType="textCapSentences" />
         </com.google.android.material.textfield.TextInputLayout>
 
     </LinearLayout>

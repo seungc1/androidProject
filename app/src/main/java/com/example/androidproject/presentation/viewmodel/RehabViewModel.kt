@@ -30,7 +30,8 @@ class RehabViewModel @Inject constructor(
     private val userRepository: UserRepository,
     private val injuryRepository: InjuryRepository,
     private val dietRepository: DietRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val localDataSource: com.example.androidproject.data.local.datasource.LocalDataSource
 ) : ViewModel() {
 
     // region [StateFlow Definitions]
@@ -207,9 +208,17 @@ class RehabViewModel @Inject constructor(
     }
 
     fun logout() {
-        sessionManager.clearSession()
-        _currentUser.value = null
-        _currentInjury.value = null
+        viewModelScope.launch { // (★ Coroutine Scope 필요)
+            // 1. 로컬 DB 데이터 싹 지우기
+            localDataSource.clearAllData()
+
+            // 2. 세션 정보 지우기
+            sessionManager.clearSession()
+
+            // 3. 상태 초기화
+            _currentUser.value = null
+            _currentInjury.value = null
+        }
     }
     // endregion
 

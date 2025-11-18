@@ -1,42 +1,56 @@
 package com.example.androidproject.data.repository
 
-import com.example.androidproject.data.local.datasource.LocalDataSource // ✅ [추가]
-import com.example.androidproject.data.mapper.toDomain // ✅ [추가] (3-1단계에서 만듦)
-import com.example.androidproject.data.mapper.toEntity // ✅ [추가] (3-1단계에서 만듦)
+import com.example.androidproject.data.local.datasource.LocalDataSource
+import com.example.androidproject.data.remote.datasource.FirebaseDataSource // (★ 추가)
+import com.example.androidproject.data.mapper.toDomain
+import com.example.androidproject.data.mapper.toEntity
 import com.example.androidproject.domain.model.DietSession
 import com.example.androidproject.domain.repository.DietSessionRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map // ✅ [추가]
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-// ✅ [수정] Hilt가 LocalDataSource를 주입하도록 생성자 변경
 class DietSessionRepositoryImpl @Inject constructor(
-    private val localDataSource: LocalDataSource
+    private val localDataSource: LocalDataSource,
+    private val firebaseDataSource: FirebaseDataSource // (★ 추가 주입)
 ) : DietSessionRepository {
 
-    // ❌ --- 'MutableStateFlow' (더미 데이터) 관련 코드 '전부 삭제' ---
-    // private val _dietSessions = ...
-    // ❌ ----------------------------------------------------
-
     override suspend fun addDietSession(session: DietSession): Flow<Unit> {
-        // ✅ [수정] Domain 모델(Session)을 Entity로 '번역'하여 LocalDataSource에 전달
+        // 1. Firebase 저장
+        firebaseDataSource.addDietSession(session)
+        // 2. Local 저장
         localDataSource.addDietSession(session.toEntity())
-        return flowOf(Unit) // 성공 반환
+        return flowOf(Unit)
     }
 
     override suspend fun getDietHistory(userId: String): Flow<List<DietSession>> {
-        // ✅ [수정] LocalDataSource에서 Entity 리스트를 받아 Domain 리스트로 '번역'하여 반환
-        return localDataSource.getDietHistory(userId).map { entityList ->
-            entityList.map { it.toDomain() } // it == DietSessionEntity
+        // 1. 로컬 데이터 구독
+        val localData = localDataSource.getDietHistory(userId).map { entityList ->
+            entityList.map { it.toDomain() }
         }
+
+        // 2. 서버 데이터 동기화
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val remoteSessions = firebaseDataSource.getDietHistory(userId)
+                remoteSessions.forEach { session ->
+                    localDataSource.addDietSession(session.toEntity())
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return localData
     }
 
     override suspend fun getDietSessionsBetween(userId: String, startDate: Date, endDate: Date): Flow<List<DietSession>> {
-        // ✅ [수정] LocalDataSource에서 기간별 Entity 리스트를 받아 Domain 리스트로 '번역'
         return localDataSource.getDietSessionsBetween(userId, startDate, endDate).map { entityList ->
             entityList.map { it.toDomain() }
         }
