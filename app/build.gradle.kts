@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.androidx.navigation.safeargs.kotlin)
     id("org.jetbrains.kotlin.kapt")
     id("com.google.dagger.hilt.android")
+    id("com.google.gms.google-services")
 }
 
 // local.properties 파일에서 API 키를 읽어오기 위한 설정
@@ -92,6 +93,9 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.loggingInterceptor)
+    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation(libs.kotlinx.coroutines.play.services)
 
     // --- 5. 로컬 데이터베이스 (Room) ---
     implementation(libs.androidx.room.runtime)
@@ -112,4 +116,12 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.hilt.android.testing)
     kaptAndroidTest(libs.hilt.compiler)
+
+    // (★ 여기를 추가해주세요 ★) Firebase 의존성 추가
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+
+    // Coroutines와 Firebase 연동 (await() 함수 사용을 위해 필요)
+    implementation(libs.kotlinx.coroutines.play.services)
 }
