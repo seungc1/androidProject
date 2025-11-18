@@ -1,6 +1,7 @@
 package com.example.androidproject
 
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.fragment.NavHostFragment // (★필수★)
 import androidx.navigation.ui.NavigationUI // (★필수★)
@@ -21,7 +22,6 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         // (★필수★) '하단 툴바'와 '지도'를 '연결'합니다.
         setupNavigation()
     }

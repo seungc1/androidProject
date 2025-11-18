@@ -19,17 +19,13 @@ class AIApiRepositoryImpl @Inject constructor(
     private val gson: Gson
 ) : AIApiRepository {
 
-    /**
-     * AI 루틴 추천 요청 (Flow)
-     * (try-catch가 제거된 버전)
-     */
     override suspend fun getAIRehabAndDietRecommendation(params: RecommendationParams): Flow<AIRecommendationResult> = flow {
 
         val systemPrompt = createGptSystemPrompt()
         val userPrompt = createGptUserPrompt(params)
 
         val request = GptRequest(
-            model = "gpt-4-turbo",
+            model = "gpt-4-turbo", // 모델 확인 (권한 없으면 gpt-3.5-turbo로 변경)
             messages = listOf(
                 GptMessage(role = "system", content = systemPrompt),
                 GptMessage(role = "user", content = userPrompt)
@@ -37,6 +33,7 @@ class AIApiRepositoryImpl @Inject constructor(
             response_format = ResponseFormat(type = "json_object")
         )
 
+        // [수정됨] API 호출 시 request만 전달 (API 키 파라미터 제거)
         val gptResponse = gptApiService.getChatCompletion(request = request)
         val jsonResponseString = gptResponse.choices.firstOrNull()?.message?.content
 
@@ -44,15 +41,10 @@ class AIApiRepositoryImpl @Inject constructor(
             val aiResult = parseGptResponseToAIRecommendationResult(jsonResponseString)
             emit(aiResult)
         } else {
-            // (AI 응답이 비어있는 경우, 성공이지만 빈 목록으로 간주)
             emit(createErrorResult("AI 응답이 비어있습니다."))
         }
     }
 
-    /**
-     * AI 주간 분석 요청 (Flow)
-     * (try-catch가 제거된 버전)
-     */
     override suspend fun analyzeRehabProgress(rehabData: RehabData): Flow<AIAnalysisResult> = flow {
         val systemPrompt = createAnalysisSystemPrompt()
         val userPrompt = createAnalysisUserPrompt(rehabData)
@@ -66,6 +58,7 @@ class AIApiRepositoryImpl @Inject constructor(
             response_format = ResponseFormat(type = "json_object")
         )
 
+        // [수정됨] API 호출 시 request만 전달
         val gptResponse = gptApiService.getChatCompletion(request = request)
         val jsonResponseString = gptResponse.choices.firstOrNull()?.message?.content
 
@@ -75,8 +68,8 @@ class AIApiRepositoryImpl @Inject constructor(
         } else {
             emit(createErrorAnalysisResult("AI 분석 응답이 비어있습니다."))
         }
-    }
 
+    }
     /**
      * (★수정★) AI 추천용 시스템 프롬프트
      * (HTTP 400 오류 해결을 위해 "JSON" 단어 추가)

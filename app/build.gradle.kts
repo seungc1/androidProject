@@ -38,7 +38,7 @@ android {
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val gptApiKey = properties.getProperty("GPT_API_KEY")?.trim('"') ?: ""
+        val gptApiKey = properties.getProperty("GPT_API_KEY")?.trim()?.trim('"') ?: ""
         buildConfigField("String", "GPT_API_KEY", "\"$gptApiKey\"")
     }
 
