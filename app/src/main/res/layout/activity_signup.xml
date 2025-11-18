@@ -5,38 +5,32 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="32dp"
-    tools:context=".presentation.auth.LoginActivity">
+    tools:context=".presentation.auth.SignupActivity">
 
     <TextView
-        android:id="@+id/loginTitleTextView"
+        android:id="@+id/signupTitleTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Rehab AI"
-        android:textAppearance="@style/TextAppearance.App.DisplayMedium"
-        app:layout_constraintBottom_toTopOf="@+id/usernameInputLayout"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:text="@string/signup_title"
+        android:textAppearance="@style/TextAppearance.App.HeadlineMedium"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.4"
-        app:layout_constraintVertical_chainStyle="packed" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/usernameInputLayout"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="24dp"
         android:hint="@string/login_username_hint"
-        app:layout_constraintBottom_toTopOf="@+id/passwordInputLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/loginTitleTextView">
+        app:layout_constraintTop_toBottomOf="@+id/signupTitleTextView">
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/usernameEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textEmailAddress"
-            tools:text="test" />
+            android:inputType="textEmailAddress" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
@@ -47,7 +41,6 @@
         android:layout_marginTop="16dp"
         android:hint="@string/login_password_hint"
         app:endIconMode="password_toggle"
-        app:layout_constraintBottom_toTopOf="@+id/loginButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/usernameInputLayout">
@@ -55,46 +48,50 @@
             android:id="@+id/passwordEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="textPassword"
-            tools:text="1234" />
+            android:inputType="textPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/passwordConfirmInputLayout"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="@string/signup_password_confirm_hint"
+        app:endIconMode="password_toggle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/passwordInputLayout">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/passwordConfirmEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+
     <Button
-        android:id="@+id/loginButton"
+        android:id="@+id/signupButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:padding="16dp"
-        android:text="@string/login_button_text"
+        android:text="@string/signup_button_text"
         android:textAppearance="@style/TextAppearance.App.LabelLarge"
-        app:layout_constraintBottom_toTopOf="@+id/signupButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/passwordInputLayout" />
-
-    <Button
-        android:id="@+id/signupButton"
-        style="@style/Widget.Material3.Button.TextButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/login_signup_button_text"
-        android:textAppearance="@style/TextAppearance.App.LabelLarge"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/loginButton" />
+        app:layout_constraintTop_toBottomOf="@+id/passwordConfirmInputLayout" />
 
     <ProgressBar
-        android:id="@+id/loginLoadingSpinner"
+        android:id="@+id/signupLoadingSpinner"
         style="?android:attr/progressBarStyle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@+id/loginButton"
-        app:layout_constraintEnd_toEndOf="@+id/loginButton"
-        app:layout_constraintStart_toStartOf="@+id/loginButton"
-        app:layout_constraintTop_toTopOf="@+id/loginButton"
+        app:layout_constraintBottom_toBottomOf="@+id/signupButton"
+        app:layout_constraintEnd_toEndOf="@+id/signupButton"
+        app:layout_constraintStart_toStartOf="@+id/signupButton"
+        app:layout_constraintTop_toTopOf="@+id/signupButton"
         tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

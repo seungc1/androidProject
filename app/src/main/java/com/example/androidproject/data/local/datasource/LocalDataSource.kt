@@ -29,6 +29,13 @@ class LocalDataSource @Inject constructor(
         return userDao.getUserById(userId)
     }
 
+    // (★ 추가 ★) '아이디' '중복' '확인' '통로'
+    suspend fun getUserCountById(id: String): Int {
+        return userDao.getUserCountById(id)
+    }
+
+    // --- (이하 Exercise, Rehab, Diet '관련' '함수' '수정' '없음') ---
+
     // --- ExerciseDao 관련 함수 ---
     suspend fun upsertExercises(exercises: List<ExerciseEntity>) {
         exerciseDao.upsertExercises(exercises)
