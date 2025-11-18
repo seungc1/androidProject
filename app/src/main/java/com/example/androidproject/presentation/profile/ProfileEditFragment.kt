@@ -1,18 +1,23 @@
 package com.example.androidproject.presentation.profile
 
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.example.androidproject.R
 import com.example.androidproject.databinding.FragmentProfileEditBinding
 import com.example.androidproject.domain.model.User
 import com.example.androidproject.presentation.viewmodel.RehabViewModel
+import com.google.android.material.button.MaterialButton
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -23,6 +28,9 @@ class ProfileEditFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: RehabViewModel by activityViewModels()
+
+    // (★추가★) 현재 선택된 성별을 추적하는 변수
+    private var selectedGender: String = ""
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -37,6 +45,7 @@ class ProfileEditFragment : Fragment() {
 
         setupSaveButton()
         setupPainLevelSlider()
+        setupGenderButtons() // (★추가★) 성별 버튼 리스너 설정
         loadCurrentProfileData()
         handleBackPress()
     }
@@ -57,25 +66,71 @@ class ProfileEditFragment : Fragment() {
     }
 
     private fun setupPainLevelSlider() {
-        // (★수정★) 슬라이더 값이 바뀔 때마다 텍스트+설명 업데이트
         binding.painLevelSlider.addOnChangeListener { _, value, _ ->
             updatePainLevelText(value.toInt())
         }
     }
 
-    /**
-     * (★추가★) 통증 점수에 따른 설명을 텍스트뷰에 표시하는 함수
-     */
     private fun updatePainLevelText(value: Int) {
         val description = when (value) {
             0 -> "통증 없음"
-            in 1..3 -> "경미함 (약간 불편)"
-            in 4..6 -> "중등도 (일상생활 불편)"
-            in 7..9 -> "심함 (매우 고통스러움)"
-            10 -> "극심함 (응급 상황)"
+            1 -> "아주 경미함 (거의 느껴지지 않음)"
+            2 -> "경미함 (약간 거슬리는 정도)"
+            3 -> "약한 통증 (참을 수 있음)"
+            4 -> "불편함 (치통 정도의 통증)"
+            5 -> "통증 있음 (계속 신경 쓰임)"
+            6 -> "꽤 아픔 (활동에 지장이 생김)"
+            7 -> "심함 (진통제가 필요한 수준)"
+            8 -> "매우 심함 (일상생활 불가)"
+            9 -> "극심함 (참기 힘든 고통)"
+            10 -> "최악의 통증 (응급 상황)"
             else -> ""
         }
         binding.painLevelValueTextView.text = "$value - $description"
+    }
+
+    // (★추가★) 성별 버튼 클릭 리스너
+    private fun setupGenderButtons() {
+        binding.genderMaleButton.setOnClickListener {
+            updateGenderSelection("남성")
+        }
+        binding.genderFemaleButton.setOnClickListener {
+            updateGenderSelection("여성")
+        }
+    }
+
+    // (★추가★) 선택된 성별에 따라 버튼 스타일(색상, 테두리) 변경
+    private fun updateGenderSelection(gender: String) {
+        selectedGender = gender
+
+        val primaryColor = ContextCompat.getColor(requireContext(), com.google.android.material.R.color.design_default_color_primary)
+        val onPrimaryColor = ContextCompat.getColor(requireContext(), com.google.android.material.R.color.design_default_color_on_primary)
+        val outlineColor = Color.GRAY // 또는 테마의 outline color
+        val surfaceColor = Color.TRANSPARENT
+
+        // 남성 버튼 스타일 업데이트
+        if (gender == "남성") {
+            setButtonStyle(binding.genderMaleButton, true, primaryColor, onPrimaryColor, outlineColor)
+            setButtonStyle(binding.genderFemaleButton, false, primaryColor, onPrimaryColor, outlineColor)
+        } else if (gender == "여성") {
+            setButtonStyle(binding.genderMaleButton, false, primaryColor, onPrimaryColor, outlineColor)
+            setButtonStyle(binding.genderFemaleButton, true, primaryColor, onPrimaryColor, outlineColor)
+        }
+    }
+
+    private fun setButtonStyle(button: MaterialButton, isSelected: Boolean, primary: Int, onPrimary: Int, outline: Int) {
+        if (isSelected) {
+            // 선택됨: 배경색(Primary), 글자색(White), 테두리 없음
+            button.backgroundTintList = ColorStateList.valueOf(primary)
+            button.setTextColor(onPrimary)
+            button.strokeWidth = 0
+        } else {
+            // 선택 안됨: 배경색(투명), 글자색(Primary or Gray), 테두리 있음
+            button.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
+            button.setTextColor(primary) // 또는 Color.GRAY
+            button.strokeColor = ColorStateList.valueOf(outline)
+            button.strokeWidth = 3 // 1dp 정도 (px 단위이므로 3 정도 줌)
+        }
     }
 
     private fun loadCurrentProfileData() {
@@ -89,8 +144,8 @@ class ProfileEditFragment : Fragment() {
             binding.ageEditText.hint = user.age.toString()
             binding.ageEditText.setText("")
 
-            binding.genderEditText.hint = user.gender
-            binding.genderEditText.setText("")
+            // (★수정★) 초기 성별 설정
+            updateGenderSelection(user.gender)
 
             binding.heightEditText.hint = user.heightCm.toString()
             binding.heightEditText.setText("")
@@ -107,7 +162,6 @@ class ProfileEditFragment : Fragment() {
             binding.injuryNameEditText.hint = injury.name
             binding.injuryNameEditText.setText("")
 
-            // (★수정★) 초기값 설정 시에도 설명 텍스트 업데이트
             val painLevel = user.currentPainLevel.toFloat().coerceIn(0f, 10f)
             binding.painLevelSlider.value = painLevel
             updatePainLevelText(painLevel.toInt())
@@ -124,7 +178,11 @@ class ProfileEditFragment : Fragment() {
 
             val inputName = binding.nameEditText.text.toString()
             val inputAge = binding.ageEditText.text.toString()
-            val inputGender = binding.genderEditText.text.toString()
+
+            // (★수정★) 변수에 저장된 성별 사용
+            // 초기값이 빈 문자열일 수 있으므로, 선택 안했으면 기존 값 유지
+            val finalGender = if (selectedGender.isNotEmpty()) selectedGender else currentUser.gender
+
             val inputHeight = binding.heightEditText.text.toString()
             val inputWeight = binding.weightEditText.text.toString()
             val inputAllergy = binding.allergyEditText.text.toString()
@@ -135,7 +193,6 @@ class ProfileEditFragment : Fragment() {
 
             val finalName = inputName.ifBlank { currentUser.name }
             val finalAge = inputAge.toIntOrNull() ?: currentUser.age
-            val finalGender = inputGender.ifBlank { currentUser.gender }
             val finalHeight = inputHeight.toIntOrNull() ?: currentUser.heightCm
             val finalWeight = inputWeight.toDoubleOrNull() ?: currentUser.weightKg
             val finalInjuryArea = inputInjuryArea.ifBlank { currentInjury.bodyPart }
@@ -149,8 +206,9 @@ class ProfileEditFragment : Fragment() {
                 Toast.makeText(context, "나이를 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            // (★수정★) 성별 유효성 검사
             if (finalGender.isBlank() || finalGender == "미설정") {
-                Toast.makeText(context, "성별을 입력해주세요.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "성별을 선택해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             if (finalHeight <= 0) {
