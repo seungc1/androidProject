@@ -1,16 +1,16 @@
 package com.example.androidproject.data.local.datasource
 
 import com.example.androidproject.data.local.AppDatabase
-import com.example.androidproject.data.local.dao.* // 👈 [수정] Wildcard import
-import com.example.androidproject.data.local.entity.* // 👈 [수정] Wildcard import
+import com.example.androidproject.data.local.dao.*
+import com.example.androidproject.data.local.entity.*
+import kotlinx.coroutines.Dispatchers // (★필수★) 스레드 전환을 위해 import
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext // (★필수★) 스레드 전환을 위해 import
 import java.util.Date
 import javax.inject.Inject
 
 /**
- * (★수정★)
- * Hilt가 모든 DAO 6개(User, Exercise, RehabSession, DietSession, Injury, Diet)를
- * 생성자에 주입합니다.
+ * (★수정★) clearAllData 함수에 스레드 처리 추가
  */
 class LocalDataSource @Inject constructor(
     private val database: AppDatabase,
@@ -18,12 +18,18 @@ class LocalDataSource @Inject constructor(
     private val exerciseDao: ExerciseDao,
     private val rehabSessionDao: RehabSessionDao,
     private val dietSessionDao: DietSessionDao,
-    private val injuryDao: InjuryDao,           // 👈 🚨 [추가]
-    private val dietDao: DietDao,               // 👈 🚨 [추가]
-    private val scheduledWorkoutDao: ScheduledWorkoutDao // 👈 🚨 [추가]
+    private val injuryDao: InjuryDao,
+    private val dietDao: DietDao,
+    private val scheduledWorkoutDao: ScheduledWorkoutDao
 ) {
+    /**
+     * (★수정★) DB 전체 삭제 (로그아웃 시 호출됨)
+     * 메인 스레드에서 호출하면 크래시가 나므로, IO 스레드로 전환하여 실행합니다.
+     */
     suspend fun clearAllData() {
-        database.clearAllTables()
+        withContext(Dispatchers.IO) {
+            database.clearAllTables()
+        }
     }
 
     // --- UserDao 관련 함수 ---
@@ -34,12 +40,9 @@ class LocalDataSource @Inject constructor(
         return userDao.getUserById(userId)
     }
 
-    // (★ 추가 ★) '아이디' '중복' '확인' '통로'
     suspend fun getUserCountById(id: String): Int {
         return userDao.getUserCountById(id)
     }
-
-    // --- (이하 Exercise, Rehab, Diet '관련' '함수' '수정' '없음') ---
 
     // --- ExerciseDao 관련 함수 ---
     suspend fun upsertExercises(exercises: List<ExerciseEntity>) {
@@ -74,19 +77,18 @@ class LocalDataSource @Inject constructor(
         return dietSessionDao.getSessionsBetween(userId, startDate, endDate)
     }
 
-    // 🚨 [추가] --- InjuryDao 관련 함수 ---
+    // --- InjuryDao 관련 함수 ---
     suspend fun upsertInjury(injury: InjuryEntity) {
         injuryDao.upsertInjury(injury)
     }
     fun getInjuryById(injuryId: String): Flow<InjuryEntity?> {
         return injuryDao.getInjuryById(injuryId)
     }
-    // 🚨 [오류 해결] 'getInjuriesForUser' 함수를 추가합니다.
     fun getInjuriesForUser(userId: String): Flow<List<InjuryEntity>> {
         return injuryDao.getInjuriesForUser(userId)
     }
 
-    // 🚨 [추가] --- DietDao 관련 함수 ---
+    // --- DietDao 관련 함수 ---
     suspend fun upsertDiets(diets: List<DietEntity>) {
         dietDao.upsertDiets(diets)
     }
@@ -94,7 +96,7 @@ class LocalDataSource @Inject constructor(
         return dietDao.getDietById(dietId)
     }
 
-    // 🚨 [추가] --- ScheduledWorkoutDao 관련 함수 ---
+    // --- ScheduledWorkoutDao 관련 함수 ---
     suspend fun upsertWorkouts(workouts: List<ScheduledWorkoutEntity>) {
         scheduledWorkoutDao.upsertWorkouts(workouts)
     }
