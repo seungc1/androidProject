@@ -40,7 +40,8 @@ object NetworkModule {
 
         // 3. 로그 인터셉터 (디버깅용)
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+            else HttpLoggingInterceptor.Level.NONE
         }
 
         return OkHttpClient.Builder()
