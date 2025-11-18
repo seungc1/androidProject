@@ -16,7 +16,7 @@ interface DietSessionDao {
     @Query("SELECT * FROM diet_session_table WHERE userId = :userId ORDER BY dateTime DESC")
     fun getDietHistory(userId: String): Flow<List<DietSessionEntity>>
 
-    // UseCase에서 7일간의 기록을 요청하므로
-    @Query("SELECT * FROM diet_session_table WHERE userId = :userId AND dateTime BETWEEN :startDate AND :endDate")
+    // (★ 수정 ★) 'BETWEEN' 대신 명확한 부등호 사용 (start <= time < end)
+    @Query("SELECT * FROM diet_session_table WHERE userId = :userId AND dateTime >= :startDate AND dateTime < :endDate")
     fun getSessionsBetween(userId: String, startDate: Date, endDate: Date): Flow<List<DietSessionEntity>>
 }
