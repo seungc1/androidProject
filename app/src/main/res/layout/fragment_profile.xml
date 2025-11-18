@@ -16,7 +16,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:visibility="gone">
+        tools:visibility="visible">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -252,6 +252,14 @@
                 android:text="계정 변경 (로그아웃)"
                 android:textColor="?android:attr/textColorPrimary" />
 
+            <Button
+                android:id="@+id/generateTestDataButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="[개발용] 지난 7일 기록 생성"
+                android:textColor="@android:color/holo_red_light" />
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
@@ -281,7 +289,6 @@
             android:layout_marginTop="16dp"
             android:text="@string/profile_empty_button"
             android:textAppearance="@style/TextAppearance.App.LabelLarge" />
-
     </LinearLayout>
 
     <ProgressBar
