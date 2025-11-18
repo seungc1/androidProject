@@ -334,6 +334,21 @@ class FirebaseDataSource @Inject constructor(
         // (실제 앱에서는 로그인 후에만 데이터 접근하므로 이럴 일은 적음)
         throw Exception("사용자가 로그인되어 있지 않습니다.")
     }
+    suspend fun getInjury(injuryId: String): Injury? {
+        val currentUser = auth.currentUser ?: return null
+        val snapshot = firestore.collection("users").document(currentUser.uid)
+            .collection("injuries").document(injuryId).get().await()
+
+        if (!snapshot.exists()) return null
+
+        return Injury(
+            id = snapshot.getString("id") ?: "",
+            name = snapshot.getString("name") ?: "",
+            bodyPart = snapshot.getString("bodyPart") ?: "",
+            severity = snapshot.getString("severity") ?: "",
+            description = snapshot.getString("description") ?: ""
+        )
+    }
 
     private fun getUserDocRef(uid: String) = firestore.collection("users").document(uid)
 }
