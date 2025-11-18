@@ -17,5 +17,9 @@ data class UserEntity(
     val allergyInfo: String,
     val preferredDietType: String,
     val targetCalories: Int?,
-    val currentInjuryId: String?
+    val currentInjuryId: String?,
+    val preferredDietaryTypes: String,
+    val equipmentAvailable: String,
+    val currentPainLevel: Int,
+    val additionalNotes: String?
 )
