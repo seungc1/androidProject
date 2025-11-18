@@ -61,24 +61,28 @@ class RehabViewModel @Inject constructor(
 
     private fun loadUserAndInjury(userId: String) {
         viewModelScope.launch {
-            // 1. 사용자 정보 로드
-            val user = userRepository.getUserProfile(userId).first()
-            _currentUser.value = user
-            dummyUser = user
+            // 1. 사용자 정보 '지속 관찰' (collectLatest)
+            userRepository.getUserProfile(userId).collectLatest { user ->
+                _currentUser.value = user
+                dummyUser = user
 
-            // 2. 부상 정보 로드
-            val injuryId = user.currentInjuryId
-            if (injuryId != null) {
-                val injury = injuryRepository.getInjuryById(injuryId).first()
-                _currentInjury.value = injury
-                dummyInjury = injury ?: createEmptyInjury()
-            } else {
-                _currentInjury.value = null
-                dummyInjury = createEmptyInjury()
+                // 2. 부상 정보 로드
+                val injuryId = user.currentInjuryId
+                if (injuryId != null) {
+                    // 부상 정보도 '지속 관찰'하여 동기화 시 자동 갱신
+                    injuryRepository.getInjuryById(injuryId).collectLatest { injury ->
+                        _currentInjury.value = injury
+                        dummyInjury = injury ?: createEmptyInjury()
+
+                        // 데이터가 준비되면 대시보드 로드
+                        loadMainDashboardData(forceReload = false)
+                    }
+                } else {
+                    _currentInjury.value = null
+                    dummyInjury = createEmptyInjury()
+                    loadMainDashboardData(forceReload = false)
+                }
             }
-
-            // 3. 데이터 로드 시작
-            loadMainDashboardData(forceReload = false)
         }
     }
     // endregion

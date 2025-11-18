@@ -142,9 +142,6 @@ fun DietRecommendation.toDomain(): Diet {
     )
 }
 
-
-// --- User Mappers ---
-// (기존 팀원 코드 유지)
 fun UserEntity.toDomain(): User {
     return User(
         id = this.id,
@@ -156,15 +153,14 @@ fun UserEntity.toDomain(): User {
         weightKg = this.weightKg,
         activityLevel = this.activityLevel,
         fitnessGoal = this.fitnessGoal,
-        allergyInfo = this.allergyInfo.split(",").map { it.trim() },
+        allergyInfo = if (this.allergyInfo.isBlank()) emptyList() else this.allergyInfo.split(",").map { it.trim() },
         preferredDietType = this.preferredDietType,
         targetCalories = this.targetCalories,
         currentInjuryId = this.currentInjuryId,
-        // (Domain 모델에 맞춰 '가짜' 기본값 추가 - Entity에 필드 추가 필요)
-        preferredDietaryTypes = emptyList(),
-        equipmentAvailable = emptyList(),
-        currentPainLevel = 0,
-        additionalNotes = null
+        preferredDietaryTypes = if (this.preferredDietaryTypes.isBlank()) emptyList() else this.preferredDietaryTypes.split(",").map { it.trim() },
+        equipmentAvailable = if (this.equipmentAvailable.isBlank()) emptyList() else this.equipmentAvailable.split(",").map { it.trim() },
+        currentPainLevel = this.currentPainLevel,
+        additionalNotes = this.additionalNotes
     )
 }
 
@@ -182,7 +178,11 @@ fun User.toEntity(): UserEntity {
         allergyInfo = this.allergyInfo.joinToString(", "),
         preferredDietType = this.preferredDietType,
         targetCalories = this.targetCalories,
-        currentInjuryId = this.currentInjuryId
+        currentInjuryId = this.currentInjuryId,
+        preferredDietaryTypes = this.preferredDietaryTypes.joinToString(", "),
+        equipmentAvailable = this.equipmentAvailable.joinToString(", "),
+        currentPainLevel = this.currentPainLevel,
+        additionalNotes = this.additionalNotes
     )
 }
 
