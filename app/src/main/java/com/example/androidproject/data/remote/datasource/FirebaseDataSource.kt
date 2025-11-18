@@ -58,6 +58,67 @@ class FirebaseDataSource @Inject constructor(
         return authResult.user?.uid ?: throw Exception("로그인 실패")
     }
 
+    // (★ 추가 ★) 사용자 정보 업데이트 함수
+    suspend fun updateUser(user: User) {
+        val uid = getUid(user.id)
+
+        // 업데이트할 데이터 맵 생성 (signUp 함수와 동일한 구조)
+        val userMap = hashMapOf(
+            "uid" to uid,
+            "originalId" to user.id,
+            "name" to user.name,
+            "gender" to user.gender,
+            "age" to user.age,
+            "heightCm" to user.heightCm,
+            "weightKg" to user.weightKg,
+            "activityLevel" to user.activityLevel,
+            "fitnessGoal" to user.fitnessGoal,
+            "allergyInfo" to user.allergyInfo,
+            "preferredDietType" to user.preferredDietType,
+            "preferredDietaryTypes" to user.preferredDietaryTypes,
+            "equipmentAvailable" to user.equipmentAvailable,
+            "currentPainLevel" to user.currentPainLevel,
+            "additionalNotes" to user.additionalNotes,
+            "targetCalories" to user.targetCalories,
+            "currentInjuryId" to user.currentInjuryId
+        )
+
+        // Firestore 문서 덮어쓰기
+        firestore.collection("users").document(uid).set(userMap).await()
+    }
+    suspend fun getUser(uid: String): User? {
+        val snapshot = firestore.collection("users").document(uid).get().await()
+        if (!snapshot.exists()) return null
+
+        val data = snapshot.data ?: return null
+
+        // Firestore Map -> User 객체 수동 변환
+        return try {
+            User(
+                id = data["originalId"] as? String ?: "",
+                password = "", // 비밀번호는 서버에서 가져오지 않음 (보안)
+                name = data["name"] as? String ?: "",
+                gender = data["gender"] as? String ?: "",
+                age = (data["age"] as? Long)?.toInt() ?: 0,
+                heightCm = (data["heightCm"] as? Long)?.toInt() ?: 0,
+                weightKg = (data["weightKg"] as? Double) ?: 0.0,
+                activityLevel = data["activityLevel"] as? String ?: "",
+                fitnessGoal = data["fitnessGoal"] as? String ?: "",
+                allergyInfo = (data["allergyInfo"] as? List<String>) ?: emptyList(),
+                preferredDietType = data["preferredDietType"] as? String ?: "",
+                preferredDietaryTypes = (data["preferredDietaryTypes"] as? List<String>) ?: emptyList(),
+                equipmentAvailable = (data["equipmentAvailable"] as? List<String>) ?: emptyList(),
+                currentPainLevel = (data["currentPainLevel"] as? Long)?.toInt() ?: 0,
+                additionalNotes = data["additionalNotes"] as? String,
+                targetCalories = (data["targetCalories"] as? Long)?.toInt(),
+                currentInjuryId = data["currentInjuryId"] as? String
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
     // ------------------------------------------------------------------------
     // 2. 부상 정보 (Injury)
     // ------------------------------------------------------------------------
@@ -140,7 +201,6 @@ class FirebaseDataSource @Inject constructor(
             .get().await()
         // (매핑 로직은 위와 동일하므로 생략 또는 함수로 분리 가능)
         return snapshot.documents.mapNotNull { doc ->
-            // ... 위와 동일한 매핑 ...
             RehabSession(
                 id = doc.getString("id") ?: "",
                 userId = doc.getString("userId") ?: "",
@@ -254,39 +314,6 @@ class FirebaseDataSource @Inject constructor(
         batch.commit().await()
     }
 
-    suspend fun getUser(uid: String): User? {
-        val snapshot = firestore.collection("users").document(uid).get().await()
-        if (!snapshot.exists()) return null
-
-        val data = snapshot.data ?: return null
-
-        // Firestore Map -> User 객체 수동 변환
-        return try {
-            User(
-                id = data["originalId"] as? String ?: "",
-                password = "", // 비밀번호는 서버에서 가져오지 않음 (보안)
-                name = data["name"] as? String ?: "",
-                gender = data["gender"] as? String ?: "",
-                age = (data["age"] as? Long)?.toInt() ?: 0,
-                heightCm = (data["heightCm"] as? Long)?.toInt() ?: 0,
-                weightKg = (data["weightKg"] as? Double) ?: 0.0,
-                activityLevel = data["activityLevel"] as? String ?: "",
-                fitnessGoal = data["fitnessGoal"] as? String ?: "",
-                allergyInfo = (data["allergyInfo"] as? List<String>) ?: emptyList(),
-                preferredDietType = data["preferredDietType"] as? String ?: "",
-                preferredDietaryTypes = (data["preferredDietaryTypes"] as? List<String>) ?: emptyList(),
-                equipmentAvailable = (data["equipmentAvailable"] as? List<String>) ?: emptyList(),
-                currentPainLevel = (data["currentPainLevel"] as? Long)?.toInt() ?: 0,
-                additionalNotes = data["additionalNotes"] as? String,
-                targetCalories = (data["targetCalories"] as? Long)?.toInt(),
-                currentInjuryId = data["currentInjuryId"] as? String
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
 
     // ------------------------------------------------------------------------
     // Helper Methods
@@ -306,6 +333,21 @@ class FirebaseDataSource @Inject constructor(
         // 2. 만약 비로그인 상태에서 이 함수가 호출된다면 예외 발생
         // (실제 앱에서는 로그인 후에만 데이터 접근하므로 이럴 일은 적음)
         throw Exception("사용자가 로그인되어 있지 않습니다.")
+    }
+    suspend fun getInjury(injuryId: String): Injury? {
+        val currentUser = auth.currentUser ?: return null
+        val snapshot = firestore.collection("users").document(currentUser.uid)
+            .collection("injuries").document(injuryId).get().await()
+
+        if (!snapshot.exists()) return null
+
+        return Injury(
+            id = snapshot.getString("id") ?: "",
+            name = snapshot.getString("name") ?: "",
+            bodyPart = snapshot.getString("bodyPart") ?: "",
+            severity = snapshot.getString("severity") ?: "",
+            description = snapshot.getString("description") ?: ""
+        )
     }
 
     private fun getUserDocRef(uid: String) = firestore.collection("users").document(uid)
