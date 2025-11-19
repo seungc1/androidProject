@@ -96,11 +96,11 @@ class FirebaseDataSource @Inject constructor(
         return try {
             User(
                 id = data["originalId"] as? String ?: "",
-                password = "", // 비밀번호는 서버에서 가져오지 않음 (보안)
+                password = "",
                 name = data["name"] as? String ?: "",
                 gender = data["gender"] as? String ?: "",
-                age = (data["age"] as? Long)?.toInt() ?: 0,
-                heightCm = (data["heightCm"] as? Long)?.toInt() ?: 0,
+                age = (data["age"] as? Number)?.toInt() ?: 0,
+                heightCm = (data["heightCm"] as? Number)?.toInt() ?: 0,
                 weightKg = (data["weightKg"] as? Double) ?: 0.0,
                 activityLevel = data["activityLevel"] as? String ?: "",
                 fitnessGoal = data["fitnessGoal"] as? String ?: "",
@@ -108,9 +108,10 @@ class FirebaseDataSource @Inject constructor(
                 preferredDietType = data["preferredDietType"] as? String ?: "",
                 preferredDietaryTypes = (data["preferredDietaryTypes"] as? List<String>) ?: emptyList(),
                 equipmentAvailable = (data["equipmentAvailable"] as? List<String>) ?: emptyList(),
-                currentPainLevel = (data["currentPainLevel"] as? Long)?.toInt() ?: 0,
+                currentPainLevel = (data["currentPainLevel"] as? Number)?.toInt() ?: 0,
+                // (★ 수정 ★) additionalNotes는 String으로 안전하게 캐스팅
                 additionalNotes = data["additionalNotes"] as? String,
-                targetCalories = (data["targetCalories"] as? Long)?.toInt(),
+                targetCalories = (data["targetCalories"] as? Number)?.toInt(),
                 currentInjuryId = data["currentInjuryId"] as? String
             )
         } catch (e: Exception) {
@@ -286,7 +287,6 @@ class FirebaseDataSource @Inject constructor(
 
         return snapshot.documents.mapNotNull { doc ->
             val date = doc.getString("scheduledDate") ?: return@mapNotNull null
-            // Firestore 배열 -> List<Map> -> List<ExerciseRecommendation> 변환
             val exercisesList = doc.get("exercises") as? List<Map<String, Any>> ?: emptyList()
 
             val exercises = exercisesList.map { map ->
@@ -294,8 +294,8 @@ class FirebaseDataSource @Inject constructor(
                     name = map["name"] as? String ?: "",
                     description = map["description"] as? String ?: "",
                     bodyPart = map["bodyPart"] as? String ?: "",
-                    sets = (map["sets"] as? Long)?.toInt() ?: 0,
-                    reps = (map["reps"] as? Long)?.toInt() ?: 0,
+                    sets = (map["sets"] as? Number)?.toInt() ?: 0,
+                    reps = (map["reps"] as? Number)?.toInt() ?: 0,
                     difficulty = map["difficulty"] as? String ?: "",
                     aiRecommendationReason = map["aiRecommendationReason"] as? String,
                     imageUrl = map["imageUrl"] as? String

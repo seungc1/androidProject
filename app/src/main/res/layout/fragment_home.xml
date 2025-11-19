@@ -4,33 +4,35 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/backgroundColor"
     android:fillViewport="true"
     tools:context=".presentation.main.HomeFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp">
-
-        <ProgressBar
-            android:id="@+id/loadingProgressBar"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:visibility="visible" />
+        android:padding="24dp"> <ProgressBar
+        android:id="@+id/loadingProgressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/exerciseCard"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:visibility="gone"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/divider"
+            app:cardBackgroundColor="@color/white"
             app:layout_constraintBottom_toTopOf="@id/dietCard"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -38,27 +40,48 @@
             app:layout_constraintVertical_weight="1"
             tools:visibility="visible">
 
-            <FrameLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="16dp">
+                android:orientation="vertical"
+                android:padding="20dp">
 
-                <TextView
-                    android:id="@+id/exerciseTitleTextView"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="오늘의 운동 (to-do 리스트)"
-                    android:textAppearance="@style/TextAppearance.App.TitleLarge" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_menu_directions"
+                        app:tint="@color/primaryColor"
+                        android:layout_marginEnd="8dp"/>
+
+                    <TextView
+                        android:id="@+id/exerciseTitleTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="오늘의 운동"
+                        android:textAppearance="@style/TextAppearance.App.TitleLarge" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/emptyViewExercise"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:visibility="gone"
                     tools:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:src="@android:drawable/ic_menu_help"
+                        app:tint="@color/textSecondary"
+                        android:alpha="0.3"
+                        android:layout_marginBottom="16dp"/>
 
                     <TextView
                         android:id="@+id/emptyExerciseTextView"
@@ -66,30 +89,31 @@
                         android:layout_height="wrap_content"
                         android:text="@string/home_empty_message"
                         android:textAlignment="center"
-                        android:textAppearance="@style/TextAppearance.App.BodyLarge" />
+                        android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                        android:textColor="@color/textSecondary"/>
 
                     <Button
                         android:id="@+id/goToProfileFromExerciseButton"
-                        style="@style/Widget.Material3.Button.TextButton"
+                        style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="16dp"
                         android:text="@string/home_empty_button_go_to_profile"
-                        android:textAppearance="@style/TextAppearance.App.LabelLarge" />
+                        android:textColor="@color/primaryColor"/>
                 </LinearLayout>
 
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/exerciseRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_marginTop="48dp"
+                    android:layout_marginTop="16dp"
                     android:nestedScrollingEnabled="false"
                     android:visibility="gone"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     tools:itemCount="3"
                     tools:listitem="@layout/item_exercise"
                     tools:visibility="visible" />
-            </FrameLayout>
+            </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
@@ -99,8 +123,11 @@
             android:layout_height="0dp"
             android:layout_marginTop="16dp"
             android:visibility="gone"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
+            app:cardCornerRadius="24dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="@color/divider"
+            app:cardBackgroundColor="@color/white"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -108,27 +135,48 @@
             app:layout_constraintVertical_weight="1"
             tools:visibility="visible">
 
-            <FrameLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="16dp">
+                android:orientation="vertical"
+                android:padding="20dp">
 
-                <TextView
-                    android:id="@+id/dietTitleTextView"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="AI 추천 식단"
-                    android:textAppearance="@style/TextAppearance.App.TitleLarge" />
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@android:drawable/ic_menu_compass"
+                        app:tint="@color/secondaryColor"
+                        android:layout_marginEnd="8dp"/>
+
+                    <TextView
+                        android:id="@+id/dietTitleTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="AI 추천 식단"
+                        android:textAppearance="@style/TextAppearance.App.TitleLarge" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/emptyViewDiet"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:visibility="gone"
                     tools:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:src="@android:drawable/ic_menu_help"
+                        app:tint="@color/textSecondary"
+                        android:alpha="0.3"
+                        android:layout_marginBottom="16dp"/>
 
                     <TextView
                         android:id="@+id/emptyDietTextView"
@@ -136,16 +184,17 @@
                         android:layout_height="wrap_content"
                         android:text="@string/home_empty_message"
                         android:textAlignment="center"
-                        android:textAppearance="@style/TextAppearance.App.BodyLarge" />
+                        android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                        android:textColor="@color/textSecondary"/>
 
                     <Button
                         android:id="@+id/goToProfileFromDietButton"
-                        style="@style/Widget.Material3.Button.TextButton"
+                        style="@style/Widget.Material3.Button.TonalButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="16dp"
                         android:text="@string/home_empty_button_go_to_profile"
-                        android:textAppearance="@style/TextAppearance.App.LabelLarge" />
+                        android:textColor="@color/primaryColor"/>
 
                 </LinearLayout>
 
@@ -153,14 +202,14 @@
                     android:id="@+id/dietRecyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:layout_marginTop="48dp"
+                    android:layout_marginTop="16dp"
                     android:nestedScrollingEnabled="false"
                     android:visibility="gone"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     tools:itemCount="2"
                     tools:listitem="@layout/item_diet"
                     tools:visibility="visible" />
-            </FrameLayout>
+            </LinearLayout>
 
         </com.google.android.material.card.MaterialCardView>
 
