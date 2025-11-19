@@ -6,6 +6,7 @@ import com.example.androidproject.data.mapper.toDomain
 import com.example.androidproject.data.mapper.toEntity
 import com.example.androidproject.domain.model.User
 import com.example.androidproject.domain.repository.UserRepository
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -19,29 +20,54 @@ class UserRepositoryImpl @Inject constructor(
     private val firebaseDataSource: FirebaseDataSource
 ) : UserRepository {
 
-    /**
-     * (★수정★) 로그인 + 데이터 동기화
-     */
     override suspend fun login(id: String, password: String): String? {
         return try {
-            // 1. Firebase 로그인 (UID 획득)
             val uid = firebaseDataSource.login(id, password)
-
-            // 2. (중요) 서버에서 최신 유저 정보 가져오기
             val serverUser = firebaseDataSource.getUser(uid)
 
-            // 3. 가져온 정보가 있다면 로컬 DB(Room)에 저장 (동기화)
             if (serverUser != null) {
-                // 비밀번호는 로컬 로그인용으로 입력받은 것 저장
                 val userWithPassword = serverUser.copy(password = password)
                 localDataSource.upsertUser(userWithPassword.toEntity())
-
-                // 반환값은 앱에서 사용하는 originalId (예: test1234)
                 return serverUser.id
             }
-
-            // 정보가 없다면 UID라도 반환 (이런 경우는 드뭄)
             null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    // (★ 추가 ★) 구글 로그인 구현
+    override suspend fun loginWithGoogle(idToken: String): String? {
+        return try {
+            // 1. Firebase 인증 (UID 획득)
+            val uid = firebaseDataSource.signInWithGoogle(idToken)
+
+            // 2. Firestore에서 유저 정보 확인
+            var serverUser = firebaseDataSource.getUser(uid)
+
+            // 3. 신규 유저라면 DB에 초기 정보 생성 (회원가입 처리)
+            if (serverUser == null) {
+                val newUser = User(
+                    id = FirebaseAuth.getInstance().currentUser?.email ?: "google_user",
+                    password = "", // 소셜 로그인은 비밀번호 없음
+                    name = "신규 사용자", // 이 이름 덕분에 로그인 후 프로필 입력 화면으로 이동함
+                    gender = "미설정",
+                    age = 0, heightCm = 0, weightKg = 0.0, activityLevel = "낮음",
+                    fitnessGoal = "재활", allergyInfo = emptyList(),
+                    preferredDietType = "일반", preferredDietaryTypes = emptyList(),
+                    equipmentAvailable = emptyList(), currentPainLevel = 0,
+                    additionalNotes = null, targetCalories = null, currentInjuryId = null
+                )
+                firebaseDataSource.signUp(newUser) // Firestore 저장 (set)
+                serverUser = newUser
+            }
+
+            // 4. 로컬 DB 동기화
+            localDataSource.upsertUser(serverUser.toEntity())
+
+            // 5. 사용자 ID 반환
+            serverUser.id
         } catch (e: Exception) {
             e.printStackTrace()
             null
@@ -50,9 +76,7 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun createUser(user: User): Flow<Unit> {
         return try {
-            // 1. 서버 생성 및 저장
             firebaseDataSource.signUp(user)
-            // 2. 로컬 저장 (즉시 로그인 효과)
             localDataSource.upsertUser(user.toEntity())
             flowOf(Unit)
         } catch (e: Exception) {
@@ -62,31 +86,16 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getUserProfile(userId: String): Flow<User> {
-        // 1. 로컬 데이터 먼저 반환 (화면에 즉시 표시)
         val localFlow = localDataSource.getUserById(userId).map { userEntity ->
             userEntity?.toDomain() ?: getTemporaryUser(userId)
         }
 
-        // 2. 백그라운드에서 서버 데이터 확인 및 로컬 업데이트 (자동 로그인 대응)
-        // (이미 로그인된 상태이므로 uid를 따로 조회하지 않고 바로 호출 가능하도록 FirebaseDataSource가 구현되어 있다고 가정)
-        // 만약 userId(문자열)로 UID를 찾아야 한다면 로직이 더 필요하지만,
-        // 현재 구조상 로그인된 상태의 Auth.uid를 이용하는 것이 안전합니다.
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // 현재 로그인된 사용자의 UID로 서버 데이터 요청
-                // (주의: userId 파라미터와 실제 로그인된 계정이 다를 수 있는 엣지 케이스는 제외)
-                val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+                val uid = FirebaseAuth.getInstance().currentUser?.uid
                 if (uid != null) {
                     val serverUser = firebaseDataSource.getUser(uid)
                     if (serverUser != null) {
-                        // 비밀번호는 서버에 없으므로 로컬에 있는 걸 유지하거나 빈 문자열 처리
-                        // 여기서는 업데이트 목적이므로 로컬 DB에 덮어씌웁니다.
-                        // (단, 로컬에 있던 비밀번호가 날아가지 않게 주의해야 함.
-                        //  Entity 변환 시 기존 비밀번호를 조회해서 넣는 게 가장 좋으나,
-                        //  간단히 처리하기 위해 여기선 빈 문자열로 넣고, Room의 OnConflictStrategy가
-                        //  전체 교체이므로 비밀번호가 사라질 수 있음.
-                        //  -> **보완책**: LocalDataSource에서 upsert 시 기존 비번 유지 로직이 있으면 좋음.
-                        //  지금은 일단 서버 데이터로 갱신합니다.)
                         localDataSource.upsertUser(serverUser.toEntity())
                     }
                 }
@@ -98,15 +107,10 @@ class UserRepositoryImpl @Inject constructor(
         return localFlow
     }
 
-    // (★ 수정 ★) 프로필 업데이트 시 서버 동기화 추가
     override suspend fun updateUserProfile(user: User): Flow<Unit> {
         return try {
-            // 1. 서버(Firebase)에 먼저 업데이트 시도
             firebaseDataSource.updateUser(user)
-
-            // 2. 성공 시 로컬(Room)에도 저장 (화면 갱신)
             localDataSource.upsertUser(user.toEntity())
-
             flowOf(Unit)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -115,7 +119,7 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun checkUserExists(id: String): Boolean {
-        return false // Firebase는 가입 시점에 체크하므로 여기선 패스
+        return false
     }
 
     private fun getTemporaryUser(userId: String): User {

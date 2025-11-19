@@ -117,11 +117,11 @@ dependencies {
     androidTestImplementation(libs.hilt.android.testing)
     kaptAndroidTest(libs.hilt.compiler)
 
-    // (★ 여기를 추가해주세요 ★) Firebase 의존성 추가
+    // Firebase 의존성
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
 
-    // Coroutines와 Firebase 연동 (await() 함수 사용을 위해 필요)
-    implementation(libs.kotlinx.coroutines.play.services)
+    // (★ 추가 ★) Google Sign-In
+    implementation(libs.play.services.auth)
 }
