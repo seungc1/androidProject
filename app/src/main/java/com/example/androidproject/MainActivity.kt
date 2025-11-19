@@ -1,13 +1,14 @@
 package com.example.androidproject
 
 import android.os.Bundle
-import android.view.View // (★필수★) View.GONE, View.VISIBLE 사용을 위해
+import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.NavigationUI
 import com.example.androidproject.databinding.ActivityMainBinding
@@ -37,7 +38,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setupNavigation()
-        observeProfileStatus() // 프로필 상태 감시 시작
+        observeProfileStatus()
     }
 
     private fun setupNavigation() {
@@ -46,10 +47,49 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
         val bottomNav = binding.bottomNavigationView
 
+        // (★수정★) 기본 NavigationUI.setupWithNavController 대신
+        // setOnItemSelectedListener를 직접 구현하여 커스텀 동작(상태 리셋)을 정의합니다.
+
+        // 1. 초기 설정 (선택된 아이템 표시 등)은 setupWithNavController로 하되,
+        //    리스너를 덮어씌우는 방식입니다.
         NavigationUI.setupWithNavController(bottomNav, navController)
 
+        // 2. 리스너 재정의
+        bottomNav.setOnItemSelectedListener { item ->
+            // 현재 보고 있는 탭을 다시 누른 경우 (Reselection) -> popBackStack
+            if (item.itemId == navController.currentDestination?.id) {
+                navController.popBackStack(item.itemId, false)
+                return@setOnItemSelectedListener true
+            }
+
+            val builder = NavOptions.Builder()
+                .setLaunchSingleTop(true)
+                .setPopUpTo(navController.graph.startDestinationId, false)
+
+            if (item.itemId == R.id.navigation_profile) {
+                // (★핵심★) '개인정보' 탭 클릭 시: 상태를 복원하지 않음 (restoreState = false)
+                // 이렇게 하면 이전에 '수정 화면'에 있었더라도 '초기 화면'(내 정보)으로 리셋됩니다.
+                builder.setRestoreState(false)
+            } else {
+                // 다른 탭 클릭 시: 상태를 복원함 (기존 동작 유지)
+                builder.setRestoreState(true)
+            }
+
+            // 네비게이션 수행
+            try {
+                navController.navigate(item.itemId, null, builder.build())
+            } catch (e: Exception) {
+                // 네비게이션 실패 시 (예: 이미 해당 화면일 때) 무시
+                return@setOnItemSelectedListener false
+            }
+
+            return@setOnItemSelectedListener true
+        }
+
+        // (참고) 재선택 리스너는 위에서 처리했으므로 별도 설정 불필요하지만,
+        // setupWithNavController가 덮어쓸 수 있으니 명시적으로 둡니다.
         bottomNav.setOnItemReselectedListener { item ->
-            navController.popBackStack(item.itemId, inclusive = false)
+            navController.popBackStack(item.itemId, false)
         }
     }
 
@@ -63,13 +103,10 @@ class MainActivity : AppCompatActivity() {
                 viewModel.uiState.collectLatest { state ->
                     if (!state.isLoading) {
 
-                        // (★핵심★) 프로필 미완성 상태 처리
                         if (!state.isProfileComplete) {
-
-                            // 1. 하단 탭 숨기기 (이동 차단)
+                            // 프로필 미완성 시 탭바 숨기고 수정 화면 강제 이동
                             binding.bottomNavigationView.visibility = View.GONE
 
-                            // 2. 현재 화면이 이미 '수정 화면'이 아니면 강제 이동
                             val currentDest = navController.currentDestination?.id
                             if (currentDest != R.id.profileEditFragment) {
                                 Toast.makeText(this@MainActivity, "초기 설정을 위해 정보를 입력해주세요.", Toast.LENGTH_SHORT).show()
@@ -77,9 +114,7 @@ class MainActivity : AppCompatActivity() {
                                     navController.navigate(R.id.profileEditFragment)
                                 } catch (_: Exception) { }
                             }
-
                         } else {
-                            // (★핵심★) 프로필 완성 시 하단 탭 다시 보이기
                             binding.bottomNavigationView.visibility = View.VISIBLE
                         }
                     }
