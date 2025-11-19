@@ -96,7 +96,6 @@ class LocalDataSource @Inject constructor(
         return dietDao.getDietById(dietId)
     }
 
-    // --- ScheduledWorkoutDao 관련 함수 ---
     suspend fun upsertWorkouts(workouts: List<ScheduledWorkoutEntity>) {
         scheduledWorkoutDao.upsertWorkouts(workouts)
     }

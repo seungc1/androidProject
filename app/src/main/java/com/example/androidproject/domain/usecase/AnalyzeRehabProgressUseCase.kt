@@ -20,7 +20,7 @@ class AnalyzeRehabProgressUseCase @Inject constructor(
             rehabSessionRepository.getRehabHistory(userId), // Flow<List<RehabSession>>
             dietSessionRepository.getDietHistory(userId)    // Flow<List<DietSession>>
         ) { rehabSessions, dietSessions -> // 두 Flow의 최신 값이 도착하면 이 람다 실행
-            // ✨ 1-2. 복합 분석 로직 구현 ✨
+            // 1-2. 복합 분석 로직 구현
             val totalRehabSessions = rehabSessions.size
             val totalDietSessions = dietSessions.size
 
@@ -51,7 +51,7 @@ class AnalyzeRehabProgressUseCase @Inject constructor(
                 feedbackMessage = feedbackMessage
             )
         }
-            // ✨ 예외 처리 추가 ✨
+            // 예외 처리 추가
             .catch { e ->
                 // 예외 발생 시 로깅하고, 빈 ProgressAnalysisResult를 반환
                 println("AnalyzeRehabProgressUseCase: Error analyzing progress: ${e.message}")

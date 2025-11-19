@@ -37,6 +37,8 @@ class AIApiRepositoryImpl @Inject constructor(
         val gptResponse = gptApiService.getChatCompletion(request = request)
         val jsonResponseString = gptResponse.choices.firstOrNull()?.message?.content
 
+        android.util.Log.d("GPT_RAW", "AI 원본 응답: $jsonResponseString")
+
         if (jsonResponseString != null) {
             val aiResult = parseGptResponseToAIRecommendationResult(jsonResponseString)
             emit(aiResult)
@@ -123,10 +125,15 @@ class AIApiRepositoryImpl @Inject constructor(
     }
 
     /**
-     * (기존) 사용자 정보 전달 프롬프트
+     * (★ 수정 ★) 사용자 정보 전달 프롬프트
+     * AI에게 "오늘 날짜"를 알려주어, 오늘부터 일정을 시작하도록 강제합니다.
      */
     private fun createGptUserPrompt(params: RecommendationParams): String {
         val pastSessionsJson = gson.toJson(params.pastSessions)
+
+        // (중요) 오늘 날짜 구하기 (앱과 동일한 포맷 사용)
+        val todayDate = java.text.SimpleDateFormat("M월 d일 (E)", java.util.Locale.KOREA).format(java.util.Date())
+
         return """
             Here is the user's information and past performance:
             
@@ -141,12 +148,16 @@ class AIApiRepositoryImpl @Inject constructor(
             Injury Severity: ${params.injurySeverity ?: "N/A"}
             Additional Notes: ${params.additionalNotes ?: "None"}
 
-            2. Past Performance (Learning Data - Note 'userRating' 1-5 and 'notes'):
+            2. Past Performance (Learning Data):
             $pastSessionsJson
 
-            Based on ALL this data, create a new multi-day workout plan.
-            Remember to AVOID or MODIFY exercises with low ratings or negative feedback.
-            If 'Past Performance' is empty or this is a new injury, create a new beginner plan.
+            🚨 IMPORTANT DATE INSTRUCTION:
+            Today is "$todayDate".
+            You MUST start the 'scheduledWorkouts' list from **Today ($todayDate)**.
+            For the following days, verify the correct date and day of the week.
+            Do NOT start from January 1st.
+
+            Based on ALL this data, create a new multi-day workout plan starting from "$todayDate".
         """.trimIndent()
     }
 
@@ -188,6 +199,8 @@ class AIApiRepositoryImpl @Inject constructor(
             Based on the user's profile and their past 7 days of rehab/diet sessions,
             provide concise, encouraging, and actionable feedback.
             Analyze the user's notes and ratings.
+            
+            🚨 IMPORTANT INSTRUCTION: You MUST respond entirely in Korean (한국어).
             
             🚨 You MUST respond in a valid JSON format that matches the AIAnalysisResult JSON structure:
             {
