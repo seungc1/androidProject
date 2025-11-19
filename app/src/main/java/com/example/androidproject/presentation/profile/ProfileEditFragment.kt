@@ -11,7 +11,9 @@ import androidx.activity.addCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.androidproject.R
 import com.example.androidproject.databinding.FragmentProfileEditBinding
@@ -19,6 +21,7 @@ import com.example.androidproject.domain.model.User
 import com.example.androidproject.presentation.viewmodel.RehabViewModel
 import com.google.android.material.button.MaterialButton
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -29,7 +32,6 @@ class ProfileEditFragment : Fragment() {
 
     private val viewModel: RehabViewModel by activityViewModels()
 
-    // (★추가★) 현재 선택된 성별을 추적하는 변수
     private var selectedGender: String = ""
 
     override fun onCreateView(
@@ -45,13 +47,17 @@ class ProfileEditFragment : Fragment() {
 
         setupSaveButton()
         setupPainLevelSlider()
-        setupGenderButtons() // (★추가★) 성별 버튼 리스너 설정
-        loadCurrentProfileData()
+        setupGenderButtons()
+
+        // (★수정★) 안전한 데이터 로드 함수 호출
+        observeProfileData()
+
         handleBackPress()
     }
 
     private fun handleBackPress() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+            // uiState의 값을 안전하게 확인
             val isComplete = viewModel.uiState.value.isProfileComplete
             if (!isComplete) {
                 Toast.makeText(context, "정보 입력을 완료해야 서비스를 이용할 수 있습니다.", Toast.LENGTH_SHORT).show()
@@ -89,7 +95,6 @@ class ProfileEditFragment : Fragment() {
         binding.painLevelValueTextView.text = "$value - $description"
     }
 
-    // (★추가★) 성별 버튼 클릭 리스너
     private fun setupGenderButtons() {
         binding.genderMaleButton.setOnClickListener {
             updateGenderSelection("남성")
@@ -99,16 +104,13 @@ class ProfileEditFragment : Fragment() {
         }
     }
 
-    // (★추가★) 선택된 성별에 따라 버튼 스타일(색상, 테두리) 변경
     private fun updateGenderSelection(gender: String) {
         selectedGender = gender
 
         val primaryColor = ContextCompat.getColor(requireContext(), com.google.android.material.R.color.design_default_color_primary)
         val onPrimaryColor = ContextCompat.getColor(requireContext(), com.google.android.material.R.color.design_default_color_on_primary)
-        val outlineColor = Color.GRAY // 또는 테마의 outline color
-        val surfaceColor = Color.TRANSPARENT
+        val outlineColor = Color.LTGRAY
 
-        // 남성 버튼 스타일 업데이트
         if (gender == "남성") {
             setButtonStyle(binding.genderMaleButton, true, primaryColor, onPrimaryColor, outlineColor)
             setButtonStyle(binding.genderFemaleButton, false, primaryColor, onPrimaryColor, outlineColor)
@@ -120,84 +122,91 @@ class ProfileEditFragment : Fragment() {
 
     private fun setButtonStyle(button: MaterialButton, isSelected: Boolean, primary: Int, onPrimary: Int, outline: Int) {
         if (isSelected) {
-            // 선택됨: 배경색(Primary), 글자색(White), 테두리 없음
             button.backgroundTintList = ColorStateList.valueOf(primary)
             button.setTextColor(onPrimary)
             button.strokeWidth = 0
         } else {
-            // 선택 안됨: 배경색(투명), 글자색(Primary or Gray), 테두리 있음
             button.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
-            button.setTextColor(primary) // 또는 Color.GRAY
+            button.setTextColor(Color.GRAY)
             button.strokeColor = ColorStateList.valueOf(outline)
-            button.strokeWidth = 3 // 1dp 정도 (px 단위이므로 3 정도 줌)
+            button.strokeWidth = 3
         }
     }
 
-    private fun loadCurrentProfileData() {
+    /**
+     * (★수정★) ViewModel의 StateFlow를 구독하여 데이터가 준비되면 UI를 업데이트합니다.
+     * 기존의 'dummyUser' 직접 접근 방식을 제거하여 크래시를 방지합니다.
+     */
+    private fun observeProfileData() {
         viewLifecycleOwner.lifecycleScope.launch {
-            val user = viewModel.dummyUser
-            val injury = viewModel.dummyInjury
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                // 1. 사용자 정보 관찰
+                launch {
+                    viewModel.currentUser.collectLatest { user ->
+                        user?.let {
+                            binding.nameEditText.hint = it.name
+                            binding.ageEditText.hint = it.age.toString()
 
-            binding.nameEditText.hint = user.name
-            binding.nameEditText.setText("")
+                            // 성별 초기값 설정
+                            updateGenderSelection(it.gender)
 
-            binding.ageEditText.hint = user.age.toString()
-            binding.ageEditText.setText("")
+                            binding.heightEditText.hint = it.heightCm.toString()
+                            binding.weightEditText.hint = it.weightKg.toString()
+                            binding.allergyEditText.hint = it.allergyInfo.joinToString(", ")
 
-            // (★수정★) 초기 성별 설정
-            updateGenderSelection(user.gender)
+                            val painLevel = it.currentPainLevel.toFloat().coerceIn(0f, 10f)
+                            binding.painLevelSlider.value = painLevel
+                            updatePainLevelText(painLevel.toInt())
 
-            binding.heightEditText.hint = user.heightCm.toString()
-            binding.heightEditText.setText("")
+                            binding.additionalNotesEditText.hint = it.additionalNotes ?: "추가 사항 없음"
+                        }
+                    }
+                }
 
-            binding.weightEditText.hint = user.weightKg.toString()
-            binding.weightEditText.setText("")
-
-            binding.allergyEditText.hint = user.allergyInfo.joinToString(", ")
-            binding.allergyEditText.setText("")
-
-            binding.injuryAreaEditText.hint = injury.bodyPart
-            binding.injuryAreaEditText.setText("")
-
-            binding.injuryNameEditText.hint = injury.name
-            binding.injuryNameEditText.setText("")
-
-            val painLevel = user.currentPainLevel.toFloat().coerceIn(0f, 10f)
-            binding.painLevelSlider.value = painLevel
-            updatePainLevelText(painLevel.toInt())
-
-            binding.additionalNotesEditText.hint = user.additionalNotes ?: "추가 사항 없음"
-            binding.additionalNotesEditText.setText("")
+                // 2. 부상 정보 관찰
+                launch {
+                    viewModel.currentInjury.collectLatest { injury ->
+                        injury?.let {
+                            binding.injuryAreaEditText.hint = it.bodyPart
+                            binding.injuryNameEditText.hint = it.name
+                        }
+                    }
+                }
+            }
         }
     }
 
     private fun setupSaveButton() {
         binding.saveButton.setOnClickListener {
-            val currentUser = viewModel.dummyUser
-            val currentInjury = viewModel.dummyInjury
+            // (★수정★) 현재 로드된 데이터를 안전하게 가져옴 (dummyUser 사용 X)
+            val currentUser = viewModel.currentUser.value
+            val currentInjury = viewModel.currentInjury.value
+
+            // 데이터가 아직 로드되지 않았다면 저장 막기 (안전 장치)
+            if (currentUser == null) {
+                Toast.makeText(context, "데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             val inputName = binding.nameEditText.text.toString()
             val inputAge = binding.ageEditText.text.toString()
-
-            // (★수정★) 변수에 저장된 성별 사용
-            // 초기값이 빈 문자열일 수 있으므로, 선택 안했으면 기존 값 유지
-            val finalGender = if (selectedGender.isNotEmpty()) selectedGender else currentUser.gender
-
+            val inputGender = if (selectedGender.isNotEmpty()) selectedGender else currentUser.gender
             val inputHeight = binding.heightEditText.text.toString()
             val inputWeight = binding.weightEditText.text.toString()
             val inputAllergy = binding.allergyEditText.text.toString()
-
             val inputInjuryArea = binding.injuryAreaEditText.text.toString()
             val inputInjuryName = binding.injuryNameEditText.text.toString()
             val inputNotes = binding.additionalNotesEditText.text.toString()
 
             val finalName = inputName.ifBlank { currentUser.name }
             val finalAge = inputAge.toIntOrNull() ?: currentUser.age
+            val finalGender = inputGender
             val finalHeight = inputHeight.toIntOrNull() ?: currentUser.heightCm
             val finalWeight = inputWeight.toDoubleOrNull() ?: currentUser.weightKg
-            val finalInjuryArea = inputInjuryArea.ifBlank { currentInjury.bodyPart }
-            val finalInjuryName = inputInjuryName.ifBlank { currentInjury.name }
+            val finalInjuryArea = inputInjuryArea.ifBlank { currentInjury?.bodyPart ?: "" }
+            val finalInjuryName = inputInjuryName.ifBlank { currentInjury?.name ?: "" }
 
+            // 유효성 검사
             if (finalName.isBlank() || finalName == "신규 사용자") {
                 Toast.makeText(context, "이름을 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -206,7 +215,6 @@ class ProfileEditFragment : Fragment() {
                 Toast.makeText(context, "나이를 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            // (★수정★) 성별 유효성 검사
             if (finalGender.isBlank() || finalGender == "미설정") {
                 Toast.makeText(context, "성별을 선택해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
@@ -236,22 +244,17 @@ class ProfileEditFragment : Fragment() {
                 age = finalAge,
                 heightCm = finalHeight,
                 weightKg = finalWeight,
-
                 activityLevel = currentUser.activityLevel,
                 fitnessGoal = currentUser.fitnessGoal,
-
                 allergyInfo = if (inputAllergy.isNotBlank()) {
                     inputAllergy.split(",").map { it.trim() }
                 } else {
                     currentUser.allergyInfo
                 },
-
                 preferredDietType = currentUser.preferredDietType,
                 preferredDietaryTypes = currentUser.preferredDietaryTypes,
                 equipmentAvailable = currentUser.equipmentAvailable,
-
                 currentPainLevel = binding.painLevelSlider.value.toInt(),
-
                 additionalNotes = inputNotes.ifBlank { currentUser.additionalNotes },
                 targetCalories = currentUser.targetCalories,
                 currentInjuryId = currentUser.currentInjuryId
