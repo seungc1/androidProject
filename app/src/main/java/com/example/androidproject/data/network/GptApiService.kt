@@ -1,7 +1,7 @@
 package com.example.androidproject.data.network
 
-import com.example.androidproject.data.network.dto.GptRequest
-import com.example.androidproject.data.network.dto.GptResponse
+import com.example.androidproject.data.network.model.GptRequest
+import com.example.androidproject.data.network.model.GptResponse
 import retrofit2.http.Body
 import retrofit2.http.POST
 

@@ -6,9 +6,9 @@ import com.example.androidproject.domain.model.AIRecommendationResult
 import com.example.androidproject.domain.model.RecommendationParams
 import com.example.androidproject.domain.repository.AIApiRepository
 import com.example.androidproject.data.network.GptApiService
-import com.example.androidproject.data.network.dto.GptMessage
-import com.example.androidproject.data.network.dto.GptRequest
-import com.example.androidproject.data.network.dto.ResponseFormat
+import com.example.androidproject.data.network.model.GptMessage
+import com.example.androidproject.data.network.model.GptRequest
+import com.example.androidproject.data.network.model.ResponseFormat
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -71,47 +71,47 @@ class AIApiRepositoryImpl @Inject constructor(
 
     }
     /**
-     * (★수정★) AI 추천용 시스템 프롬프트
-     * (HTTP 400 오류 해결을 위해 "JSON" 단어 추가)
+     * (★ 수정 ★) AI 추천용 시스템 프롬프트
+     * (7일치 루틴을 반드시 생성하도록 구조와 명령어를 명확하게 강화)
      */
     private fun createGptSystemPrompt(): String {
         return """
-            You are a long-term rehabilitation planner AI.
-            Your goal is to create a systematic, multi-day workout plan (e.g., 5-7 days) that adapts to the user's progress.
-            You MUST learn from the user's past session feedback (ratings and notes).
-            
-            🚨 You MUST respond in a valid JSON format that matches the AIRecommendationResult JSON structure. 
-            Note the 'scheduledWorkouts' list.
+        You are a long-term rehabilitation planner AI.
+        Your goal is to create a systematic, multi-day workout plan (e.g., 5-7 days) that adapts to the user's progress.
+        You MUST learn from the user's past session feedback (ratings and notes).
+        
+        🚨 You MUST respond in a valid JSON format that matches the AIRecommendationResult JSON structure. 
+        Note the 'scheduledWorkouts' list.
+        {
+          "scheduledWorkouts": [
             {
-              "scheduledWorkouts": [
-                {
-                  "name": "String",
-                  "description": "String",
-                  "bodyPart": "String",
-                  "sets": "Int",
-                  "reps": "Int",
-                  "difficulty": "String (초급, 중급, 고급)",
-                  "aiRecommendationReason": "String",
-                  "imageUrl": "String? (can be null)"
-                }
-              ],
-              "recommendedDiets": [
-                {
-                  "mealType": "String (아침, 점심, 저녁, 간식)",
-                  "foodItems": ["String", "String"],
-                  "ingredients": ["String", "String"],
-                  "calories": "Double?",
-                  "proteinGrams": "Double?",
-                  "carbs": "Double?",
-                  "fats": "Double?",
-                  "aiRecommendationReason": "String"
-                }
-              ],
-              "overallSummary": "String?",
-              "disclaimer": "String"
+              "name": "String",
+              "description": "String",
+              "bodyPart": "String",
+              "sets": "Int",
+              "reps": "Int",
+              "difficulty": "String (초급, 중급, 고급)",
+              "aiRecommendationReason": "String",
+              "imageUrl": "String? (can be null)"
             }
-            Ensure the response is ONLY the valid JSON object.
-        """.trimIndent()
+          ],
+          "recommendedDiets": [
+            {
+              "mealType": "String (아침, 점심, 저녁, 간식)",
+              "foodItems": ["String", "String"],
+              "ingredients": ["String", "String"],
+              "calories": "Double?",
+              "proteinGrams": "Double?",
+              "carbs": "Double?",
+              "fats": "Double?",
+              "aiRecommendationReason": "String"
+            }
+          ],
+          "overallSummary": "String?",
+          "disclaimer": "String"
+        }
+        Ensure the response is ONLY the valid JSON object.
+    """.trimIndent()
     }
 
     /**
