@@ -1,4 +1,4 @@
-package com.example.androidproject.data.network.dto
+package com.example.androidproject.data.network.model
 
 /**
  * GPT API 요청 DTO

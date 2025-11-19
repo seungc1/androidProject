@@ -6,9 +6,9 @@ import com.example.androidproject.domain.model.AIRecommendationResult
 import com.example.androidproject.domain.model.RecommendationParams
 import com.example.androidproject.domain.repository.AIApiRepository
 import com.example.androidproject.data.network.GptApiService
-import com.example.androidproject.data.network.dto.GptMessage
-import com.example.androidproject.data.network.dto.GptRequest
-import com.example.androidproject.data.network.dto.ResponseFormat
+import com.example.androidproject.data.network.model.GptMessage
+import com.example.androidproject.data.network.model.GptRequest
+import com.example.androidproject.data.network.model.ResponseFormat
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -71,19 +71,26 @@ class AIApiRepositoryImpl @Inject constructor(
 
     }
     /**
-     * (★수정★) AI 추천용 시스템 프롬프트
-     * (HTTP 400 오류 해결을 위해 "JSON" 단어 추가)
+     * (★ 수정 ★) AI 추천용 시스템 프롬프트
+     * 1. 한국어 응답 강제 (You MUST respond in Korean)
+     * 2. 날짜 포맷 엄격 지정 (Format: M월 d일 (E))
      */
     private fun createGptSystemPrompt(): String {
         return """
-            You are a long-term rehabilitation planner AI.
-            Your goal is to create a systematic, multi-day workout plan (e.g., 5-7 days) that adapts to the user's progress.
-            You MUST learn from the user's past session feedback (ratings and notes).
-            
-            🚨 You MUST respond in a valid JSON format that matches the AIRecommendationResult JSON structure. 
-            Note the 'scheduledWorkouts' list.
+        You are a long-term rehabilitation planner AI.
+        Your goal is to create a systematic, multi-day workout plan (e.g., 5-7 days) that adapts to the user's progress.
+        
+        🚨 IMPORTANT INSTRUCTIONS:
+        1. You MUST respond in **Korean** (한국어).
+        2. You MUST respond in a valid JSON format.
+        3. The 'scheduledDate' MUST strictly follow the format "M월 d일 (E)" (e.g., "11월 20일 (수)").
+        
+        JSON Structure:
+        {
+          "scheduledWorkouts": [
             {
-              "scheduledWorkouts": [
+              "scheduledDate": "String (Format: 'M월 d일 (E)', example: '11월 20일 (수)')",
+              "exercises": [
                 {
                   "name": "String",
                   "description": "String",
@@ -94,24 +101,25 @@ class AIApiRepositoryImpl @Inject constructor(
                   "aiRecommendationReason": "String",
                   "imageUrl": "String? (can be null)"
                 }
-              ],
-              "recommendedDiets": [
-                {
-                  "mealType": "String (아침, 점심, 저녁, 간식)",
-                  "foodItems": ["String", "String"],
-                  "ingredients": ["String", "String"],
-                  "calories": "Double?",
-                  "proteinGrams": "Double?",
-                  "carbs": "Double?",
-                  "fats": "Double?",
-                  "aiRecommendationReason": "String"
-                }
-              ],
-              "overallSummary": "String?",
-              "disclaimer": "String"
+              ]
             }
-            Ensure the response is ONLY the valid JSON object.
-        """.trimIndent()
+          ],
+          "recommendedDiets": [
+            {
+              "mealType": "String (아침, 점심, 저녁, 간식)",
+              "foodItems": ["String", "String"],
+              "ingredients": ["String", "String"],
+              "calories": "Double?",
+              "proteinGrams": "Double?",
+              "carbs": "Double?",
+              "fats": "Double?",
+              "aiRecommendationReason": "String"
+            }
+          ],
+          "overallSummary": "String (Korean summary)",
+          "disclaimer": "String"
+        }
+    """.trimIndent()
     }
 
     /**
