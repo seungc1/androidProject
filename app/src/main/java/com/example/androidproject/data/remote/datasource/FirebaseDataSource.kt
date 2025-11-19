@@ -305,13 +305,20 @@ class FirebaseDataSource @Inject constructor(
     }
 
     // ★★★ [유지] 하나만 남긴 clearWorkouts 함수 ★★★
+    // [디버그 로그 추가]
     suspend fun clearWorkouts(userId: String) {
+        android.util.Log.d("DEBUG_DELETE", "FirebaseDataSource: Firestore에서 루틴 삭제 시작 (User: $userId)")
         val uid = getUid(userId)
         val collectionRef = getUserDocRef(uid).collection("scheduled_workouts")
         val snapshot = collectionRef.get().await()
+
+        android.util.Log.d("DEBUG_DELETE", "FirebaseDataSource: 삭제할 문서 개수: ${snapshot.documents.size}")
+
         val batch = firestore.batch()
         snapshot.documents.forEach { batch.delete(it.reference) }
         batch.commit().await()
+
+        android.util.Log.d("DEBUG_DELETE", "FirebaseDataSource: Firestore 삭제 완료")
     }
 
 // -----------------------------------------------------------------------

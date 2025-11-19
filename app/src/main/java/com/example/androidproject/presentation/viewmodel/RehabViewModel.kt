@@ -185,13 +185,22 @@ class RehabViewModel @Inject constructor(
     // endregion
 
     // region [Profile Feature]
+    // [수정] 프로필 업데이트 시 기존 루틴 UI 초기화 및 강제 리로드
     fun updateUserProfile(updatedUser: User, updatedInjuryName: String, updatedInjuryArea: String) {
         viewModelScope.launch {
             val user = _currentUser.value ?: return@launch
-            _uiState.update { it.copy(isLoading = true) } // 저장 중 로딩 표시
+
+            // 1. 로딩 시작 및 기존 루틴 UI에서 제거 (사용자에게 갱신됨을 알림)
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    fullRoutine = emptyList(), // 기존 데이터 화면에서 삭제
+                    todayExercises = emptyList()
+                )
+            }
 
             try {
-                // 1. 부상 정보 생성 및 저장
+                // 2. 부상 정보 생성 및 저장
                 val newInjury = Injury(
                     id = _currentInjury.value?.id ?: "injury_${user.id}",
                     name = updatedInjuryName,
@@ -199,21 +208,18 @@ class RehabViewModel @Inject constructor(
                     severity = _currentInjury.value?.severity ?: "경미",
                     description = _currentInjury.value?.description ?: "정보 없음"
                 )
-
-                // (★중요★) Repository 함수가 suspend 함수이므로 완료될 때까지 대기합니다.
                 injuryRepository.upsertInjury(newInjury, user.id)
 
-                // 2. 사용자 정보 업데이트 (부상 ID 연결)
+                // 3. 사용자 정보 업데이트 (부상 ID 연결)
                 val userToUpdate = updatedUser.copy(currentInjuryId = newInjury.id)
-
-                // (★중요★) Flow를 반환하므로 반드시 collect()를 호출해야 실행됩니다.
                 userRepository.updateUserProfile(userToUpdate).collect()
 
-                // 3. 로컬 상태 즉시 업데이트 (UI 반응성 향상)
+                android.util.Log.d("DEBUG_DELETE", "ViewModel: 프로필 업데이트 완료. 강제 리로드(Force Reload) 요청 시작")
+                // 4. 로컬 상태 즉시 업데이트
                 _currentUser.value = userToUpdate
                 _currentInjury.value = newInjury
 
-                // 4. 변경된 정보로 대시보드 새로고침
+                // 5. [핵심] 강제 리로드 요청 (기존 DB 데이터 삭제 후 AI 재요청)
                 loadMainDashboardData(forceReload = true)
 
             } catch (e: Exception) {
