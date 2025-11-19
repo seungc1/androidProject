@@ -224,11 +224,16 @@ class RehabViewModel @Inject constructor(
     private fun createEmptyInjury() = Injury(id = "temp", name = "없음", bodyPart = "없음", severity = "없음", description = "")
 
     private fun filterTodayExercises(fullRoutine: List<ScheduledWorkout>): List<TodayExercise> {
+        // 1. 앱이 생성하는 오늘 날짜 포맷
         val todayString = SimpleDateFormat("M월 d일 (E)", Locale.KOREA).format(Date())
-        return fullRoutine.find { it.scheduledDate.contains(todayString) }
-            ?.exercises?.map { it.toTodayExercise() } ?: emptyList()
-    }
 
+        // 2. 날짜 매칭 (공백 제거 후 비교로 유연성 확보)
+        val normalize = { s: String -> s.replace(" ", "").trim() }
+
+        return fullRoutine.find {
+            normalize(it.scheduledDate).contains(normalize(todayString))
+        }?.exercises?.map { it.toTodayExercise() } ?: emptyList()
+    }
     private fun ExerciseRecommendation.toTodayExercise() = TodayExercise(
         exercise = Exercise(
             id = name, name = name, description = description, bodyPart = bodyPart,
