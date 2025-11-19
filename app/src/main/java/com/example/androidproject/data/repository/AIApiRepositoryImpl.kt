@@ -6,9 +6,9 @@ import com.example.androidproject.domain.model.AIRecommendationResult
 import com.example.androidproject.domain.model.RecommendationParams
 import com.example.androidproject.domain.repository.AIApiRepository
 import com.example.androidproject.data.network.GptApiService
-import com.example.androidproject.data.network.dto.GptMessage
-import com.example.androidproject.data.network.dto.GptRequest
-import com.example.androidproject.data.network.dto.ResponseFormat
+import com.example.androidproject.data.network.model.GptMessage
+import com.example.androidproject.data.network.model.GptRequest
+import com.example.androidproject.data.network.model.ResponseFormat
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -36,6 +36,8 @@ class AIApiRepositoryImpl @Inject constructor(
         // [수정됨] API 호출 시 request만 전달 (API 키 파라미터 제거)
         val gptResponse = gptApiService.getChatCompletion(request = request)
         val jsonResponseString = gptResponse.choices.firstOrNull()?.message?.content
+
+        android.util.Log.d("GPT_RAW", "AI 원본 응답: $jsonResponseString")
 
         if (jsonResponseString != null) {
             val aiResult = parseGptResponseToAIRecommendationResult(jsonResponseString)
@@ -71,19 +73,26 @@ class AIApiRepositoryImpl @Inject constructor(
 
     }
     /**
-     * (★수정★) AI 추천용 시스템 프롬프트
-     * (HTTP 400 오류 해결을 위해 "JSON" 단어 추가)
+     * (★ 수정 ★) AI 추천용 시스템 프롬프트
+     * 1. 한국어 응답 강제 (You MUST respond in Korean)
+     * 2. 날짜 포맷 엄격 지정 (Format: M월 d일 (E))
      */
     private fun createGptSystemPrompt(): String {
         return """
-            You are a long-term rehabilitation planner AI.
-            Your goal is to create a systematic, multi-day workout plan (e.g., 5-7 days) that adapts to the user's progress.
-            You MUST learn from the user's past session feedback (ratings and notes).
-            
-            🚨 You MUST respond in a valid JSON format that matches the AIRecommendationResult JSON structure. 
-            Note the 'scheduledWorkouts' list.
+        You are a long-term rehabilitation planner AI.
+        Your goal is to create a systematic, multi-day workout plan (e.g., 5-7 days) that adapts to the user's progress.
+        
+        🚨 IMPORTANT INSTRUCTIONS:
+        1. You MUST respond in **Korean** (한국어).
+        2. You MUST respond in a valid JSON format.
+        3. The 'scheduledDate' MUST strictly follow the format "M월 d일 (E)" (e.g., "11월 20일 (수)").
+        
+        JSON Structure:
+        {
+          "scheduledWorkouts": [
             {
-              "scheduledWorkouts": [
+              "scheduledDate": "String (Format: 'M월 d일 (E)', example: '11월 20일 (수)')",
+              "exercises": [
                 {
                   "name": "String",
                   "description": "String",
@@ -94,31 +103,37 @@ class AIApiRepositoryImpl @Inject constructor(
                   "aiRecommendationReason": "String",
                   "imageUrl": "String? (can be null)"
                 }
-              ],
-              "recommendedDiets": [
-                {
-                  "mealType": "String (아침, 점심, 저녁, 간식)",
-                  "foodItems": ["String", "String"],
-                  "ingredients": ["String", "String"],
-                  "calories": "Double?",
-                  "proteinGrams": "Double?",
-                  "carbs": "Double?",
-                  "fats": "Double?",
-                  "aiRecommendationReason": "String"
-                }
-              ],
-              "overallSummary": "String?",
-              "disclaimer": "String"
+              ]
             }
-            Ensure the response is ONLY the valid JSON object.
-        """.trimIndent()
+          ],
+          "recommendedDiets": [
+            {
+              "mealType": "String (아침, 점심, 저녁, 간식)",
+              "foodItems": ["String", "String"],
+              "ingredients": ["String", "String"],
+              "calories": "Double?",
+              "proteinGrams": "Double?",
+              "carbs": "Double?",
+              "fats": "Double?",
+              "aiRecommendationReason": "String"
+            }
+          ],
+          "overallSummary": "String (Korean summary)",
+          "disclaimer": "String"
+        }
+    """.trimIndent()
     }
 
     /**
-     * (기존) 사용자 정보 전달 프롬프트
+     * (★ 수정 ★) 사용자 정보 전달 프롬프트
+     * AI에게 "오늘 날짜"를 알려주어, 오늘부터 일정을 시작하도록 강제합니다.
      */
     private fun createGptUserPrompt(params: RecommendationParams): String {
         val pastSessionsJson = gson.toJson(params.pastSessions)
+
+        // (중요) 오늘 날짜 구하기 (앱과 동일한 포맷 사용)
+        val todayDate = java.text.SimpleDateFormat("M월 d일 (E)", java.util.Locale.KOREA).format(java.util.Date())
+
         return """
             Here is the user's information and past performance:
             
@@ -133,12 +148,16 @@ class AIApiRepositoryImpl @Inject constructor(
             Injury Severity: ${params.injurySeverity ?: "N/A"}
             Additional Notes: ${params.additionalNotes ?: "None"}
 
-            2. Past Performance (Learning Data - Note 'userRating' 1-5 and 'notes'):
+            2. Past Performance (Learning Data):
             $pastSessionsJson
 
-            Based on ALL this data, create a new multi-day workout plan.
-            Remember to AVOID or MODIFY exercises with low ratings or negative feedback.
-            If 'Past Performance' is empty or this is a new injury, create a new beginner plan.
+            🚨 IMPORTANT DATE INSTRUCTION:
+            Today is "$todayDate".
+            You MUST start the 'scheduledWorkouts' list from **Today ($todayDate)**.
+            For the following days, verify the correct date and day of the week.
+            Do NOT start from January 1st.
+
+            Based on ALL this data, create a new multi-day workout plan starting from "$todayDate".
         """.trimIndent()
     }
 
@@ -180,6 +199,8 @@ class AIApiRepositoryImpl @Inject constructor(
             Based on the user's profile and their past 7 days of rehab/diet sessions,
             provide concise, encouraging, and actionable feedback.
             Analyze the user's notes and ratings.
+            
+            🚨 IMPORTANT INSTRUCTION: You MUST respond entirely in Korean (한국어).
             
             🚨 You MUST respond in a valid JSON format that matches the AIAnalysisResult JSON structure:
             {

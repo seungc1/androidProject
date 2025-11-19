@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -39,6 +40,7 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // 1. 기존 버튼들 연결
         binding.editButton.setOnClickListener {
             findNavController().navigate(R.id.action_navigation_profile_to_profileEditFragment)
         }
@@ -55,7 +57,12 @@ class ProfileFragment : Fragment() {
             requireActivity().finish()
         }
 
-        // (★수정★) UI 및 데이터 관찰
+        // (★추가★) 테스트 데이터 생성 버튼 연결
+        binding.generateTestDataButton.setOnClickListener {
+            viewModel.createTestHistory()
+            Toast.makeText(requireContext(), "지난 7일간의 운동/식단 기록이 생성되었습니다.", Toast.LENGTH_SHORT).show()
+        }
+
         observeData()
     }
 
@@ -63,19 +70,16 @@ class ProfileFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
-                // 1. 전체 UI 상태 (로딩, 빈 화면 여부 등) 관찰
                 launch {
                     viewModel.uiState.collectLatest { state ->
                         binding.profileLoadingSpinner.isVisible = state.isLoading
 
-                        // 데이터 로딩이 끝났는데 이름이 비어있으면 빈 화면 처리
                         val isEmpty = state.userName.isEmpty() && !state.isLoading
                         binding.emptyProfileView.isVisible = isEmpty
                         binding.profileDataView.isVisible = !isEmpty && !state.isLoading
                     }
                 }
 
-                // 2. (★핵심★) 사용자 데이터 실시간 관찰 -> 텍스트 뷰 즉시 갱신
                 launch {
                     viewModel.currentUser.collectLatest { user ->
                         user?.let {
@@ -91,7 +95,6 @@ class ProfileFragment : Fragment() {
                     }
                 }
 
-                // 3. (★핵심★) 부상 데이터 실시간 관찰
                 launch {
                     viewModel.currentInjury.collectLatest { injury ->
                         binding.injuryAreaTextView.text = injury?.bodyPart ?: "정보 없음"

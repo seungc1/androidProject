@@ -14,6 +14,7 @@ import com.prolificinteractive.materialcalendarview.CalendarDay
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import com.example.androidproject.domain.usecase.AddDietSessionUseCase
 import org.threeten.bp.DateTimeUtils
 import org.threeten.bp.LocalDate
 import org.threeten.bp.ZoneId
@@ -28,6 +29,7 @@ import javax.inject.Inject
 class RehabViewModel @Inject constructor(
     private val addRehabSessionUseCase: AddRehabSessionUseCase,
     private val workoutRoutineRepository: WorkoutRoutineRepository,
+    private val addDietSessionUseCase: AddDietSessionUseCase,
     private val userRepository: UserRepository,
     private val injuryRepository: InjuryRepository,
     private val dietRepository: DietRepository,
@@ -214,8 +216,55 @@ class RehabViewModel @Inject constructor(
     }
 
     fun createTestHistory() {
-        // (테스트 데이터 생성 로직 유지)
+        viewModelScope.launch {
+            val user = _currentUser.value ?: return@launch
+            _uiState.update { it.copy(isLoading = true) }
+
+            val calendar = Calendar.getInstance()
+
+            // 랜덤 데이터용 샘플
+            val exerciseNames = listOf("가벼운 스트레칭", "의자 스쿼트", "벽 짚고 팔굽혀펴기", "제자리 걷기")
+            val dietNames = listOf("닭가슴살 샐러드", "현미밥과 나물", "고구마와 우유", "연어 스테이크")
+
+            // 지난 7일간의 데이터 생성 (어제부터 7일 전까지)
+            for (i in 1..7) {
+                calendar.add(Calendar.DAY_OF_YEAR, -1) // 하루씩 과거로 이동
+                val date = calendar.time
+
+                // 1. 운동 기록 생성
+                val rehabSession = RehabSession(
+                    id = UUID.randomUUID().toString(),
+                    userId = user.id,
+                    exerciseId = exerciseNames.random(), // 랜덤 운동 이름
+                    dateTime = date,
+                    sets = (2..4).random(),
+                    reps = (10..15).random(),
+                    durationMinutes = (15..40).random(),
+                    userRating = (3..5).random(), // 3~5점 (대체로 잘 함)
+                    notes = "테스트 기록: $i 일 전 운동 완료"
+                )
+                addRehabSessionUseCase(rehabSession).collect()
+
+                // 2. 식단 기록 생성
+                val dietSession = DietSession(
+                    id = UUID.randomUUID().toString(),
+                    userId = user.id,
+                    dietId = "diet_${i}",
+                    dateTime = date,
+                    actualQuantity = 1.0,
+                    actualUnit = "인분",
+                    userSatisfaction = (3..5).random(),
+                    notes = "테스트 기록: ${dietNames.random()} 섭취"
+                )
+                addDietSessionUseCase(dietSession).collect()
+            }
+
+            _uiState.update { it.copy(isLoading = false) }
+
+            // (선택 사항) 데이터 생성 후 캘린더 UI 갱신 등을 위해 이벤트를 줄 수도 있음
+        }
     }
+
     // endregion
 
     // region [Helpers & Utils]
@@ -224,11 +273,16 @@ class RehabViewModel @Inject constructor(
     private fun createEmptyInjury() = Injury(id = "temp", name = "없음", bodyPart = "없음", severity = "없음", description = "")
 
     private fun filterTodayExercises(fullRoutine: List<ScheduledWorkout>): List<TodayExercise> {
+        // 1. 앱이 생성하는 오늘 날짜 포맷
         val todayString = SimpleDateFormat("M월 d일 (E)", Locale.KOREA).format(Date())
-        return fullRoutine.find { it.scheduledDate.contains(todayString) }
-            ?.exercises?.map { it.toTodayExercise() } ?: emptyList()
-    }
 
+        // 2. 날짜 매칭 (공백 제거 후 비교로 유연성 확보)
+        val normalize = { s: String -> s.replace(" ", "").trim() }
+
+        return fullRoutine.find {
+            normalize(it.scheduledDate).contains(normalize(todayString))
+        }?.exercises?.map { it.toTodayExercise() } ?: emptyList()
+    }
     private fun ExerciseRecommendation.toTodayExercise() = TodayExercise(
         exercise = Exercise(
             id = name, name = name, description = description, bodyPart = bodyPart,
@@ -248,5 +302,4 @@ class RehabViewModel @Inject constructor(
         ingredients = ingredients ?: emptyList(),
         preparationTips = null, aiRecommendationReason = aiRecommendationReason
     )
-    // endregion
 }
