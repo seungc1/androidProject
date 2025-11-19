@@ -1,4 +1,3 @@
-// 파일 경로: app/src/main/java/com/example/androidproject/data/remote/datasource/FirebaseDataSource.kt
 package com.example.androidproject.data.remote.datasource
 
 import com.example.androidproject.domain.model.*
@@ -279,15 +278,7 @@ class FirebaseDataSource @Inject constructor(
         batch.commit().await()
     }
 
-    suspend fun clearWorkouts(userId: String) {
-        val uid = getUid(userId)
-        val collectionRef = getUserDocRef(uid).collection("scheduled_workouts")
-        val snapshot = collectionRef.get().await()
-        val batch = firestore.batch()
-        snapshot.documents.forEach { batch.delete(it.reference) }
-        batch.commit().await()
-    }
-
+    // [삭제됨] 중복된 clearWorkouts 함수 제거
 
     suspend fun getWorkouts(userId: String): List<ScheduledWorkout> {
         val uid = getUid(userId)
@@ -313,6 +304,7 @@ class FirebaseDataSource @Inject constructor(
         }
     }
 
+    // ★★★ [유지] 하나만 남긴 clearWorkouts 함수 ★★★
     suspend fun clearWorkouts(userId: String) {
         val uid = getUid(userId)
         val collectionRef = getUserDocRef(uid).collection("scheduled_workouts")
