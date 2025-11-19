@@ -302,7 +302,7 @@ class RehabViewModel @Inject constructor(
     private fun ExerciseRecommendation.toTodayExercise() = TodayExercise(
         exercise = Exercise(
             id = name, name = name, description = description, bodyPart = bodyPart,
-            difficulty = difficulty, videoUrl = imageUrl, precautions = null,
+            difficulty = difficulty, precautions = null,
             sets = sets, reps = reps, aiRecommendationReason = aiRecommendationReason
         ),
         isCompleted = false

@@ -278,7 +278,16 @@ class FirebaseDataSource @Inject constructor(
         batch.commit().await()
     }
 
-    // [삭제됨] 중복된 clearWorkouts 함수 제거
+    // (여기에 중복된 함수가 있어서 에러가 났었습니다. 하나만 남겨둡니다.)
+    suspend fun clearWorkouts(userId: String) {
+        val uid = getUid(userId)
+        val collectionRef = getUserDocRef(uid).collection("scheduled_workouts")
+        val snapshot = collectionRef.get().await()
+        val batch = firestore.batch()
+        snapshot.documents.forEach { batch.delete(it.reference) }
+        batch.commit().await()
+    }
+
 
     suspend fun getWorkouts(userId: String): List<ScheduledWorkout> {
         val uid = getUid(userId)
@@ -302,23 +311,6 @@ class FirebaseDataSource @Inject constructor(
             }
             ScheduledWorkout(date, exercises)
         }
-    }
-
-    // ★★★ [유지] 하나만 남긴 clearWorkouts 함수 ★★★
-    // [디버그 로그 추가]
-    suspend fun clearWorkouts(userId: String) {
-        android.util.Log.d("DEBUG_DELETE", "FirebaseDataSource: Firestore에서 루틴 삭제 시작 (User: $userId)")
-        val uid = getUid(userId)
-        val collectionRef = getUserDocRef(uid).collection("scheduled_workouts")
-        val snapshot = collectionRef.get().await()
-
-        android.util.Log.d("DEBUG_DELETE", "FirebaseDataSource: 삭제할 문서 개수: ${snapshot.documents.size}")
-
-        val batch = firestore.batch()
-        snapshot.documents.forEach { batch.delete(it.reference) }
-        batch.commit().await()
-
-        android.util.Log.d("DEBUG_DELETE", "FirebaseDataSource: Firestore 삭제 완료")
     }
 
 // -----------------------------------------------------------------------
