@@ -129,12 +129,12 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
     private fun List<ScheduledWorkoutEntity>.toDomainResult(): AIRecommendationResult {
         val gson = Gson()
         val workouts = this.map {
+            // [수정] TypeToken 대신 Array로 받아서 toList()로 변환 (R8 오류 방지)
+            val exercisesArray = gson.fromJson(it.exercisesJson, Array<ExerciseRecommendation>::class.java)
+
             ScheduledWorkout(
                 scheduledDate = it.scheduledDate,
-                exercises = gson.fromJson(
-                    it.exercisesJson,
-                    object : TypeToken<List<ExerciseRecommendation>>() {}.type
-                )
+                exercises = exercisesArray?.toList() ?: emptyList()
             )
         }
         return AIRecommendationResult(
