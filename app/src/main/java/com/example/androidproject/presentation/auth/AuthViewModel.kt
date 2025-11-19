@@ -1,3 +1,4 @@
+// 파일 경로: app/src/main/java/com/example/androidproject/presentation/auth/AuthViewModel.kt
 package com.example.androidproject.presentation.auth
 
 import androidx.lifecycle.LiveData
@@ -7,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.androidproject.data.local.SessionManager
 import com.example.androidproject.domain.model.User
 import com.example.androidproject.domain.usecase.CheckUserExistsUseCase
-import com.example.androidproject.domain.usecase.GoogleLoginUseCase // (★ 추가)
+import com.example.androidproject.domain.usecase.GoogleLoginUseCase
 import com.example.androidproject.domain.usecase.LoginUseCase
 import com.example.androidproject.domain.usecase.SignupUseCase
 import com.google.firebase.auth.FirebaseAuth
@@ -16,7 +17,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// --- 상태 클래스 정의 ---
+// --- 기존 상태 클래스 정의 ---
 sealed class LoginState {
     object Loading : LoginState()
     data class Success(val userId: String) : LoginState()
@@ -35,12 +36,22 @@ sealed class SignupState {
     data class Error(val message: String) : SignupState()
 }
 
+// --- ★★★ 신규 상태 클래스 정의 (NetworkError 추가) ★★★
+sealed class CheckDuplicationState {
+    object Idle : CheckDuplicationState()
+    object Loading : CheckDuplicationState()
+    data class Available(val username: String) : CheckDuplicationState() // 사용 가능 (성공)
+    object Exists : CheckDuplicationState() // 중복됨 (실패)
+    object Invalid : CheckDuplicationState() // 입력 무효 (실패)
+    object NetworkError : CheckDuplicationState() // ★★★ 네트워크/권한 오류 ★★★
+}
+
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val checkUserExistsUseCase: CheckUserExistsUseCase,
     private val signupUseCase: SignupUseCase,
-    private val googleLoginUseCase: GoogleLoginUseCase, // (★ 추가) 주입
+    private val googleLoginUseCase: GoogleLoginUseCase,
     private val sessionManager: SessionManager
 ) : ViewModel() {
 
@@ -53,6 +64,11 @@ class AuthViewModel @Inject constructor(
 
     private val _signupState = MutableLiveData<SignupState>()
     val signupState: LiveData<SignupState> = _signupState
+
+    // ★★★ 신규 LiveData ★★★
+    private val _duplicationState = MutableLiveData<CheckDuplicationState>(CheckDuplicationState.Idle)
+    val duplicationState: LiveData<CheckDuplicationState> = _duplicationState
+
 
     /**
      * 로그인 상태 확인
@@ -93,7 +109,7 @@ class AuthViewModel @Inject constructor(
     }
 
     /**
-     * (★ 추가 ★) 구글 로그인 요청
+     * 구글 로그인 요청
      */
     fun googleLogin(idToken: String) {
         viewModelScope.launch {
@@ -109,7 +125,36 @@ class AuthViewModel @Inject constructor(
     }
 
     /**
-     * 회원가입
+     * ★★★ [수정] 아이디 중복 검사 로직 (오류 처리 추가) ★★★
+     */
+    fun checkUsernameDuplication(username: String) {
+        viewModelScope.launch {
+            _duplicationState.value = CheckDuplicationState.Loading
+
+            // 기본 유효성 검사 (빈 값, 길이 등)
+            if (username.isBlank() || username.length < 4) {
+                _duplicationState.value = CheckDuplicationState.Invalid
+                return@launch
+            }
+
+            try {
+                // DB 조회 (Local + Remote)
+                val exists = checkUserExistsUseCase(username)
+
+                if (exists) {
+                    _duplicationState.value = CheckDuplicationState.Exists
+                } else {
+                    _duplicationState.value = CheckDuplicationState.Available(username)
+                }
+            } catch (e: Exception) {
+                // ★★★ Firebase 권한/네트워크 오류 처리 ★★★
+                _duplicationState.value = CheckDuplicationState.NetworkError
+            }
+        }
+    }
+
+    /**
+     * 회원가입 로직
      */
     fun signup(username: String, password: String, passwordConfirm: String) {
         viewModelScope.launch {
@@ -119,14 +164,15 @@ class AuthViewModel @Inject constructor(
                 _signupState.value = SignupState.Error("PASSWORD_MISMATCH")
                 return@launch
             }
+            // 비밀번호 길이 검사 (strings.xml에 맞춰 6자리로 조정)
             if (password.length < 6) {
                 _signupState.value = SignupState.Error("SHORT_PASSWORD")
                 return@launch
             }
-            if (checkUserExistsUseCase(username)) {
-                _signupState.value = SignupState.Error("USER_EXISTS")
-                return@launch
-            }
+
+            // ★★★ 주의: 여기서 중복 확인 로직은 삭제합니다.
+            // 대신, UI(SignupActivity)에서 'verifiedUsername' 플래그를 통해
+            // 미리 중복 확인을 완료했는지 검증해야 합니다.
 
             val newUser = User(
                 id = username,
@@ -145,7 +191,11 @@ class AuthViewModel @Inject constructor(
                 sessionManager.saveUserId(newUser.id)
                 _signupState.value = SignupState.Success(newUser.id)
             } catch (e: Exception) {
-                _signupState.value = SignupState.Error("UNKNOWN_ERROR")
+                // Firebase 중복 오류 발생 시 "UNKNOWN_ERROR"가 아닌 "USER_EXISTS"를 반환하도록 변경
+                // FirebaseDataSource에서 User ID로 가입할 때 이미 로컬에 있다면 "USER_EXISTS"로 처리합니다.
+                // 만약 Firebase Auth에서 중복 오류가 나면 여기서 잡고 USER_EXISTS로 처리하는 로직이 필요합니다.
+                val errorMessage = if (e.message?.contains("The email address is already in use") == true) "USER_EXISTS" else "UNKNOWN_ERROR"
+                _signupState.value = SignupState.Error(errorMessage)
             }
         }
     }

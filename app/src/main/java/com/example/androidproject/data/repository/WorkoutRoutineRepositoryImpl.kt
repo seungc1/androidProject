@@ -1,6 +1,7 @@
+// 파일 경로: app/src/main/java/com/example/androidproject/data/repository/WorkoutRoutineRepositoryImpl.kt
 package com.example.androidproject.data.repository
 
-import android.util.Log
+import android.util.Log // ★★★ 이 구문이 누락되었을 수 있습니다. ★★★
 import com.example.androidproject.data.local.datasource.LocalDataSource
 import com.example.androidproject.data.local.entity.ScheduledWorkoutEntity
 import com.example.androidproject.data.remote.datasource.FirebaseDataSource
@@ -30,10 +31,10 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
 
         val userId = user.id
 
-        // 1. (★수정: 상태 변경 시 무조건 AI 요청 경로★) 강제 리로드 시 처리
+        // 1. 강제 리로드 시 처리
         if (forceReload) {
             // 로컬/서버 캐시 삭제 (새로 받을 거니까)
-            localDataSource.clearWorkouts(userId)
+            localDataSource.clearWorkouts(userId) // <-- LocalDataSource의 clearWorkouts 호출
             try {
                 firebaseDataSource.clearWorkouts(userId)
                 Log.d("WorkoutRepo", "Cleared remote and local workouts due to forceReload.")
@@ -47,7 +48,6 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             val localCache = localDataSource.getWorkouts(userId).first()
             if (localCache.isNotEmpty()) {
                 emit(localCache.toDomainResult())
-                // 로컬 데이터는 일단 화면에 표시하고, 함수를 종료하여 AI 요청을 막습니다.
                 return@flow
             }
 
@@ -90,7 +90,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                     localDataSource.upsertWorkouts(entities)
 
                     try {
-                        // (★수정★) 서버에 저장 (새 루틴이므로)
+                        // 서버에 저장 (새 루틴이므로)
                         firebaseDataSource.upsertWorkouts(userId, aiResult.scheduledWorkouts)
                         Log.d("WorkoutRepo", "Firebase Save Success: New routine stored.")
                     } catch (e: Exception) {
@@ -129,7 +129,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
     private fun List<ScheduledWorkoutEntity>.toDomainResult(): AIRecommendationResult {
         val gson = Gson()
         val workouts = this.map {
-            // [수정] TypeToken 대신 Array로 받아서 toList()로 변환 (R8 오류 방지)
+            // R8/ProGuard 오류 방지를 위해 TypeToken 대신 Array로 받아서 toList()로 변환
             val exercisesArray = gson.fromJson(it.exercisesJson, Array<ExerciseRecommendation>::class.java)
 
             ScheduledWorkout(

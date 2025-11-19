@@ -1,8 +1,9 @@
+// 파일 경로: app/src/main/java/com/example/androidproject/data/remote/datasource/FirebaseDataSource.kt
 package com.example.androidproject.data.remote.datasource
 
 import com.example.androidproject.domain.model.*
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.GoogleAuthProvider // (★ 추가)
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
@@ -13,6 +14,7 @@ class FirebaseDataSource @Inject constructor(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore
 ) {
+    // (★핵심★) 가짜 도메인 상수
     private val DUMMY_DOMAIN = "@rehabai.com"
 
     // ------------------------------------------------------------------------
@@ -23,7 +25,6 @@ class FirebaseDataSource @Inject constructor(
         val email = if (user.id.contains("@")) user.id else "${user.id}$DUMMY_DOMAIN"
         val authResult = auth.createUserWithEmailAndPassword(email, user.password).await()
         val uid = authResult.user?.uid ?: throw Exception("UID 생성 실패")
-
         saveUserToFirestore(uid, user)
         return uid
     }
@@ -35,7 +36,7 @@ class FirebaseDataSource @Inject constructor(
     }
 
     /**
-     * (★ 추가 ★) 구글 ID 토큰으로 Firebase 인증
+     * ★★★ [추가] 구글 ID 토큰으로 Firebase 인증 ★★★
      */
     suspend fun signInWithGoogle(idToken: String): String {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
@@ -78,6 +79,7 @@ class FirebaseDataSource @Inject constructor(
 
         val data = snapshot.data ?: return null
 
+        // Firestore Map -> User 객체 수동 변환
         return try {
             User(
                 id = data["originalId"] as? String ?: "",
@@ -94,7 +96,6 @@ class FirebaseDataSource @Inject constructor(
                 preferredDietaryTypes = (data["preferredDietaryTypes"] as? List<String>) ?: emptyList(),
                 equipmentAvailable = (data["equipmentAvailable"] as? List<String>) ?: emptyList(),
                 currentPainLevel = (data["currentPainLevel"] as? Number)?.toInt() ?: 0,
-                // (★ 수정 ★) additionalNotes는 String으로 안전하게 캐스팅
                 additionalNotes = data["additionalNotes"] as? String,
                 targetCalories = (data["targetCalories"] as? Number)?.toInt(),
                 currentInjuryId = data["currentInjuryId"] as? String
@@ -104,6 +105,25 @@ class FirebaseDataSource @Inject constructor(
             null
         }
     }
+
+    /**
+     * ★★★ [수정] 서버 권한/네트워크 오류에 대한 try-catch 추가 (오류를 다시 던짐) ★★★
+     */
+    suspend fun checkUserExistsRemote(username: String): Boolean {
+        return try {
+            // 'users' 컬렉션에서 'originalId'가 일치하는 문서가 있는지 쿼리
+            val snapshot = firestore.collection("users")
+                .whereEqualTo("originalId", username)
+                .limit(1)
+                .get()
+                .await()
+            return !snapshot.isEmpty
+        } catch (e: Exception) {
+            // FirebaseFirestoreException (PERMISSION_DENIED 등) 발생 시, 오류를 던져 ViewModel에서 NetworkError로 처리하게 함
+            throw e
+        }
+    }
+
 
     // ------------------------------------------------------------------------
     // 2. 부상 정보 (Injury)
@@ -178,6 +198,27 @@ class FirebaseDataSource @Inject constructor(
         }
     }
 
+    suspend fun getRehabSessionsBetween(userId: String, startDate: Date, endDate: Date): List<RehabSession> {
+        val uid = getUid(userId)
+        val snapshot = getUserDocRef(uid).collection("rehab_sessions")
+            .whereGreaterThanOrEqualTo("dateTime", startDate)
+            .whereLessThanOrEqualTo("dateTime", endDate)
+            .get().await()
+        return snapshot.documents.mapNotNull { doc ->
+            RehabSession(
+                id = doc.getString("id") ?: "",
+                userId = doc.getString("userId") ?: "",
+                exerciseId = doc.getString("exerciseId") ?: "",
+                dateTime = doc.getDate("dateTime") ?: Date(),
+                sets = doc.getLong("sets")?.toInt() ?: 0,
+                reps = doc.getLong("reps")?.toInt() ?: 0,
+                durationMinutes = doc.getLong("durationMinutes")?.toInt(),
+                userRating = doc.getLong("userRating")?.toInt(),
+                notes = doc.getString("notes")
+            )
+        }
+    }
+
     // ------------------------------------------------------------------------
     // 4. 식단 기록 (DietSession)
     // ------------------------------------------------------------------------
@@ -228,6 +269,7 @@ class FirebaseDataSource @Inject constructor(
 
         workouts.forEach { workout ->
             val docRef = collectionRef.document(workout.scheduledDate.replace(" ", "_"))
+
             val data = hashMapOf(
                 "scheduledDate" to workout.scheduledDate,
                 "exercises" to workout.exercises
@@ -236,6 +278,16 @@ class FirebaseDataSource @Inject constructor(
         }
         batch.commit().await()
     }
+
+    suspend fun clearWorkouts(userId: String) {
+        val uid = getUid(userId)
+        val collectionRef = getUserDocRef(uid).collection("scheduled_workouts")
+        val snapshot = collectionRef.get().await()
+        val batch = firestore.batch()
+        snapshot.documents.forEach { batch.delete(it.reference) }
+        batch.commit().await()
+    }
+
 
     suspend fun getWorkouts(userId: String): List<ScheduledWorkout> {
         val uid = getUid(userId)
@@ -268,9 +320,9 @@ class FirebaseDataSource @Inject constructor(
     private fun getUid(userId: String): String {
         val currentUser = auth.currentUser
         if (currentUser != null) return currentUser.uid
+
         throw Exception("사용자가 로그인되어 있지 않습니다.")
     }
-
     suspend fun getInjury(injuryId: String): Injury? {
         val currentUser = auth.currentUser ?: return null
         val snapshot = firestore.collection("users").document(currentUser.uid)

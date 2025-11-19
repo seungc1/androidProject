@@ -1,3 +1,4 @@
+// 파일 경로: app/src/main/java/com/example/androidproject/data/repository/UserRepositoryImpl.kt
 package com.example.androidproject.data.repository
 
 import com.example.androidproject.data.local.datasource.LocalDataSource
@@ -118,8 +119,17 @@ class UserRepositoryImpl @Inject constructor(
         }
     }
 
+    /**
+     * ★★★ [수정] 로컬 DB와 Firebase를 모두 조회하여 중복 확인 ★★★
+     */
     override suspend fun checkUserExists(id: String): Boolean {
-        return false
+        // 1. Local DB 확인 (빠른 체크)
+        val localExists = localDataSource.getUserCountById(id) > 0
+
+        if (localExists) return true
+
+        // 2. Firebase Firestore 확인 (서버 체크)
+        return firebaseDataSource.checkUserExistsRemote(id)
     }
 
     private fun getTemporaryUser(userId: String): User {
