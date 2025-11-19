@@ -72,27 +72,36 @@ class AIApiRepositoryImpl @Inject constructor(
     }
     /**
      * (★ 수정 ★) AI 추천용 시스템 프롬프트
-     * (7일치 루틴을 반드시 생성하도록 구조와 명령어를 명확하게 강화)
+     * 1. 한국어 응답 강제 (You MUST respond in Korean)
+     * 2. 날짜 포맷 엄격 지정 (Format: M월 d일 (E))
      */
     private fun createGptSystemPrompt(): String {
         return """
         You are a long-term rehabilitation planner AI.
         Your goal is to create a systematic, multi-day workout plan (e.g., 5-7 days) that adapts to the user's progress.
-        You MUST learn from the user's past session feedback (ratings and notes).
         
-        🚨 You MUST respond in a valid JSON format that matches the AIRecommendationResult JSON structure. 
-        Note the 'scheduledWorkouts' list.
+        🚨 IMPORTANT INSTRUCTIONS:
+        1. You MUST respond in **Korean** (한국어).
+        2. You MUST respond in a valid JSON format.
+        3. The 'scheduledDate' MUST strictly follow the format "M월 d일 (E)" (e.g., "11월 20일 (수)").
+        
+        JSON Structure:
         {
           "scheduledWorkouts": [
             {
-              "name": "String",
-              "description": "String",
-              "bodyPart": "String",
-              "sets": "Int",
-              "reps": "Int",
-              "difficulty": "String (초급, 중급, 고급)",
-              "aiRecommendationReason": "String",
-              "imageUrl": "String? (can be null)"
+              "scheduledDate": "String (Format: 'M월 d일 (E)', example: '11월 20일 (수)')",
+              "exercises": [
+                {
+                  "name": "String",
+                  "description": "String",
+                  "bodyPart": "String",
+                  "sets": "Int",
+                  "reps": "Int",
+                  "difficulty": "String (초급, 중급, 고급)",
+                  "aiRecommendationReason": "String",
+                  "imageUrl": "String? (can be null)"
+                }
+              ]
             }
           ],
           "recommendedDiets": [
@@ -107,10 +116,9 @@ class AIApiRepositoryImpl @Inject constructor(
               "aiRecommendationReason": "String"
             }
           ],
-          "overallSummary": "String?",
+          "overallSummary": "String (Korean summary)",
           "disclaimer": "String"
         }
-        Ensure the response is ONLY the valid JSON object.
     """.trimIndent()
     }
 

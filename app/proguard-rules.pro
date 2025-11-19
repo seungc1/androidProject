@@ -24,7 +24,11 @@
 # Gson이 제네릭 타입(List<T> 등)을 인식하기 위해 필요합니다.
 -keepattributes Signature
 -keepattributes *Annotation*
--keep class sun.misc.Unsafe { *; }
+# Gson이 사용하는 내부 클래스 경고 무시 (이것만 있으면 충분합니다)
+-dontwarn sun.misc.Unsafe
+
+# 아래 줄은 삭제하세요 (시스템 클래스라 keep이 불필요하며 에러의 원인이 됩니다)
+# -keep class sun.misc.Unsafe { *; }
 -keep class com.google.gson.stream.** { *; }
 
 # TypeToken을 사용하는 코드가 난독화되지 않도록 보호합니다.
