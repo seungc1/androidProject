@@ -1,6 +1,5 @@
 package com.example.androidproject.presentation.viewmodel
 
-import android.util.Log // (★추가★) 디버깅용 로그
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidproject.data.local.SessionManager
@@ -47,30 +46,18 @@ class HistoryViewModel @Inject constructor(
     }
 
     fun loadHistory(date: LocalDate) {
-        val userId = sessionManager.getUserId()
-        if (userId == null) {
-            Log.e("HistoryViewModel", "사용자 ID를 찾을 수 없습니다.")
-            return
-        }
+        val userId = sessionManager.getUserId() ?: return
 
         viewModelScope.launch {
             _historyUiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
-                // 1. 선택한 날짜의 00:00:00 (Start)
                 val startDate = DateTimeUtils.toDate(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
-
-                // 2. 다음 날짜의 00:00:00 (End) -> 쿼리에서 '<' (미만) 조건을 쓰므로 24시간 전체 커버
                 val endDate = DateTimeUtils.toDate(date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant())
-
-                Log.d("HistoryViewModel", "데이터 조회: $userId, $startDate ~ $endDate")
 
                 val rehabFlow = rehabSessionRepository.getRehabSessionsBetween(userId, startDate, endDate)
                 val dietFlow = dietSessionRepository.getDietSessionsBetween(userId, startDate, endDate)
 
-                // 두 데이터를 결합하여 최신순으로 정렬
                 combine(rehabFlow, dietFlow) { rehabSessions, dietSessions ->
-                    Log.d("HistoryViewModel", "조회 결과 - 운동: ${rehabSessions.size}개, 식단: ${dietSessions.size}개")
-
                     val exerciseItems = rehabSessions.map { HistoryItem.Exercise(it) }
                     val dietItems = dietSessions.map { HistoryItem.Diet(it) }
                     (exerciseItems + dietItems).sortedByDescending { it.dateTime }
@@ -78,7 +65,6 @@ class HistoryViewModel @Inject constructor(
                     _historyUiState.update { it.copy(isLoading = false, historyItems = historyItems) }
                 }
             } catch (e: Exception) {
-                Log.e("HistoryViewModel", "데이터 로드 오류", e)
                 _historyUiState.update { it.copy(isLoading = false, errorMessage = "로드 실패: ${e.message}") }
             }
         }
@@ -118,6 +104,7 @@ class HistoryViewModel @Inject constructor(
             val dietDates = dietSessionRepository.getDietHistory(userId).first().map { it.dateTime }
 
             // 오늘 날짜도 포함 (UX상 저장 직후 반응성을 위해)
+            // java.util.Date() 사용
             val allDates = (rehabDates + dietDates + java.util.Date()).distinct()
 
             val calendarDays = allDates.map {
