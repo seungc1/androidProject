@@ -200,6 +200,8 @@ class AIApiRepositoryImpl @Inject constructor(
             provide concise, encouraging, and actionable feedback.
             Analyze the user's notes and ratings.
             
+            🚨 IMPORTANT INSTRUCTION: You MUST respond entirely in Korean (한국어).
+            
             🚨 You MUST respond in a valid JSON format that matches the AIAnalysisResult JSON structure:
             {
               "summary": "String",
