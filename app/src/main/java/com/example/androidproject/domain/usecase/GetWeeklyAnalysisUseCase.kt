@@ -1,6 +1,6 @@
 package com.example.androidproject.domain.usecase
 
-import com.example.androidproject.data.remote.datasource.FirebaseDataSource // 🚨 (1) Import 추가
+import com.example.androidproject.data.remote.datasource.FirebaseDataSource
 import com.example.androidproject.domain.model.AIAnalysisResult
 import com.example.androidproject.domain.model.RehabData
 import com.example.androidproject.domain.model.User
@@ -9,12 +9,12 @@ import com.example.androidproject.domain.repository.DietSessionRepository
 import com.example.androidproject.domain.repository.RehabSessionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow // 🚨 (2) Flow 빌더 사용을 위해 import
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.catch
 import java.util.Calendar
 import java.util.Date
 import javax.inject.Inject
-import java.text.SimpleDateFormat // 🚨 (3) SimpleDateFormat Import
+import java.text.SimpleDateFormat
 import java.util.Locale
 
 /**
