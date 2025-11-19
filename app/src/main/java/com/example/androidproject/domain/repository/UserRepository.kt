@@ -5,7 +5,8 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * [수정 파일 6/8] 'UserRepository' '인터페이스'
- * (★ 수정 ★) 'loginWithGoogle' 함수 추가
+ * 'login' '함수' '반환' '타입' '변경'
+ * 'checkUserExists', 'createUser' '함수' '추가'
  */
 interface UserRepository {
     // (기존) '프로필' '조회'

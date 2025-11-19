@@ -313,6 +313,58 @@ class FirebaseDataSource @Inject constructor(
         }
     }
 
+    suspend fun clearWorkouts(userId: String) {
+        val uid = getUid(userId)
+        val collectionRef = getUserDocRef(uid).collection("scheduled_workouts")
+        val snapshot = collectionRef.get().await()
+        val batch = firestore.batch()
+        snapshot.documents.forEach { batch.delete(it.reference) }
+        batch.commit().await()
+    }
+
+// -----------------------------------------------------------------------
+// 6. AI 분석 캐시 (Analysis Cache)
+// ------------------------------------------------------------------------
+
+    /**
+     * 주간 분석 결과를 Firebase 캐시에 저장합니다.
+     * @param cacheId 주간 분석 기간의 시작 날짜 (YYYYMMDD)
+     */
+    suspend fun saveAnalysisCache(userId: String, cacheId: String, result: AIAnalysisResult) {
+        val uid = getUid(userId)
+        val data = hashMapOf(
+            "summary" to result.summary,
+            "strengths" to result.strengths,
+            "areasForImprovement" to result.areasForImprovement,
+            "personalizedTips" to result.personalizedTips,
+            "nextStepsRecommendation" to result.nextStepsRecommendation,
+            "disclaimer" to result.disclaimer,
+            "timestamp" to Date() // 캐시 저장 시간
+        )
+        getUserDocRef(uid).collection("analysis_cache").document(cacheId).set(data).await()
+    }
+
+    /**
+     * Firebase 캐시에서 주간 분석 결과를 가져옵니다. (주간 분석 시작 날짜 기준)
+     */
+    suspend fun getAnalysisCache(userId: String, cacheId: String): AIAnalysisResult? {
+        val uid = getUid(userId)
+        val snapshot = getUserDocRef(uid).collection("analysis_cache").document(cacheId).get().await()
+
+        if (!snapshot.exists()) return null
+
+        val data = snapshot.data ?: return null
+
+        @Suppress("UNCHECKED_CAST")
+        return AIAnalysisResult(
+            summary = data["summary"] as? String ?: "",
+            strengths = data["strengths"] as? List<String> ?: emptyList(),
+            areasForImprovement = data["areasForImprovement"] as? List<String> ?: emptyList(),
+            personalizedTips = data["personalizedTips"] as? List<String> ?: emptyList(),
+            nextStepsRecommendation = data["nextStepsRecommendation"] as? String ?: "",
+            disclaimer = data["disclaimer"] as? String ?: ""
+        )
+    }
     // ------------------------------------------------------------------------
     // Helper Methods
     // ------------------------------------------------------------------------
