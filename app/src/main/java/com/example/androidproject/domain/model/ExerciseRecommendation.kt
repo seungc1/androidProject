@@ -1,3 +1,4 @@
+// 파일 경로: app/src/main/java/com/example/androidproject/domain/model/ExerciseRecommendation.kt
 package com.example.androidproject.domain.model
 
 /**
@@ -12,5 +13,7 @@ data class ExerciseRecommendation(
     val reps: Int,
     val difficulty: String,
     val aiRecommendationReason: String? = null,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    // ★★★ [추가] 운동 완료 상태 필드 ★★★
+    val isCompleted: Boolean = false
 )
