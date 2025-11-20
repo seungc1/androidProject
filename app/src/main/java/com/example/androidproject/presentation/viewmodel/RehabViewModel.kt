@@ -237,6 +237,34 @@ class RehabViewModel @Inject constructor(
             _currentInjury.value = null
         }
     }
+    fun deleteAllUserData() {
+        viewModelScope.launch {
+            val userId = _currentUser.value?.id ?: return@launch
+
+            // 로딩 UI 업데이트
+            _uiState.update { it.copy(isLoading = true) }
+
+            try {
+                // 1. 로컬 DB 데이터 모두 삭제 (Room)
+                localDataSource.clearAllTables() // LocalDataSource에서 clearAllTables 함수가 IO 스레드에서 실행되도록 이미 수정되었음을 가정
+
+                // 2. Firebase의 주요 데이터 컬렉션 삭제
+                firebaseDataSource.clearAllRehabData(userId) // ★★★ 이 함수는 3단계에서 추가해야 합니다 ★★★
+
+                // 3. 로그아웃 처리 및 상태 초기화 (SessionManager 포함)
+                sessionManager.clearSession()
+                _currentUser.value = null
+                _currentInjury.value = null
+                _uiState.update { MainUiState(isLoading = false, isProfileComplete = false) } // 홈 화면에서 초기 상태로 복귀
+
+                // (로그인 화면으로 이동은 Fragment에서 처리합니다)
+
+            } catch (e: Exception) {
+                android.util.Log.e("DELETE_DATA", "전체 데이터 삭제 실패: ${e.message}")
+                _uiState.update { it.copy(isLoading = false, errorMessage = "데이터 삭제 실패: ${e.message}") }
+            }
+        }
+    }
 
     fun createTestHistory() {
         viewModelScope.launch {

@@ -11,5 +11,6 @@ data class ExerciseEntity(
     val bodyPart: String,
     val difficulty: String,
     val precautions: String?,
-    val aiRecommendationReason: String?
+    val aiRecommendationReason: String?,
+    val imageName: String?
 )

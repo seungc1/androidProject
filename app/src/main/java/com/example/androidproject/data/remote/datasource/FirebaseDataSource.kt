@@ -357,6 +357,41 @@ class FirebaseDataSource @Inject constructor(
         )
     }
     // ------------------------------------------------------------------------
+// 7. 전체 데이터 삭제 (관리) ★★★ 이 섹션을 추가합니다. ★★★
+// ------------------------------------------------------------------------
+
+    /**
+     * 특정 사용자의 모든 재활 및 식단 관련 데이터를 Firestore에서 삭제합니다.
+     */
+    suspend fun clearAllRehabData(userId: String) {
+        val uid = getUid(userId)
+
+        // 삭제할 컬렉션 목록
+        val collectionsToDelete = listOf(
+            "rehab_sessions",
+            "diet_sessions",
+            "scheduled_workouts",
+            "analysis_cache"
+            // Injury는 보통 users 문서 아래에 'injuries' 컬렉션에 있으므로, 함께 삭제합니다.
+            // 유저 문서 자체(User Profile)는 삭제하지 않고, 기록만 삭제합니다.
+        )
+
+        for (collectionName in collectionsToDelete) {
+            val collectionRef = getUserDocRef(uid).collection(collectionName)
+            val snapshot = collectionRef.get().await()
+
+            if (!snapshot.isEmpty) {
+                val batch = firestore.batch()
+                snapshot.documents.forEach { doc ->
+                    batch.delete(doc.reference)
+                }
+                batch.commit().await()
+                android.util.Log.d("DELETE_DATA", "컬렉션 '$collectionName'의 문서 ${snapshot.size()}개 삭제 완료.")
+            }
+        }
+        android.util.Log.d("DELETE_DATA", "Firebase 모든 기록 삭제 완료.")
+    }
+    // ------------------------------------------------------------------------
     // Helper Methods
     // ------------------------------------------------------------------------
 
