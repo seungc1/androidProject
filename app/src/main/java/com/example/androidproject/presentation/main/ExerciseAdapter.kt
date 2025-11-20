@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.androidproject.databinding.ItemExerciseBinding
 import com.example.androidproject.domain.model.Exercise
+import android.util.Log
 
 class ExerciseAdapter(
     private val onItemClick: (Exercise) -> Unit
@@ -47,6 +48,7 @@ class ExerciseAdapter(
                         (if (setsText.isNotEmpty() || repsText.isNotEmpty()) " / $setsText$detailSeparator$repsText" else "")
 
             binding.exerciseStatusCheckBox.isChecked = todayExercise.isCompleted
+            Log.d("REHAB_LOG", "Adapter 바인딩: ${exercise.name} (ID: ${exercise.id}) -> isCompleted: ${todayExercise.isCompleted}")
         }
     }
 }

@@ -23,10 +23,11 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
+import android.util.Log // ★ DEBUG: Log import 추가 ★
 
 @HiltViewModel
 class RehabViewModel @Inject constructor(
-    // ★★★ [수정] 여기에 rehabSessionRepository를 추가했습니다 ★★★
+    // [수정 완료] rehabSessionRepository가 생성자에 주입되어야 합니다.
     private val rehabSessionRepository: RehabSessionRepository,
     private val addRehabSessionUseCase: AddRehabSessionUseCase,
     private val workoutRoutineRepository: WorkoutRoutineRepository,
@@ -101,11 +102,13 @@ class RehabViewModel @Inject constructor(
             val user = _currentUser.value ?: return@launch
             val isComplete = user.name != "신규 사용자"
 
-            // [핵심] 오늘 날짜의 완료된 운동 기록을 가져옵니다.
+            // [핵심] 1. 오늘 날짜의 완료된 운동 기록을 DB에서 가져옵니다.
             val todaySessions = fetchTodayCompletedSessions(user.id)
+            Log.d("REHAB_LOG", "로드 시점: 오늘 완료된 세션 수: ${todaySessions.size}")
+            todaySessions.forEach { Log.d("REHAB_LOG", " - 완료 세션 ID: ${it.exerciseId}") }
 
             if (!forceReload && _uiState.value.fullRoutine.isNotEmpty()) {
-                // [핵심] 가져온 기록을 필터 함수에 전달하여 체크 상태를 반영합니다.
+                // [핵심] 2. 캐시된 루틴에 완료 기록을 반영합니다.
                 val todayExercises = filterTodayExercises(_uiState.value.fullRoutine, todaySessions)
                 _uiState.update {
                     it.copy(
@@ -114,6 +117,7 @@ class RehabViewModel @Inject constructor(
                         isProfileComplete = isComplete
                     )
                 }
+                Log.d("REHAB_LOG", "캐시 사용: 오늘의 운동 ${todayExercises.size}개 중 완료 ${todayExercises.count { it.isCompleted }}개 표시.")
                 return@launch
             }
 
@@ -134,20 +138,25 @@ class RehabViewModel @Inject constructor(
                         val diets = aiResult.recommendedDiets.map { it.toDomain() }
                         dietRepository.upsertDiets(diets)
 
+                        // [핵심] 3. AI 결과에 완료 기록을 반영합니다.
+                        val updatedTodayExercises = filterTodayExercises(aiResult.scheduledWorkouts, todaySessions)
+
+                        Log.d("REHAB_LOG", "AI 로드: 오늘의 운동 ${updatedTodayExercises.size}개 중 완료 ${updatedTodayExercises.count { it.isCompleted }}개 표시.")
+
                         _uiState.value = MainUiState(
                             isLoading = false,
                             userName = user.name,
                             currentInjuryName = injury?.name,
                             currentInjuryArea = injury?.bodyPart,
                             fullRoutine = aiResult.scheduledWorkouts,
-                            // [핵심] 여기서도 완료 기록(todaySessions)을 반영합니다.
-                            todayExercises = filterTodayExercises(aiResult.scheduledWorkouts, todaySessions),
+                            todayExercises = updatedTodayExercises,
                             recommendedDiets = diets,
                             isProfileComplete = isComplete
                         )
                     }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = "데이터 로드 실패: ${e.message}") }
+                Log.e("REHAB_LOG", "loadMainDashboardData 실패: ${e.message}")
             }
         }
     }
@@ -160,7 +169,7 @@ class RehabViewModel @Inject constructor(
             val session = RehabSession(
                 id = UUID.randomUUID().toString(),
                 userId = user.id,
-                exerciseId = exerciseId,
+                exerciseId = exerciseId, // ★★★ 이 ID가 완료 기록에 저장됩니다. ★★★
                 dateTime = Date(),
                 sets = exercise?.sets ?: 3,
                 reps = exercise?.reps ?: 10,
@@ -169,8 +178,13 @@ class RehabViewModel @Inject constructor(
                 userRating = rating
             )
 
+            Log.d("REHAB_LOG", "저장 요청: ID=${session.exerciseId}, Name=${exercise?.name}")
+            // 1. RehabSession을 DB에 저장합니다.
             addRehabSessionUseCase(session).collect()
+
+            // 2. 현재 메모리 내 UI 상태를 업데이트합니다.
             setExerciseCompleted(exerciseId, true)
+            Log.d("REHAB_LOG", "저장 완료 및 UI 업데이트: ID=${exerciseId}")
         }
     }
 
@@ -251,52 +265,7 @@ class RehabViewModel @Inject constructor(
         }
     }
 
-    fun createTestHistory() {
-        viewModelScope.launch {
-            val user = _currentUser.value ?: return@launch
-            _uiState.update { it.copy(isLoading = true) }
-
-            try {
-                val calendar = Calendar.getInstance()
-                val exerciseNames = listOf("가벼운 스트레칭", "의자 스쿼트", "벽 짚고 팔굽혀펴기", "제자리 걷기")
-                val dietNames = listOf("닭가슴살 샐러드", "현미밥과 나물", "고구마와 우유", "연어 스테이크")
-
-                for (i in 1..7) {
-                    calendar.add(Calendar.DAY_OF_YEAR, -1)
-                    val date = calendar.time
-
-                    val rehabSession = RehabSession(
-                        id = UUID.randomUUID().toString(),
-                        userId = user.id,
-                        exerciseId = exerciseNames.random(),
-                        dateTime = date,
-                        sets = (2..4).random(),
-                        reps = (10..15).random(),
-                        durationMinutes = (15..40).random(),
-                        userRating = (3..5).random(),
-                        notes = "테스트 기록: $i 일 전 운동 완료"
-                    )
-                    addRehabSessionUseCase(rehabSession).collect()
-
-                    val dietSession = DietSession(
-                        id = UUID.randomUUID().toString(),
-                        userId = user.id,
-                        dietId = "diet_${i}",
-                        dateTime = date,
-                        actualQuantity = 1.0,
-                        actualUnit = "인분",
-                        userSatisfaction = (3..5).random(),
-                        notes = "테스트 기록: ${dietNames.random()} 섭취"
-                    )
-                    addDietSessionUseCase(dietSession).collect()
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
-                _uiState.update { it.copy(isLoading = false) }
-            }
-        }
-    }
+    // createTestHistory 함수는 요청에 따라 삭제했습니다.
     // endregion
 
     // region [Helpers & Utils]
@@ -304,7 +273,7 @@ class RehabViewModel @Inject constructor(
 
     private fun createEmptyInjury() = Injury(id = "temp", name = "없음", bodyPart = "없음", severity = "없음", description = "")
 
-    // [추가] 오늘 하루 동안 완료한 세션 목록을 가져오는 함수
+    // [핵심 함수 1] 오늘 하루 동안 완료한 세션 목록을 DB에서 가져옵니다.
     private suspend fun fetchTodayCompletedSessions(userId: String): List<RehabSession> {
         val calendar = Calendar.getInstance()
 
@@ -321,15 +290,17 @@ class RehabViewModel @Inject constructor(
         calendar.set(Calendar.SECOND, 59)
         val endOfDay = calendar.time
 
-        // 주입받은 rehabSessionRepository를 사용하여 DB 조회
         return try {
-            rehabSessionRepository.getRehabSessionsBetween(userId, startOfDay, endOfDay).first()
+            val sessions = rehabSessionRepository.getRehabSessionsBetween(userId, startOfDay, endOfDay).first()
+            Log.d("REHAB_LOG_FETCH", "DB 조회 성공 (오늘): 세션 ${sessions.size}개 발견.")
+            sessions
         } catch (e: Exception) {
+            Log.e("REHAB_LOG_FETCH", "DB 조회 실패 (오늘): ${e.message}")
             emptyList()
         }
     }
 
-    // [수정] completedSessions(DB기록)과 비교하여 isCompleted 설정
+    // [핵심 함수 2] AI 계획과 완료 기록을 비교하여 isCompleted 상태를 복원합니다.
     private fun filterTodayExercises(
         fullRoutine: List<ScheduledWorkout>,
         completedSessions: List<RehabSession>
@@ -337,31 +308,31 @@ class RehabViewModel @Inject constructor(
         val todayString = SimpleDateFormat("M월 d일 (E)", Locale.KOREA).format(Date())
         val normalize = { s: String -> s.replace(" ", "").trim() }
 
+        Log.d("REHAB_LOG_MAP", "=== 매핑 시작 (오늘의 날짜: $todayString) ===")
+
         return fullRoutine.find {
             normalize(it.scheduledDate).contains(normalize(todayString))
         }?.exercises?.mapNotNull { aiRec ->
+            // 1. AI 추천 운동 이름(aiRec.name)을 기반으로 카탈로그에서 고유 ID를 찾습니다.
             val matchingCatalogExercise = ExerciseCatalog.allExercises.find { it.name == aiRec.name }
 
             if (matchingCatalogExercise != null) {
-                // ★ [핵심] DB 기록 중에 현재 운동 ID와 일치하는 것이 있는지 확인
-                val isDone = completedSessions.any { it.exerciseId == matchingCatalogExercise.id }
+                // 2. [핵심 비교] 완료된 세션 목록(completedSessions)에 현재 운동의 고유 ID가 있는지 확인합니다.
+                val isCompleted = completedSessions.any { session -> session.exerciseId == matchingCatalogExercise.id }
 
+                Log.d("REHAB_LOG_MAP", " - 운동명: ${aiRec.name}, ID: ${matchingCatalogExercise.id}, 완료 상태(isCompleted): $isCompleted")
+
+                // isCompleted 상태를 포함하여 TodayExercise 객체를 생성합니다.
                 TodayExercise(
-                    exercise = Exercise(
-                        id = matchingCatalogExercise.id,
-                        name = aiRec.name,
-                        description = aiRec.description,
-                        bodyPart = aiRec.bodyPart,
-                        difficulty = aiRec.difficulty,
-                        precautions = matchingCatalogExercise.precautions,
+                    // ExerciseCatalog의 원본 Exercise 객체를 복사하고 AI의 sets/reps를 덮어씁니다.
+                    exercise = matchingCatalogExercise.copy(
                         sets = aiRec.sets,
-                        reps = aiRec.reps,
-                        aiRecommendationReason = aiRec.aiRecommendationReason,
-                        imageName = matchingCatalogExercise.imageName
+                        reps = aiRec.reps
                     ),
-                    isCompleted = isDone // ★ DB 상태 반영
+                    isCompleted = isCompleted
                 )
             } else {
+                Log.e("REHAB_LOG_MAP", " - 오류: 카탈로그에 없는 운동 ${aiRec.name}가 AI 추천에 포함됨. 무시됨.")
                 null
             }
         } ?: emptyList()
