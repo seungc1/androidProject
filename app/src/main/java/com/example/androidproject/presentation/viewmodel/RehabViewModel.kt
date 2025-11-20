@@ -10,6 +10,7 @@ import com.example.androidproject.domain.model.*
 import com.example.androidproject.domain.repository.*
 import com.example.androidproject.domain.usecase.AddRehabSessionUseCase
 import com.example.androidproject.domain.usecase.AddDietSessionUseCase
+import com.example.androidproject.data.remote.datasource.FirebaseDataSource // ★ 수정 1-1: FirebaseDataSource import 추가 ★
 import com.example.androidproject.presentation.main.MainUiState
 import com.example.androidproject.presentation.main.TodayExercise
 import com.prolificinteractive.materialcalendarview.CalendarDay
@@ -32,7 +33,8 @@ class RehabViewModel @Inject constructor(
     private val injuryRepository: InjuryRepository,
     private val dietRepository: DietRepository,
     private val sessionManager: SessionManager,
-    private val localDataSource: LocalDataSource
+    private val localDataSource: LocalDataSource,
+    private val firebaseDataSource: FirebaseDataSource // ★ 수정 1-2: FirebaseDataSource 의존성 주입 추가 ★
 ) : ViewModel() {
 
     // region [StateFlow Definitions]
@@ -237,6 +239,7 @@ class RehabViewModel @Inject constructor(
             _currentInjury.value = null
         }
     }
+
     fun deleteAllUserData() {
         viewModelScope.launch {
             val userId = _currentUser.value?.id ?: return@launch
@@ -246,10 +249,10 @@ class RehabViewModel @Inject constructor(
 
             try {
                 // 1. 로컬 DB 데이터 모두 삭제 (Room)
-                localDataSource.clearAllTables() // LocalDataSource에서 clearAllTables 함수가 IO 스레드에서 실행되도록 이미 수정되었음을 가정
+                localDataSource.clearAllData() // ★ 수정 2-1: clearAllTables() -> clearAllData()로 변경 ★
 
                 // 2. Firebase의 주요 데이터 컬렉션 삭제
-                firebaseDataSource.clearAllRehabData(userId) // ★★★ 이 함수는 3단계에서 추가해야 합니다 ★★★
+                firebaseDataSource.clearAllRehabData(userId) // ★ 수정 2-2: 의존성 주입으로 오류 해결 ★
 
                 // 3. 로그아웃 처리 및 상태 초기화 (SessionManager 포함)
                 sessionManager.clearSession()
