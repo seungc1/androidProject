@@ -29,8 +29,6 @@ data class ExerciseDto(
     @SerializedName("difficulty")
     val difficulty: String,
 
-    @SerializedName("videoUrl")
-    val videoUrl: String?, // API에서 null이 올 수 있음
 
     @SerializedName("precautions")
     val precautions: String?,

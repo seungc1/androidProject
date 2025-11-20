@@ -260,6 +260,15 @@
                 android:layout_height="wrap_content"
                 android:text="[개발용] 지난 7일 기록 생성"
                 android:textColor="@android:color/holo_red_light" />
+            <Button
+                android:id="@+id/deleteAllDataButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="[위험!] 계정의 모든 데이터 삭제"
+                android:textColor="@color/errorColor"
+                android:layout_marginBottom="16dp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

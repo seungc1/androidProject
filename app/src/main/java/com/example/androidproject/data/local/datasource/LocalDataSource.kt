@@ -97,14 +97,15 @@ class LocalDataSource @Inject constructor(
         return dietDao.getDietById(dietId)
     }
 
-    // --- ScheduledWorkoutDao 관련 함수 ---
     suspend fun upsertWorkouts(workouts: List<ScheduledWorkoutEntity>) {
         scheduledWorkoutDao.upsertWorkouts(workouts)
     }
     fun getWorkouts(userId: String): Flow<List<ScheduledWorkoutEntity>> {
         return scheduledWorkoutDao.getWorkouts(userId)
     }
-    suspend fun clearWorkouts(userId: String) {
+    // [디버그 로그 추가]
+    suspend fun clearScheduledWorkouts(userId: String) {
+        android.util.Log.d("DEBUG_DELETE", "LocalDataSource: Room DB에서 루틴 삭제 실행 (User: $userId)")
         scheduledWorkoutDao.clearWorkouts(userId)
     }
 

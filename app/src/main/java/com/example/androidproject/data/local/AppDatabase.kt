@@ -18,7 +18,7 @@ import com.example.androidproject.data.local.entity.* // 👈 [수정] Wildcard 
         ScheduledWorkoutEntity::class,
         ScheduledDietEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)

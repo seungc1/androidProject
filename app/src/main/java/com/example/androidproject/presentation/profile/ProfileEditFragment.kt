@@ -11,15 +11,20 @@ import androidx.activity.addCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.example.androidproject.R
 import com.example.androidproject.databinding.FragmentProfileEditBinding
 import com.example.androidproject.domain.model.User
 import com.example.androidproject.presentation.viewmodel.RehabViewModel
 import com.google.android.material.button.MaterialButton
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import com.example.androidproject.data.ExerciseCatalog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.TextInputEditText
 
 @AndroidEntryPoint
 class ProfileEditFragment : Fragment() {
@@ -29,8 +34,36 @@ class ProfileEditFragment : Fragment() {
 
     private val viewModel: RehabViewModel by activityViewModels()
 
-    // (★추가★) 현재 선택된 성별을 추적하는 변수
     private var selectedGender: String = ""
+
+    // (★추가★) 데이터가 실제로 로드되었는지 확인하는 플래그
+    private var isDataLoaded = false
+
+    // ★★★ [수정] 선택된 환부 및 질환명 목록을 저장할 상태 변수 ★★★
+    private var selectedInjuryAreas = mutableListOf<String>()
+    private var selectedInjuryNames = mutableListOf<String>()
+
+    // ★★★ [수정] 환부 옵션 정의: 정렬 후 "기타 (직접 입력)"을 마지막에 추가 ★★★
+    private val INJURY_AREAS_OPTIONS by lazy {
+        (ExerciseCatalog.allExercises
+            .map { it.bodyPart }
+            .distinct()
+            .sorted()
+                + listOf(MANUAL_INPUT_OPTION) // 마지막 옵션으로 추가
+                ).toList()
+    }
+
+    // ★★★ [수정] 질환명 옵션 정의: 정렬 후 "기타 (직접 입력)"을 마지막에 추가 ★★★
+    private val INJURY_NAMES_OPTIONS = listOf(
+        "염좌 (삠)", "근육통", "염증 (관절염/건염)", "수술 후 재활",
+        "골절 (회복기)", "디스크 (추간판 탈출증)", "만성 통증"
+    ).sorted() + listOf(MANUAL_INPUT_OPTION)
+
+    // ★★★ [추가] 상수 정의 ★★★
+    companion object {
+        const val MANUAL_INPUT_OPTION = "기타 (직접 입력)"
+        const val DEFAULT_SELECTION_TEXT = "선택" // ★ 수정: "선택"으로 변경
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -43,10 +76,14 @@ class ProfileEditFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupInjurySelectors()
         setupSaveButton()
         setupPainLevelSlider()
-        setupGenderButtons() // (★추가★) 성별 버튼 리스너 설정
-        loadCurrentProfileData()
+        setupGenderButtons()
+
+        binding.saveButton.isEnabled = false
+
+        observeProfileData()
         handleBackPress()
     }
 
@@ -89,7 +126,6 @@ class ProfileEditFragment : Fragment() {
         binding.painLevelValueTextView.text = "$value - $description"
     }
 
-    // (★추가★) 성별 버튼 클릭 리스너
     private fun setupGenderButtons() {
         binding.genderMaleButton.setOnClickListener {
             updateGenderSelection("남성")
@@ -99,16 +135,13 @@ class ProfileEditFragment : Fragment() {
         }
     }
 
-    // (★추가★) 선택된 성별에 따라 버튼 스타일(색상, 테두리) 변경
     private fun updateGenderSelection(gender: String) {
         selectedGender = gender
 
-        val primaryColor = ContextCompat.getColor(requireContext(), com.google.android.material.R.color.design_default_color_primary)
-        val onPrimaryColor = ContextCompat.getColor(requireContext(), com.google.android.material.R.color.design_default_color_on_primary)
-        val outlineColor = Color.GRAY // 또는 테마의 outline color
-        val surfaceColor = Color.TRANSPARENT
+        val primaryColor = ContextCompat.getColor(requireContext(), com.example.androidproject.R.color.primaryColor)
+        val onPrimaryColor = ContextCompat.getColor(requireContext(), com.example.androidproject.R.color.white)
+        val outlineColor = Color.LTGRAY
 
-        // 남성 버튼 스타일 업데이트
         if (gender == "남성") {
             setButtonStyle(binding.genderMaleButton, true, primaryColor, onPrimaryColor, outlineColor)
             setButtonStyle(binding.genderFemaleButton, false, primaryColor, onPrimaryColor, outlineColor)
@@ -120,144 +153,311 @@ class ProfileEditFragment : Fragment() {
 
     private fun setButtonStyle(button: MaterialButton, isSelected: Boolean, primary: Int, onPrimary: Int, outline: Int) {
         if (isSelected) {
-            // 선택됨: 배경색(Primary), 글자색(White), 테두리 없음
             button.backgroundTintList = ColorStateList.valueOf(primary)
             button.setTextColor(onPrimary)
             button.strokeWidth = 0
         } else {
-            // 선택 안됨: 배경색(투명), 글자색(Primary or Gray), 테두리 있음
             button.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
-            button.setTextColor(primary) // 또는 Color.GRAY
+            button.setTextColor(Color.GRAY)
             button.strokeColor = ColorStateList.valueOf(outline)
-            button.strokeWidth = 3 // 1dp 정도 (px 단위이므로 3 정도 줌)
+            button.strokeWidth = 3
         }
     }
 
-    private fun loadCurrentProfileData() {
+    // ★★★ [수정] 다중 선택 다이얼로그 호출 로직 (버튼에 연결) ★★★
+    private fun setupInjurySelectors() {
+        // 1. 환부 선택 버튼 (selectInjuryAreaButton)에 리스너 연결
+        binding.selectInjuryAreaButton.setOnClickListener {
+            showMultiSelectDialog(
+                isArea = true,
+                title = "환부 (여러 개 선택 가능)",
+                options = INJURY_AREAS_OPTIONS,
+                currentSelection = selectedInjuryAreas,
+                allOptions = INJURY_AREAS_OPTIONS,
+                onUpdate = { newSelection ->
+                    selectedInjuryAreas = newSelection.toMutableList()
+                    val displayText = if (selectedInjuryAreas.isEmpty()) "" else selectedInjuryAreas.joinToString(", ") // 회색 영역 텍스트
+                    binding.injuryAreaEditText.setText(displayText) // 디스플레이 필드 업데이트
+                    binding.selectInjuryAreaButton.text = DEFAULT_SELECTION_TEXT // 버튼 텍스트 고정
+                }
+            )
+        }
+        // 2. 질환명 선택 버튼 (selectInjuryNameButton)에 리스너 연결
+        binding.selectInjuryNameButton.setOnClickListener {
+            showMultiSelectDialog(
+                isArea = false,
+                title = "질환명 (여러 개 선택 가능)",
+                options = INJURY_NAMES_OPTIONS,
+                currentSelection = selectedInjuryNames,
+                allOptions = INJURY_NAMES_OPTIONS,
+                onUpdate = { newSelection ->
+                    selectedInjuryNames = newSelection.toMutableList()
+                    val displayText = if (selectedInjuryNames.isEmpty()) "" else selectedInjuryNames.joinToString(", ") // 회색 영역 텍스트
+                    binding.injuryNameEditText.setText(displayText) // 디스플레이 필드 업데이트
+                    binding.selectInjuryNameButton.text = DEFAULT_SELECTION_TEXT // 버튼 텍스트 고정
+                }
+            )
+        }
+        // 초기 버튼 텍스트 설정 (선택이 아닌 경우)
+        binding.selectInjuryAreaButton.text = DEFAULT_SELECTION_TEXT
+        binding.selectInjuryNameButton.text = DEFAULT_SELECTION_TEXT
+    }
+
+    // ★★★ [수정] 다중 선택 다이얼로그 Helper 함수 (직접 입력 처리 통합) ★★★
+    private fun showMultiSelectDialog(
+        isArea: Boolean,
+        title: String,
+        options: List<String>,
+        currentSelection: List<String>,
+        allOptions: List<String>,
+        onUpdate: (List<String>) -> Unit
+    ) {
+        val checkedItems = BooleanArray(options.size) { i ->
+            val item = options[i]
+            if (item == MANUAL_INPUT_OPTION) {
+                currentSelection.any { it !in allOptions.filter { it != MANUAL_INPUT_OPTION } }
+            } else {
+                currentSelection.contains(item)
+            }
+        }
+
+        val tempSelectionInDialog = currentSelection.toMutableList()
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(title)
+            .setMultiChoiceItems(options.toTypedArray(), checkedItems) { _, which, isChecked ->
+                val item = options[which]
+
+                if (item == MANUAL_INPUT_OPTION) {
+                    if (isChecked) {
+                        tempSelectionInDialog.add(MANUAL_INPUT_OPTION)
+                    } else {
+                        tempSelectionInDialog.remove(MANUAL_INPUT_OPTION)
+                    }
+                } else {
+                    if (isChecked) {
+                        if (!tempSelectionInDialog.contains(item)) tempSelectionInDialog.add(item)
+                    } else {
+                        tempSelectionInDialog.remove(item)
+                    }
+                }
+            }
+            .setPositiveButton("선택 완료") { _, _ ->
+                val needsManualInput = tempSelectionInDialog.contains(MANUAL_INPUT_OPTION)
+
+                val fixedOptions = allOptions.filter { it != MANUAL_INPUT_OPTION }
+                // 최종 기본 선택 항목 (정렬)
+                val finalBaseSelection = tempSelectionInDialog
+                    .filter { it != MANUAL_INPUT_OPTION && it in fixedOptions }
+                    .sorted()
+
+                if (needsManualInput) {
+                    val initialCustomText = currentSelection.filter { it !in fixedOptions }.joinToString(", ")
+
+                    showManualInputDialog(
+                        dialogTitle = "$title - 직접 입력",
+                        initialText = initialCustomText
+                    ) { manualText ->
+
+                        val manualEntries = manualText.split(",")
+                            .map { it.trim() }
+                            .filter { it.isNotBlank() }
+
+                        val finalSelectionList = (finalBaseSelection + manualEntries).distinct()
+
+                        onUpdate(finalSelectionList)
+
+                        if (manualText.isBlank()) {
+                            Toast.makeText(context, "'기타 (직접 입력)' 항목이 선택 해제되었습니다.", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "직접 입력 항목이 저장되었습니다.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                } else {
+                    onUpdate(finalBaseSelection)
+                }
+            }
+            .setNegativeButton("취소", null)
+            .show()
+    }
+
+    // ★★★ [추가] 텍스트 입력 다이얼로그 Helper 함수 ★★★
+    private fun showManualInputDialog(
+        dialogTitle: String,
+        initialText: String,
+        onInputConfirmed: (String) -> Unit
+    ) {
+        val context = requireContext()
+        val editText = TextInputEditText(context).apply {
+            setText(initialText.ifEmpty { "" })
+            hint = "쉼표(,)로 구분하여 입력하세요."
+        }
+
+        val container = android.widget.FrameLayout(context).apply {
+            val params = android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply {
+                leftMargin = 50
+                rightMargin = 50
+            }
+            editText.layoutParams = params
+            addView(editText)
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(dialogTitle)
+            .setView(container)
+            .setPositiveButton("확인") { _, _ ->
+                onInputConfirmed(editText.text.toString().trim())
+            }
+            .setNegativeButton("취소") { _, _ ->
+                onInputConfirmed("")
+            }
+            .show()
+    }
+
+
+    /**
+     * (★수정★) 데이터 관찰 로직: 저장된 문자열을 파싱하여 버튼 및 디스플레이 필드를 초기화합니다.
+     */
+    private fun observeProfileData() {
         viewLifecycleOwner.lifecycleScope.launch {
-            val user = viewModel.dummyUser
-            val injury = viewModel.dummyInjury
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
-            binding.nameEditText.hint = user.name
-            binding.nameEditText.setText("")
+                launch {
+                    viewModel.currentUser.collectLatest { user ->
+                        if (user != null) {
+                            if (user.name != "로딩 중...") {
+                                binding.nameEditText.setText(user.name)
+                                binding.ageEditText.setText(if(user.age > 0) user.age.toString() else "")
 
-            binding.ageEditText.hint = user.age.toString()
-            binding.ageEditText.setText("")
+                                selectedGender = user.gender
+                                updateGenderSelection(user.gender)
 
-            // (★수정★) 초기 성별 설정
-            updateGenderSelection(user.gender)
+                                binding.heightEditText.setText(if(user.heightCm > 0) user.heightCm.toString() else "")
+                                binding.weightEditText.setText(if(user.weightKg > 0.0) user.weightKg.toString() else "")
+                                binding.allergyEditText.setText(user.allergyInfo.joinToString(", "))
 
-            binding.heightEditText.hint = user.heightCm.toString()
-            binding.heightEditText.setText("")
+                                val painLevel = user.currentPainLevel.toFloat().coerceIn(0f, 10f)
+                                binding.painLevelSlider.value = painLevel
+                                updatePainLevelText(painLevel.toInt())
 
-            binding.weightEditText.hint = user.weightKg.toString()
-            binding.weightEditText.setText("")
+                                binding.additionalNotesEditText.setText(user.additionalNotes ?: "")
 
-            binding.allergyEditText.hint = user.allergyInfo.joinToString(", ")
-            binding.allergyEditText.setText("")
+                                checkDataLoaded()
+                            }
+                        }
+                    }
+                }
 
-            binding.injuryAreaEditText.hint = injury.bodyPart
-            binding.injuryAreaEditText.setText("")
+                launch {
+                    viewModel.currentInjury.collectLatest { injury ->
+                        if (injury != null) {
+                            // 1. 환부 파싱 및 디스플레이 필드 업데이트
+                            val areaString = injury.bodyPart.ifEmpty { "" }
+                            // [수정] .toMutableList() 추가
+                            selectedInjuryAreas = areaString.split(",")
+                                .map { it.trim() }
+                                .filter { it.isNotEmpty() && it != "없음" }
+                                .toMutableList()
+                            val areaDisplayText = if (selectedInjuryAreas.isEmpty()) "" else selectedInjuryAreas.joinToString(", ")
+                            binding.injuryAreaEditText.setText(areaDisplayText)
+                            binding.selectInjuryAreaButton.text = DEFAULT_SELECTION_TEXT
 
-            binding.injuryNameEditText.hint = injury.name
-            binding.injuryNameEditText.setText("")
+                            // 2. 질환명 파싱 및 디스플레이 필드 업데이트
+                            val nameString = injury.name.ifEmpty { "" }
+                            // [수정] .toMutableList() 추가
+                            selectedInjuryNames = nameString.split(",")
+                                .map { it.trim() }
+                                .filter { it.isNotEmpty() && it != "없음" }
+                                .toMutableList()
 
-            val painLevel = user.currentPainLevel.toFloat().coerceIn(0f, 10f)
-            binding.painLevelSlider.value = painLevel
-            updatePainLevelText(painLevel.toInt())
+                            val nameDisplayText = if (selectedInjuryNames.isEmpty()) "" else selectedInjuryNames.joinToString(", ")
+                            binding.injuryNameEditText.setText(nameDisplayText)
+                            binding.selectInjuryNameButton.text = DEFAULT_SELECTION_TEXT
+                        }
+                        checkDataLoaded()
+                    }
+                }
+            }
+        }
+    }
 
-            binding.additionalNotesEditText.hint = user.additionalNotes ?: "추가 사항 없음"
-            binding.additionalNotesEditText.setText("")
+    private fun checkDataLoaded() {
+        if (viewModel.currentUser.value != null) {
+            isDataLoaded = true
+            binding.saveButton.isEnabled = true
         }
     }
 
     private fun setupSaveButton() {
         binding.saveButton.setOnClickListener {
-            val currentUser = viewModel.dummyUser
-            val currentInjury = viewModel.dummyInjury
+            if (!isDataLoaded) {
+                Toast.makeText(context, "데이터를 불러오는 중입니다.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val currentUser = viewModel.currentUser.value!!
+
+            // ★★★ 수정: 최종 환부/질환명은 디스플레이 필드의 텍스트를 사용 ★★★
+            val finalInjuryBodyPartString = binding.injuryAreaEditText.text.toString().trim()
+            val finalInjuryNameString = binding.injuryNameEditText.text.toString().trim()
+            val finalPainLevel = binding.painLevelSlider.value.toInt()
 
             val inputName = binding.nameEditText.text.toString()
             val inputAge = binding.ageEditText.text.toString()
-
-            // (★수정★) 변수에 저장된 성별 사용
-            // 초기값이 빈 문자열일 수 있으므로, 선택 안했으면 기존 값 유지
-            val finalGender = if (selectedGender.isNotEmpty()) selectedGender else currentUser.gender
-
+            val inputGender = if (selectedGender.isNotEmpty()) selectedGender else currentUser.gender
             val inputHeight = binding.heightEditText.text.toString()
             val inputWeight = binding.weightEditText.text.toString()
             val inputAllergy = binding.allergyEditText.text.toString()
-
-            val inputInjuryArea = binding.injuryAreaEditText.text.toString()
-            val inputInjuryName = binding.injuryNameEditText.text.toString()
             val inputNotes = binding.additionalNotesEditText.text.toString()
 
-            val finalName = inputName.ifBlank { currentUser.name }
-            val finalAge = inputAge.toIntOrNull() ?: currentUser.age
-            val finalHeight = inputHeight.toIntOrNull() ?: currentUser.heightCm
-            val finalWeight = inputWeight.toDoubleOrNull() ?: currentUser.weightKg
-            val finalInjuryArea = inputInjuryArea.ifBlank { currentInjury.bodyPart }
-            val finalInjuryName = inputInjuryName.ifBlank { currentInjury.name }
-
-            if (finalName.isBlank() || finalName == "신규 사용자") {
+            // 유효성 검사
+            if (inputName.isBlank()) {
                 Toast.makeText(context, "이름을 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (finalAge <= 0) {
+            if (inputAge.toIntOrNull() == null || inputAge.toInt() <= 0) {
                 Toast.makeText(context, "나이를 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            // (★수정★) 성별 유효성 검사
-            if (finalGender.isBlank() || finalGender == "미설정") {
+            if (inputGender.isBlank() || inputGender == "미설정") {
                 Toast.makeText(context, "성별을 선택해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (finalHeight <= 0) {
+            if (inputHeight.toIntOrNull() == null || inputHeight.toInt() <= 0) {
                 Toast.makeText(context, "키를 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (finalWeight <= 0.0) {
+            if (inputWeight.toDoubleOrNull() == null || inputWeight.toDouble() <= 0.0) {
                 Toast.makeText(context, "몸무게를 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (finalInjuryArea.isBlank() || finalInjuryArea == "없음") {
-                Toast.makeText(context, "환부(부상 부위)를 입력해주세요.", Toast.LENGTH_SHORT).show()
+            // 환부/질환명 필수 체크 (최종 텍스트가 비어있지 않은지 확인)
+            if (finalInjuryBodyPartString.isBlank() || finalInjuryBodyPartString == "없음") {
+                Toast.makeText(context, "환부(부상 부위)를 1개 이상 선택/입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (finalInjuryName.isBlank() || finalInjuryName == "없음") {
-                Toast.makeText(context, "질환명을 입력해주세요.", Toast.LENGTH_SHORT).show()
+            if (finalInjuryNameString.isBlank() || finalInjuryNameString == "없음") {
+                Toast.makeText(context, "질환명을 1개 이상 선택/입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val updatedUser = User(
-                id = currentUser.id,
-                password = currentUser.password,
-                name = finalName,
-                gender = finalGender,
-                age = finalAge,
-                heightCm = finalHeight,
-                weightKg = finalWeight,
-
-                activityLevel = currentUser.activityLevel,
-                fitnessGoal = currentUser.fitnessGoal,
-
-                allergyInfo = if (inputAllergy.isNotBlank()) {
-                    inputAllergy.split(",").map { it.trim() }
-                } else {
-                    currentUser.allergyInfo
-                },
-
-                preferredDietType = currentUser.preferredDietType,
-                preferredDietaryTypes = currentUser.preferredDietaryTypes,
-                equipmentAvailable = currentUser.equipmentAvailable,
-
-                currentPainLevel = binding.painLevelSlider.value.toInt(),
-
-                additionalNotes = inputNotes.ifBlank { currentUser.additionalNotes },
-                targetCalories = currentUser.targetCalories,
-                currentInjuryId = currentUser.currentInjuryId
+            // 객체 생성
+            val updatedUser = currentUser.copy(
+                name = inputName,
+                gender = inputGender,
+                age = inputAge.toInt(),
+                heightCm = inputHeight.toInt(),
+                weightKg = inputWeight.toDouble(),
+                allergyInfo = if (inputAllergy.isNotBlank()) inputAllergy.split(",").map { it.trim() } else emptyList(),
+                currentPainLevel = finalPainLevel,
+                additionalNotes = inputNotes
             )
 
-            viewModel.updateUserProfile(updatedUser, finalInjuryName, finalInjuryArea)
+            // ViewModel에 업데이트 요청
+            viewModel.updateUserProfile(updatedUser, finalInjuryNameString, finalInjuryBodyPartString)
 
             Toast.makeText(context, "프로필이 저장되었습니다.", Toast.LENGTH_SHORT).show()
             findNavController().popBackStack()

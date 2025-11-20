@@ -10,7 +10,7 @@ data class ExerciseEntity(
     val description: String,
     val bodyPart: String,
     val difficulty: String,
-    val videoUrl: String?,
     val precautions: String?,
-    val aiRecommendationReason: String?
+    val aiRecommendationReason: String?,
+    val imageName: String?
 )

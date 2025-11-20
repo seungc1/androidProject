@@ -88,7 +88,9 @@ class HistoryFragment : Fragment() {
 
                     val hasHistory = state.historyItems.isNotEmpty()
                     binding.historyRecyclerView.isVisible = hasHistory && !state.isLoading
-                    binding.emptyViewHistory.isVisible = !hasHistory && !state.isLoading
+
+                    // ★★★ ID를 emptyStateTextView로 변경합니다. ★★★
+                    binding.historyEmptyMessageTextView.isVisible = !hasHistory && !state.isLoading
 
                     historyAdapter.submitList(state.historyItems)
 
@@ -100,7 +102,6 @@ class HistoryFragment : Fragment() {
             }
         }
     }
-
     private fun observeRecordedDates() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

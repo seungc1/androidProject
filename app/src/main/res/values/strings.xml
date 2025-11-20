@@ -24,9 +24,13 @@
     <string name="login_signup_button_text">회원가입</string>
 
     <string name="signup_title">회원가입</string>
-    <string name="signup_password_confirm_hint">비밀번호 확인</string> <string name="signup_button_text">회원가입</string>
+    <string name="signup_password_confirm_hint">비밀번호 확인</string>
+    <string name="signup_button_text">회원가입</string>
     <string name="signup_error_user_exists">이미 사용 중인 아이디입니다.</string>
-    <string name="signup_error_short_password">비밀번호는 4자리 이상 입력해주세요.</string>
-    <string name="signup_error_password_mismatch">비밀번호가 일치하지 않습니다.</string> <string name="signup_error_unknown">알 수 없는 오류로 회원가입에 실패했습니다.</string>
+    <string name="signup_error_short_password">비밀번호는 6자리 이상 입력해주세요.</string>
+    <string name="signup_error_password_mismatch">비밀번호가 일치하지 않습니다.</string>
+    <string name="signup_error_unknown">알 수 없는 오류로 회원가입에 실패했습니다.</string>
+
+    <string name="default_web_client_id">1053114952156-YOUR_WEB_CLIENT_ID_GOES_HERE.apps.googleusercontent.com</string>
 
 </resources>

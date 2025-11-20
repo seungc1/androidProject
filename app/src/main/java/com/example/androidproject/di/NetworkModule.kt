@@ -27,6 +27,7 @@ object NetworkModule {
     fun provideOkHttpClient(): OkHttpClient {
         // 1. API 키 가져오기
         val apiKey = BuildConfig.GPT_API_KEY
+        android.util.Log.d("API_KEY_CHECK", "Current Key: $apiKey")
 
         // 2. 인증 헤더를 추가하는 Interceptor 생성 (핵심)
         val authInterceptor = Interceptor { chain ->

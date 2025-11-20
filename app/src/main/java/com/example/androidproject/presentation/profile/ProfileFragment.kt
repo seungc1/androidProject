@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -39,6 +40,7 @@ class ProfileFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // 1. 기존 버튼들 연결
         binding.editButton.setOnClickListener {
             findNavController().navigate(R.id.action_navigation_profile_to_profileEditFragment)
         }
@@ -55,7 +57,35 @@ class ProfileFragment : Fragment() {
             requireActivity().finish()
         }
 
-        // (★수정★) UI 및 데이터 관찰
+        // (★추가★) 테스트 데이터 생성 버튼 연결
+        binding.generateTestDataButton.setOnClickListener {
+            viewModel.createTestHistory()
+            Toast.makeText(requireContext(), "지난 7일간의 운동/식단 기록이 생성되었습니다.", Toast.LENGTH_SHORT).show()
+        }
+        // (★추가★) 테스트 데이터 생성 버튼 연결 (기존)
+        binding.generateTestDataButton.setOnClickListener {
+            viewModel.createTestHistory()
+            Toast.makeText(requireContext(), "지난 7일간의 운동/식단 기록이 생성되었습니다.", Toast.LENGTH_SHORT).show()
+        }
+
+        // ★★★ [추가] 모든 데이터 삭제 버튼 연결 ★★★
+        binding.deleteAllDataButton.setOnClickListener {
+            // 사용자에게 경고 메시지 표시 후 삭제 확인
+            android.app.AlertDialog.Builder(requireContext())
+                .setTitle("⚠️ 경고: 모든 데이터 삭제")
+                .setMessage("계정의 모든 운동/식단 기록, AI 루틴, 캐시가 영구적으로 삭제되며, 로그아웃됩니다. 계속하시겠습니까?")
+                .setPositiveButton("삭제 및 로그아웃") { _, _ ->
+                    viewModel.deleteAllUserData()
+                    // 로그아웃 후 로그인 화면으로 이동
+                    val intent = android.content.Intent(requireActivity(), com.example.androidproject.presentation.auth.LoginActivity::class.java)
+                    intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    requireActivity().finish()
+                }
+                .setNegativeButton("취소", null)
+                .show()
+        }
+
         observeData()
     }
 
@@ -63,19 +93,16 @@ class ProfileFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
-                // 1. 전체 UI 상태 (로딩, 빈 화면 여부 등) 관찰
                 launch {
                     viewModel.uiState.collectLatest { state ->
                         binding.profileLoadingSpinner.isVisible = state.isLoading
 
-                        // 데이터 로딩이 끝났는데 이름이 비어있으면 빈 화면 처리
                         val isEmpty = state.userName.isEmpty() && !state.isLoading
                         binding.emptyProfileView.isVisible = isEmpty
                         binding.profileDataView.isVisible = !isEmpty && !state.isLoading
                     }
                 }
 
-                // 2. (★핵심★) 사용자 데이터 실시간 관찰 -> 텍스트 뷰 즉시 갱신
                 launch {
                     viewModel.currentUser.collectLatest { user ->
                         user?.let {
@@ -91,7 +118,6 @@ class ProfileFragment : Fragment() {
                     }
                 }
 
-                // 3. (★핵심★) 부상 데이터 실시간 관찰
                 launch {
                     viewModel.currentInjury.collectLatest { injury ->
                         binding.injuryAreaTextView.text = injury?.bodyPart ?: "정보 없음"

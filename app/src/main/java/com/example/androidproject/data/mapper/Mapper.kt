@@ -24,8 +24,6 @@ import java.util.UUID
  * '번역'해주는 확장 함수(Mapper)들입니다.
  */
 
-// --- Exercise Mappers ---
-// (DTO -> Domain)
 fun ExerciseDto.toDomain(): Exercise {
     return Exercise(
         id = this.id,
@@ -33,11 +31,11 @@ fun ExerciseDto.toDomain(): Exercise {
         description = this.description,
         bodyPart = this.bodyPart,
         difficulty = this.difficulty,
-        videoUrl = this.videoUrl,
         precautions = this.precautions,
         aiRecommendationReason = this.aiRecommendationReason,
         sets = null, // (DTO에 sets/reps가 없으므로 null로 설정)
-        reps = null
+        reps = null,
+        imageName = null // DTO는 imageName을 모르므로 null
     )
 }
 
@@ -49,11 +47,11 @@ fun ExerciseEntity.toDomain(): Exercise {
         description = this.description,
         bodyPart = this.bodyPart,
         difficulty = this.difficulty,
-        videoUrl = this.videoUrl,
         precautions = this.precautions,
         aiRecommendationReason = this.aiRecommendationReason,
         sets = null, // (Entity에 sets/reps가 없으므로 null로 설정)
-        reps = null
+        reps = null,
+        imageName = this.imageName // ★★★ Entity에서 Domain으로 imageName 전달 ★★★
     )
 }
 
@@ -65,12 +63,11 @@ fun Exercise.toEntity(): ExerciseEntity {
         description = this.description,
         bodyPart = this.bodyPart,
         difficulty = this.difficulty,
-        videoUrl = this.videoUrl,
         precautions = this.precautions,
-        aiRecommendationReason = this.aiRecommendationReason
+        aiRecommendationReason = this.aiRecommendationReason,
+        imageName = this.imageName // ★★★ Domain에서 Entity로 imageName 전달 ★★★
     )
 }
-
 // --- Diet Mappers ---
 
 // (DTO -> Domain)
