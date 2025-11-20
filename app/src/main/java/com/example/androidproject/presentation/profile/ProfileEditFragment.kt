@@ -22,6 +22,9 @@ import com.google.android.material.button.MaterialButton
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import android.widget.ArrayAdapter // ★ 추가: ArrayAdapter import ★
+import android.widget.AdapterView // ★ 추가: AdapterView import ★
+import com.example.androidproject.data.ExerciseCatalog // ★ 추가: 카탈로그 import ★
 
 @AndroidEntryPoint
 class ProfileEditFragment : Fragment() {
@@ -36,6 +39,21 @@ class ProfileEditFragment : Fragment() {
     // (★추가★) 데이터가 실제로 로드되었는지 확인하는 플래그
     private var isDataLoaded = false
 
+    // ★★★ [추가] 환부 선택 목록 정의 (ExerciseCatalog 기반) ★★★
+    private val injuryAreaOptions by lazy {
+        // ExerciseCatalog에서 중복되지 않는 bodyPart 목록을 추출하고 '직접 입력' 옵션을 추가
+        val uniqueBodyParts = ExerciseCatalog.allExercises
+            .map { it.bodyPart }
+            .distinct()
+            .sorted()
+
+        mutableListOf<String>().apply {
+            addAll(uniqueBodyParts)
+            add(MANUAL_INPUT_OPTION)
+        }
+    }
+
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -47,6 +65,7 @@ class ProfileEditFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupInjuryAreaDropdown() // ★ 수정: 새로운 드롭다운 설정 함수 호출 ★
         setupSaveButton()
         setupPainLevelSlider()
         setupGenderButtons()
@@ -109,8 +128,8 @@ class ProfileEditFragment : Fragment() {
     private fun updateGenderSelection(gender: String) {
         selectedGender = gender
 
-        val primaryColor = ContextCompat.getColor(requireContext(), com.google.android.material.R.color.design_default_color_primary)
-        val onPrimaryColor = ContextCompat.getColor(requireContext(), com.google.android.material.R.color.design_default_color_on_primary)
+        val primaryColor = ContextCompat.getColor(requireContext(), com.example.androidproject.R.color.primaryColor)
+        val onPrimaryColor = ContextCompat.getColor(requireContext(), com.example.androidproject.R.color.white)
         val outlineColor = Color.LTGRAY
 
         if (gender == "남성") {
@@ -135,10 +154,38 @@ class ProfileEditFragment : Fragment() {
         }
     }
 
+    // ★★★ [추가] 환부 드롭다운 설정 함수 ★★★
+    private fun setupInjuryAreaDropdown() {
+        // 1. 어댑터 설정
+        val adapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_dropdown_item_1line, // 기본 안드로이드 레이아웃 사용
+            injuryAreaOptions
+        )
+        binding.injuryAreaAutoCompleteTextView.setAdapter(adapter)
+
+        // 2. 항목 선택 리스너 설정
+        binding.injuryAreaAutoCompleteTextView.onItemClickListener =
+            AdapterView.OnItemClickListener { parent, view, position, id ->
+                val selectedItem = parent.getItemAtPosition(position).toString()
+
+                // '직접 입력' 옵션을 선택했는지 확인
+                if (selectedItem == MANUAL_INPUT_OPTION) {
+                    // 직접 입력 필드를 보이게 하고, 기존 입력 필드를 비활성화/숨김
+                    binding.manualInjuryAreaInputLayout.visibility = View.VISIBLE
+                    binding.manualInjuryAreaEditText.setText("") // 초기화
+                    binding.manualInjuryAreaEditText.requestFocus()
+                } else {
+                    // 일반 선택 시, 직접 입력 필드를 숨김
+                    binding.manualInjuryAreaInputLayout.visibility = View.GONE
+                }
+            }
+    }
+
+
     /**
      * (★수정★) 데이터 관찰 로직 강화
-     * - null 체크를 더 엄격하게 하여, 빈 값으로 UI가 초기화되는 것을 방지합니다.
-     * - 데이터가 모두 로드되었을 때만 '저장' 버튼을 활성화합니다.
+     * - 기존에 저장된 환부 정보로 드롭다운을 초기화합니다.
      */
     private fun observeProfileData() {
         viewLifecycleOwner.lifecycleScope.launch {
@@ -174,11 +221,25 @@ class ProfileEditFragment : Fragment() {
 
                 launch {
                     viewModel.currentInjury.collectLatest { injury ->
-                        // injury가 null일 수도 있음 (부상 정보가 없는 경우)
-                        // 하지만 "초기화"되는 문제를 막기 위해, null이 아닌 경우에만 확실하게 세팅
                         if (injury != null) {
-                            binding.injuryAreaEditText.setText(injury.bodyPart)
                             binding.injuryNameEditText.setText(injury.name)
+
+                            // ★★★ 수정: 기존 환부 정보로 드롭다운/직접 입력 초기화 ★★★
+                            val savedBodyPart = injury.bodyPart
+                            if (injuryAreaOptions.contains(savedBodyPart)) {
+                                // 저장된 값이 목록에 있으면 드롭다운으로 표시
+                                binding.injuryAreaAutoCompleteTextView.setText(savedBodyPart, false)
+                                binding.manualInjuryAreaInputLayout.visibility = View.GONE
+                            } else if (savedBodyPart.isNotBlank() && savedBodyPart != "없음") {
+                                // 저장된 값이 목록에 없으면 '직접 입력'으로 간주하고 UI 업데이트
+                                binding.injuryAreaAutoCompleteTextView.setText(MANUAL_INPUT_OPTION, false)
+                                binding.manualInjuryAreaInputLayout.visibility = View.VISIBLE
+                                binding.manualInjuryAreaEditText.setText(savedBodyPart)
+                            } else {
+                                // 값이 없으면 초기 상태
+                                binding.injuryAreaAutoCompleteTextView.setText("", false)
+                                binding.manualInjuryAreaInputLayout.visibility = View.GONE
+                            }
                         }
                         // 부상 정보 로드 시도 완료 (null이어도 로드는 된 것임)
                         checkDataLoaded()
@@ -208,8 +269,15 @@ class ProfileEditFragment : Fragment() {
             // ViewModel의 현재 값 사용 (dummyUser 대신)
             val currentUser = viewModel.currentUser.value!!
 
+            // ★★★ 수정: 환부(Injury Area) 값을 드롭다운 또는 직접 입력 필드에서 가져옵니다. ★★★
+            val selectedArea = binding.injuryAreaAutoCompleteTextView.text.toString().trim()
+            val finalInjuryArea = if (selectedArea == MANUAL_INPUT_OPTION) {
+                binding.manualInjuryAreaEditText.text.toString().trim()
+            } else {
+                selectedArea
+            }
+
             // (★수정★) 현재 입력된 환부/질환명/통증수준을 가져옵니다.
-            val currentInjuryBodyPart = binding.injuryAreaEditText.text.toString()
             val currentInjuryName = binding.injuryNameEditText.text.toString()
             val finalPainLevel = binding.painLevelSlider.value.toInt()
 
@@ -243,8 +311,8 @@ class ProfileEditFragment : Fragment() {
                 return@setOnClickListener
             }
             // 환부/질환명 필수 체크
-            if (currentInjuryBodyPart.isBlank() || currentInjuryBodyPart == "없음") {
-                Toast.makeText(context, "환부(부상 부위)를 입력해주세요.", Toast.LENGTH_SHORT).show()
+            if (finalInjuryArea.isBlank() || finalInjuryArea == "없음" || finalInjuryArea == MANUAL_INPUT_OPTION) {
+                Toast.makeText(context, "환부(부상 부위)를 선택하거나 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             if (currentInjuryName.isBlank() || currentInjuryName == "없음") {
@@ -265,12 +333,18 @@ class ProfileEditFragment : Fragment() {
             )
 
             // ViewModel에 업데이트 요청 (환부, 질환명도 함께 전달)
-            viewModel.updateUserProfile(updatedUser, currentInjuryName, currentInjuryBodyPart)
+            viewModel.updateUserProfile(updatedUser, currentInjuryName, finalInjuryArea)
 
             Toast.makeText(context, "프로필이 저장되었습니다.", Toast.LENGTH_SHORT).show()
             findNavController().popBackStack()
         }
     }
+
+    // ★★★ [추가] 상수 정의 ★★★
+    companion object {
+        const val MANUAL_INPUT_OPTION = "직접 입력..."
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
