@@ -51,76 +51,108 @@
                 android:textColor="@color/primaryColor"
                 android:textAppearance="@style/TextAppearance.App.TitleLarge" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/injuryAreaInputLayout"
-                style="@style/Widget.Material3.TextInputLayout.FilledBox.ExposedDropdownMenu"
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:boxBackgroundColor="@color/inputFieldBackground"
-                app:boxCornerRadiusTopStart="16dp"
-                app:boxCornerRadiusTopEnd="16dp"
-                app:boxCornerRadiusBottomStart="16dp"
-                app:boxCornerRadiusBottomEnd="16dp"
-                app:boxStrokeWidth="0dp"
-                app:expandedHintEnabled="false"
-                android:hint="환부 선택">
+                android:text="환부 (여러 개 선택 가능)"
+                android:textAppearance="@style/TextAppearance.App.TitleSmall"
+                android:textColor="@color/textSecondary" />
 
-                <AutoCompleteTextView
-                    android:id="@+id/injuryAreaAutoCompleteTextView"
-                    android:layout_width="match_parent"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/injuryAreaDisplayLayout"
+                    style="@style/Widget.Material3.TextInputLayout.FilledBox"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:background="@null"
-                    android:inputType="none"
-                    tools:text="손목/전완" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    app:boxBackgroundColor="@color/inputFieldBackground"
+                    app:boxCornerRadiusTopStart="16dp"
+                    app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp"
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxStrokeWidth="0dp"
+                    app:expandedHintEnabled="false">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/manualInjuryAreaInputLayout"
-                style="@style/Widget.Material3.TextInputLayout.FilledBox"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/injuryAreaEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"  android:background="@null"
+                        android:inputType="none"
+                        android:focusable="false"
+                        android:textStyle="bold"
+                        android:gravity="top" tools:text="목/어깨, 손목/전완" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/selectInjuryAreaButton"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"
+                    android:backgroundTint="@color/primaryColor"
+                    android:text="선택"
+                    android:textAppearance="@style/TextAppearance.App.LabelLarge"
+                    android:textColor="@color/white"
+                    app:cornerRadius="16dp" />
+            </LinearLayout>
+
+
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:visibility="gone"
-                app:boxBackgroundColor="@color/inputFieldBackground"
-                app:boxCornerRadiusTopStart="16dp"
-                app:boxCornerRadiusTopEnd="16dp"
-                app:boxCornerRadiusBottomStart="16dp"
-                app:boxCornerRadiusBottomEnd="16dp"
-                app:boxStrokeWidth="0dp"
-                app:expandedHintEnabled="false"
-                android:hint="환부 직접 입력">
+                android:text="질환명 (여러 개 선택 가능)"
+                android:textAppearance="@style/TextAppearance.App.TitleSmall"
+                android:textColor="@color/textSecondary" />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/manualInjuryAreaEditText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="@null"
-                    android:inputType="textCapSentences" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/injuryNameInputLayout"
-                style="@style/Widget.Material3.TextInputLayout.FilledBox"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                app:boxBackgroundColor="@color/inputFieldBackground"
-                app:boxCornerRadiusTopStart="16dp"
-                app:boxCornerRadiusTopEnd="16dp"
-                app:boxCornerRadiusBottomStart="16dp"
-                app:boxCornerRadiusBottomEnd="16dp"
-                app:boxStrokeWidth="0dp"
-                app:expandedHintEnabled="false"
-                android:hint="질환명 (예: 손목 염좌)">
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/injuryNameEditText"
-                    android:layout_width="match_parent"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/injuryNameDisplayLayout"
+                    style="@style/Widget.Material3.TextInputLayout.FilledBox"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:background="@null"
-                    android:inputType="textCapSentences" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    app:boxBackgroundColor="@color/inputFieldBackground"
+                    app:boxCornerRadiusTopStart="16dp"
+                    app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp"
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxStrokeWidth="0dp"
+                    app:expandedHintEnabled="false">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/injuryNameEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"  android:background="@null"
+                        android:inputType="none"
+                        android:focusable="false"
+                        android:textStyle="bold"
+                        android:gravity="top" tools:text="염좌 (삠), 만성 통증" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/selectInjuryNameButton"
+                    style="@style/Widget.Material3.Button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="60dp"
+                    android:backgroundTint="@color/primaryColor"
+                    android:text="선택"
+                    android:textAppearance="@style/TextAppearance.App.LabelLarge"
+                    android:textColor="@color/white"
+                    app:cornerRadius="16dp" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
