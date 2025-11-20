@@ -16,7 +16,7 @@ interface WorkoutRoutineRepository {
     ): Flow<AIRecommendationResult>
 
     /**
-     * ★★★ [추가] 운동 완료 상태가 변경되었을 때 전체 루틴을 저장소에 다시 저장(Upsert)합니다. ★★★
+     * ★★★ [추가] 운동 완료 상태 영속성 함수 ★★★
      */
     suspend fun upsertWorkoutRoutineState(userId: String, updatedFullRoutine: List<ScheduledWorkout>)
 }

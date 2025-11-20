@@ -3,6 +3,7 @@ package com.example.androidproject.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.androidproject.data.ExerciseCatalog
 import com.example.androidproject.data.local.SessionManager
 import com.example.androidproject.data.local.datasource.LocalDataSource
 import com.example.androidproject.data.mapper.toDomain
@@ -182,7 +183,7 @@ class RehabViewModel @Inject constructor(
                 // 오늘 날짜 루틴인 경우에만 상태 업데이트
                 if (normalize(scheduledWorkout.scheduledDate).contains(normalize(todayString))) {
                     val updatedExercises = scheduledWorkout.exercises.map { exerciseRec ->
-                        // isCompleted 필드가 ExerciseRecommendation 모델에 있다고 가정
+                        // exerciseId 대신 exerciseRec.name을 비교하는 것이 더 안전합니다.
                         if (exerciseRec.name == exerciseId) {
                             exerciseRec.copy(isCompleted = isCompleted)
                         } else {

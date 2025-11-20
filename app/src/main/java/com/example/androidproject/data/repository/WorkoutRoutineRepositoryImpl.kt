@@ -32,7 +32,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
         val userId = user.id
 
         if (forceReload) {
-            localDataSource.clearScheduledWorkouts(userId) // ★★★ [수정] ★★★
+            localDataSource.clearScheduledWorkouts(userId)
             try {
                 firebaseDataSource.clearWorkouts(userId)
             } catch (e: Exception) {
@@ -59,7 +59,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             Log.e("WorkoutRepo", "Remote Cache Read Failed: ${e.message}")
         }
 
-        // 3. 서버에도 없으면 -> AI에게 요청 (기존 로직)
+        // 3. AI에게 새 루틴 요청 (기존 로직)
         val pastSessions = rehabSessionRepository.getRehabHistory(userId).first()
         val recommendationParams = RecommendationParams(
             userId = user.id, age = user.age, gender = user.gender,
@@ -130,9 +130,9 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
 
     private fun List<ScheduledWorkoutEntity>.toDomainResult(): AIRecommendationResult {
         val gson = Gson()
+        val exercisesListType = object : TypeToken<List<ExerciseRecommendation>>() {}.type
+
         val workouts = this.map {
-            // isCompleted 필드가 포함된 ExerciseRecommendation List를 파싱해야 합니다.
-            val exercisesListType = object : TypeToken<List<ExerciseRecommendation>>() {}.type
             val exercises = gson.fromJson<List<ExerciseRecommendation>>(it.exercisesJson, exercisesListType)
 
             ScheduledWorkout(
