@@ -15,9 +15,10 @@ import com.example.androidproject.data.local.entity.* // 👈 [수정] Wildcard 
         DietSessionEntity::class,
         InjuryEntity::class,
         DietEntity::class,
-        ScheduledWorkoutEntity::class
+        ScheduledWorkoutEntity::class,
+        ScheduledDietEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)
@@ -30,4 +31,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun injuryDao(): InjuryDao
     abstract fun dietDao(): DietDao
     abstract fun scheduledWorkoutDao(): ScheduledWorkoutDao
+    abstract fun scheduledDietDao(): ScheduledDietDao
 }

@@ -7,6 +7,7 @@ import com.example.androidproject.domain.model.ExerciseRecommendation
 import com.example.androidproject.domain.model.RehabData
 import com.example.androidproject.domain.model.RecommendationParams
 import com.example.androidproject.domain.model.ScheduledWorkout
+import com.example.androidproject.domain.model.ScheduledDiet
 import com.example.androidproject.domain.repository.AIApiRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -64,9 +65,16 @@ class FakeAIApiRepository @Inject constructor() : AIApiRepository {
             )
         )
 
+        val dummyScheduledDiets = listOf(
+            ScheduledDiet(
+                scheduledDate = todayDateString,
+                meals = dummyDiets
+            )
+        )
+
         val aiResult = AIRecommendationResult(
             scheduledWorkouts = listOf(day1Workout, day2Workout),
-            recommendedDiets = dummyDiets,
+            scheduledDiets = dummyScheduledDiets,
             overallSummary = "AI가 생성한 2일치 재활 계획입니다. $satisfactionNote",
             disclaimer = "더미 데이터로 생성된 추천입니다."
         )
