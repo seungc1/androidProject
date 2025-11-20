@@ -1,5 +1,6 @@
 package com.example.androidproject.presentation.viewmodel
 
+import com.example.androidproject.data.ExerciseCatalog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidproject.data.local.SessionManager
@@ -296,9 +297,39 @@ class RehabViewModel @Inject constructor(
 
         return fullRoutine.find {
             normalize(it.scheduledDate).contains(normalize(todayString))
-        }?.exercises?.map { it.toTodayExercise() } ?: emptyList()
+        }?.exercises?.mapNotNull { aiRec ->
+            // AI가 준 운동 이름(name)을 기준으로 카탈로그에서 원본 상세 정보(ID, imageName 등)를 찾습니다.
+            val matchingCatalogExercise = ExerciseCatalog.allExercises.find { it.name == aiRec.name }
+
+            if (matchingCatalogExercise != null) {
+                // 카탈로그의 고정 정보(ID, imageName, precautions) + AI의 추천 세부 정보(sets, reps, reason)를 결합합니다.
+                TodayExercise(
+                    exercise = Exercise(
+                        id = matchingCatalogExercise.id, // 카탈로그의 고유 ID 사용
+                        name = aiRec.name,
+                        description = aiRec.description, // AI가 생성한 새로운 설명 사용
+                        bodyPart = aiRec.bodyPart,
+                        difficulty = aiRec.difficulty,
+                        precautions = matchingCatalogExercise.precautions, // 카탈로그의 주의사항 사용
+                        sets = aiRec.sets,
+                        reps = aiRec.reps,
+                        aiRecommendationReason = aiRec.aiRecommendationReason,
+
+                        // ★★★ [핵심] 로컬 이미지 파일명을 가져와 결합 ★★★
+                        imageName = matchingCatalogExercise.imageName
+                    ),
+                    isCompleted = false
+                )
+            } else {
+                android.util.Log.e("WorkoutError", "카탈로그에 없는 운동 '${aiRec.name}'이 AI로부터 추천되었습니다. 무시됨.")
+                null
+            }
+        } ?: emptyList()
     }
 
+    // 이전에 사용된 toTodayExercise() 확장 함수는 위 로직에 통합되었으므로, 불필요하다면 제거해야 합니다.
+    // 현재 코드를 보니, 아래 확장 함수는 이제 사용되지 않지만, 혹시 다른 곳에서 사용될까 봐 안전하게 주석 처리합니다.
+    /*
     private fun ExerciseRecommendation.toTodayExercise() = TodayExercise(
         exercise = Exercise(
             id = name, name = name, description = description, bodyPart = bodyPart,
@@ -307,6 +338,7 @@ class RehabViewModel @Inject constructor(
         ),
         isCompleted = false
     )
+    */
 
     private fun DietRecommendation.toDomain() = Diet(
         id = foodItems?.joinToString() ?: UUID.randomUUID().toString(),

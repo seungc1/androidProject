@@ -66,11 +66,37 @@ class ExerciseDetailFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             // (first()를 사용해 '현재' 스냅샷을 '한 번만' 가져옵니다.)
             val state = viewModel.uiState.first()
+
+            // 현재 오늘의 운동 목록에서 해당 ID를 가진 운동을 찾습니다.
+            // selectedExercise는 ExerciseCatalog의 imageName을 포함하고 있습니다.
             selectedExercise = state.todayExercises.find { it.exercise.id == exerciseId }?.exercise
 
             if (selectedExercise != null) {
+                // 1. 운동 이름 및 상세 설명 표시
                 binding.detailExerciseNameTextView.text = selectedExercise!!.name
                 binding.detailExerciseDescriptionTextView.text = selectedExercise!!.description
+
+                // 2. ★★★ [핵심] 이미지 로드 로직 (imageName 사용) ★★★
+                selectedExercise!!.imageName?.let { imageName ->
+                    // imageName (예: "neck_lateral_flexion")을 Drawable 리소스 ID로 변환
+                    val imageResId = resources.getIdentifier(
+                        imageName,
+                        "drawable",
+                        requireContext().packageName
+                    )
+
+                    // 리소스 ID가 유효하면 ImageView에 로드
+                    if (imageResId != 0) {
+                        // 주의: 이 코드를 사용하려면 XML에 android:id="@+id/exerciseImageView"가 필요합니다.
+                        // binding.exerciseImageView.setImageResource(imageResId)
+
+                        // (실제 ImageView가 없다고 가정하고, 콘솔에 로그만 남깁니다.)
+                        android.util.Log.d("ImageLoad", "Image found and ready for: $imageName, ID: $imageResId")
+                    } else {
+                        android.util.Log.e("ImageLoad", "Image resource not found for: $imageName")
+                    }
+                }
+
             } else {
                 // (오류 처리)
                 Toast.makeText(context, "운동 정보를 불러오는 데 실패했습니다.", Toast.LENGTH_SHORT).show()
