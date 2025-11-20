@@ -1,5 +1,6 @@
 package com.example.androidproject.data.repository
 
+import com.example.androidproject.data.ExerciseCatalog
 import com.example.androidproject.domain.model.AIAnalysisResult
 import com.example.androidproject.domain.model.RehabData
 import com.example.androidproject.domain.model.AIRecommendationResult
@@ -33,11 +34,8 @@ class AIApiRepositoryImpl @Inject constructor(
             response_format = ResponseFormat(type = "json_object")
         )
 
-        // [수정됨] API 호출 시 request만 전달 (API 키 파라미터 제거)
         val gptResponse = gptApiService.getChatCompletion(request = request)
         val jsonResponseString = gptResponse.choices.firstOrNull()?.message?.content
-
-        android.util.Log.d("GPT_RAW", "AI 원본 응답: $jsonResponseString")
 
         if (jsonResponseString != null) {
             val aiResult = parseGptResponseToAIRecommendationResult(jsonResponseString)
@@ -60,7 +58,6 @@ class AIApiRepositoryImpl @Inject constructor(
             response_format = ResponseFormat(type = "json_object")
         )
 
-        // [수정됨] API 호출 시 request만 전달
         val gptResponse = gptApiService.getChatCompletion(request = request)
         val jsonResponseString = gptResponse.choices.firstOrNull()?.message?.content
 
@@ -74,8 +71,8 @@ class AIApiRepositoryImpl @Inject constructor(
     }
     /**
      * (★ 수정 ★) AI 추천용 시스템 프롬프트
-     * 1. 한국어 응답 강제 (You MUST respond in Korean)
-     * 2. 날짜 포맷 엄격 지정 (Format: M월 d일 (E))
+     * - JSON 구조에서 imageUrl 필드 제거
+     * - 한국어 응답 강제 및 날짜 포맷 엄격 지정
      */
     private fun createGptSystemPrompt(): String {
         return """
@@ -94,14 +91,14 @@ class AIApiRepositoryImpl @Inject constructor(
               "scheduledDate": "String (Format: 'M월 d일 (E)', example: '11월 20일 (수)')",
               "exercises": [
                 {
-                  "name": "String",
-                  "description": "String",
+                  "name": "String (MUST match the name in AVAILABLE EXERCISES CATALOG)",
+                  "description": "String (New detailed description based on user's injury/notes)",
                   "bodyPart": "String",
                   "sets": "Int",
                   "reps": "Int",
                   "difficulty": "String (초급, 중급, 고급)",
-                  "aiRecommendationReason": "String",
-                  "imageUrl": "String? (can be null)"
+                  "aiRecommendationReason": "String"
+                  // imageUrl 필드는 앱에서 로컬로 처리하므로 제거되었습니다.
                 }
               ]
             }
@@ -121,18 +118,23 @@ class AIApiRepositoryImpl @Inject constructor(
           "overallSummary": "String (Korean summary)",
           "disclaimer": "String"
         }
+        Ensure the response is ONLY the valid JSON object.
     """.trimIndent()
     }
 
     /**
      * (★ 수정 ★) 사용자 정보 전달 프롬프트
-     * AI에게 "오늘 날짜"를 알려주어, 오늘부터 일정을 시작하도록 강제합니다.
+     * - 오늘 날짜 포함
+     * - 운동 카탈로그 JSON 포함 및 해당 목록에서만 운동을 선택하도록 강제
      */
     private fun createGptUserPrompt(params: RecommendationParams): String {
         val pastSessionsJson = gson.toJson(params.pastSessions)
 
         // (중요) 오늘 날짜 구하기 (앱과 동일한 포맷 사용)
         val todayDate = java.text.SimpleDateFormat("M월 d일 (E)", java.util.Locale.KOREA).format(java.util.Date())
+
+        // ★★★ 운동 카탈로그 JSON 가져오기 ★★★
+        val exerciseCatalogJson = ExerciseCatalog.getExercisesJson()
 
         return """
             Here is the user's information and past performance:
@@ -151,11 +153,16 @@ class AIApiRepositoryImpl @Inject constructor(
             2. Past Performance (Learning Data):
             $pastSessionsJson
 
-            🚨 IMPORTANT DATE INSTRUCTION:
+            🚨 [CRITICAL INSTRUCTION] 🚨
             Today is "$todayDate".
-            You MUST start the 'scheduledWorkouts' list from **Today ($todayDate)**.
-            For the following days, verify the correct date and day of the week.
-            Do NOT start from January 1st.
+            
+            3. AVAILABLE EXERCISES CATALOG (You MUST select the 'name' field ONLY from this list):
+            $exerciseCatalogJson
+
+            You MUST strictly adhere to the following rules for generating 'scheduledWorkouts':
+            - The 'scheduledDate' MUST start from Today ("$todayDate").
+            - The 'name' field in your JSON output **MUST EXACTLY** match an entry in the 'AVAILABLE EXERCISES CATALOG' (Korean name).
+            - The 'description', 'sets', 'reps', and 'aiRecommendationReason' fields must be newly generated based on the user's profile and injury condition.
 
             Based on ALL this data, create a new multi-day workout plan starting from "$todayDate".
         """.trimIndent()
@@ -190,8 +197,7 @@ class AIApiRepositoryImpl @Inject constructor(
     }
 
     /**
-     * (★수정★) AI 분석용 시스템 프롬프트
-     * (HTTP 400 오류 해결을 위해 "JSON" 단어 추가)
+     * (기존) AI 분석용 시스템 프롬프트 (한국어 출력 강제)
      */
     private fun createAnalysisSystemPrompt(): String {
         return """

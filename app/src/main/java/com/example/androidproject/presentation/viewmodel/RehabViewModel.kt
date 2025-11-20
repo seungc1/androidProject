@@ -1,5 +1,6 @@
 package com.example.androidproject.presentation.viewmodel
 
+import com.example.androidproject.data.ExerciseCatalog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidproject.data.local.SessionManager
@@ -9,6 +10,7 @@ import com.example.androidproject.domain.model.*
 import com.example.androidproject.domain.repository.*
 import com.example.androidproject.domain.usecase.AddRehabSessionUseCase
 import com.example.androidproject.domain.usecase.AddDietSessionUseCase
+import com.example.androidproject.data.remote.datasource.FirebaseDataSource // ★ 수정 1-1: FirebaseDataSource import 추가 ★
 import com.example.androidproject.presentation.main.MainUiState
 import com.example.androidproject.presentation.main.TodayExercise
 import com.prolificinteractive.materialcalendarview.CalendarDay
@@ -31,7 +33,8 @@ class RehabViewModel @Inject constructor(
     private val injuryRepository: InjuryRepository,
     private val dietRepository: DietRepository,
     private val sessionManager: SessionManager,
-    private val localDataSource: LocalDataSource
+    private val localDataSource: LocalDataSource,
+    private val firebaseDataSource: FirebaseDataSource // ★ 수정 1-2: FirebaseDataSource 의존성 주입 추가 ★
 ) : ViewModel() {
 
     // region [StateFlow Definitions]
@@ -237,6 +240,35 @@ class RehabViewModel @Inject constructor(
         }
     }
 
+    fun deleteAllUserData() {
+        viewModelScope.launch {
+            val userId = _currentUser.value?.id ?: return@launch
+
+            // 로딩 UI 업데이트
+            _uiState.update { it.copy(isLoading = true) }
+
+            try {
+                // 1. 로컬 DB 데이터 모두 삭제 (Room)
+                localDataSource.clearAllData() // ★ 수정 2-1: clearAllTables() -> clearAllData()로 변경 ★
+
+                // 2. Firebase의 주요 데이터 컬렉션 삭제
+                firebaseDataSource.clearAllRehabData(userId) // ★ 수정 2-2: 의존성 주입으로 오류 해결 ★
+
+                // 3. 로그아웃 처리 및 상태 초기화 (SessionManager 포함)
+                sessionManager.clearSession()
+                _currentUser.value = null
+                _currentInjury.value = null
+                _uiState.update { MainUiState(isLoading = false, isProfileComplete = false) } // 홈 화면에서 초기 상태로 복귀
+
+                // (로그인 화면으로 이동은 Fragment에서 처리합니다)
+
+            } catch (e: Exception) {
+                android.util.Log.e("DELETE_DATA", "전체 데이터 삭제 실패: ${e.message}")
+                _uiState.update { it.copy(isLoading = false, errorMessage = "데이터 삭제 실패: ${e.message}") }
+            }
+        }
+    }
+
     fun createTestHistory() {
         viewModelScope.launch {
             val user = _currentUser.value ?: return@launch
@@ -296,9 +328,39 @@ class RehabViewModel @Inject constructor(
 
         return fullRoutine.find {
             normalize(it.scheduledDate).contains(normalize(todayString))
-        }?.exercises?.map { it.toTodayExercise() } ?: emptyList()
+        }?.exercises?.mapNotNull { aiRec ->
+            // AI가 준 운동 이름(name)을 기준으로 카탈로그에서 원본 상세 정보(ID, imageName 등)를 찾습니다.
+            val matchingCatalogExercise = ExerciseCatalog.allExercises.find { it.name == aiRec.name }
+
+            if (matchingCatalogExercise != null) {
+                // 카탈로그의 고정 정보(ID, imageName, precautions) + AI의 추천 세부 정보(sets, reps, reason)를 결합합니다.
+                TodayExercise(
+                    exercise = Exercise(
+                        id = matchingCatalogExercise.id, // 카탈로그의 고유 ID 사용
+                        name = aiRec.name,
+                        description = aiRec.description, // AI가 생성한 새로운 설명 사용
+                        bodyPart = aiRec.bodyPart,
+                        difficulty = aiRec.difficulty,
+                        precautions = matchingCatalogExercise.precautions, // 카탈로그의 주의사항 사용
+                        sets = aiRec.sets,
+                        reps = aiRec.reps,
+                        aiRecommendationReason = aiRec.aiRecommendationReason,
+
+                        // ★★★ [핵심] 로컬 이미지 파일명을 가져와 결합 ★★★
+                        imageName = matchingCatalogExercise.imageName
+                    ),
+                    isCompleted = false
+                )
+            } else {
+                android.util.Log.e("WorkoutError", "카탈로그에 없는 운동 '${aiRec.name}'이 AI로부터 추천되었습니다. 무시됨.")
+                null
+            }
+        } ?: emptyList()
     }
 
+    // 이전에 사용된 toTodayExercise() 확장 함수는 위 로직에 통합되었으므로, 불필요하다면 제거해야 합니다.
+    // 현재 코드를 보니, 아래 확장 함수는 이제 사용되지 않지만, 혹시 다른 곳에서 사용될까 봐 안전하게 주석 처리합니다.
+    /*
     private fun ExerciseRecommendation.toTodayExercise() = TodayExercise(
         exercise = Exercise(
             id = name, name = name, description = description, bodyPart = bodyPart,
@@ -307,6 +369,7 @@ class RehabViewModel @Inject constructor(
         ),
         isCompleted = false
     )
+    */
 
     private fun DietRecommendation.toDomain() = Diet(
         id = foodItems?.joinToString() ?: UUID.randomUUID().toString(),

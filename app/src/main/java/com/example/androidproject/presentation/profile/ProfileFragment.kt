@@ -62,6 +62,29 @@ class ProfileFragment : Fragment() {
             viewModel.createTestHistory()
             Toast.makeText(requireContext(), "지난 7일간의 운동/식단 기록이 생성되었습니다.", Toast.LENGTH_SHORT).show()
         }
+        // (★추가★) 테스트 데이터 생성 버튼 연결 (기존)
+        binding.generateTestDataButton.setOnClickListener {
+            viewModel.createTestHistory()
+            Toast.makeText(requireContext(), "지난 7일간의 운동/식단 기록이 생성되었습니다.", Toast.LENGTH_SHORT).show()
+        }
+
+        // ★★★ [추가] 모든 데이터 삭제 버튼 연결 ★★★
+        binding.deleteAllDataButton.setOnClickListener {
+            // 사용자에게 경고 메시지 표시 후 삭제 확인
+            android.app.AlertDialog.Builder(requireContext())
+                .setTitle("⚠️ 경고: 모든 데이터 삭제")
+                .setMessage("계정의 모든 운동/식단 기록, AI 루틴, 캐시가 영구적으로 삭제되며, 로그아웃됩니다. 계속하시겠습니까?")
+                .setPositiveButton("삭제 및 로그아웃") { _, _ ->
+                    viewModel.deleteAllUserData()
+                    // 로그아웃 후 로그인 화면으로 이동
+                    val intent = android.content.Intent(requireActivity(), com.example.androidproject.presentation.auth.LoginActivity::class.java)
+                    intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    requireActivity().finish()
+                }
+                .setNegativeButton("취소", null)
+                .show()
+        }
 
         observeData()
     }
