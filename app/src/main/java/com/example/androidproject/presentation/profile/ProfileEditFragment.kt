@@ -15,7 +15,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import com.example.androidproject.R
 import com.example.androidproject.databinding.FragmentProfileEditBinding
 import com.example.androidproject.domain.model.User
 import com.example.androidproject.presentation.viewmodel.RehabViewModel
@@ -34,6 +33,9 @@ class ProfileEditFragment : Fragment() {
 
     private var selectedGender: String = ""
 
+    // (★추가★) 데이터가 실제로 로드되었는지 확인하는 플래그
+    private var isDataLoaded = false
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -49,15 +51,15 @@ class ProfileEditFragment : Fragment() {
         setupPainLevelSlider()
         setupGenderButtons()
 
-        // (★수정★) 안전한 데이터 로드 함수 호출
-        observeProfileData()
+        // (★수정★) 초기에는 저장 버튼 비활성화 (데이터 로드 후 활성화)
+        binding.saveButton.isEnabled = false
 
+        observeProfileData()
         handleBackPress()
     }
 
     private fun handleBackPress() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
-            // uiState의 값을 안전하게 확인
             val isComplete = viewModel.uiState.value.isProfileComplete
             if (!isComplete) {
                 Toast.makeText(context, "정보 입력을 완료해야 서비스를 이용할 수 있습니다.", Toast.LENGTH_SHORT).show()
@@ -134,59 +136,82 @@ class ProfileEditFragment : Fragment() {
     }
 
     /**
-     * (★수정★) ViewModel의 StateFlow를 구독하여 데이터가 준비되면 UI를 업데이트합니다.
-     * 기존의 'dummyUser' 직접 접근 방식을 제거하여 크래시를 방지합니다.
+     * (★수정★) 데이터 관찰 로직 강화
+     * - null 체크를 더 엄격하게 하여, 빈 값으로 UI가 초기화되는 것을 방지합니다.
+     * - 데이터가 모두 로드되었을 때만 '저장' 버튼을 활성화합니다.
      */
     private fun observeProfileData() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                // 1. 사용자 정보 관찰
+
                 launch {
                     viewModel.currentUser.collectLatest { user ->
-                        user?.let {
-                            binding.nameEditText.hint = it.name
-                            binding.ageEditText.hint = it.age.toString()
+                        if (user != null) {
+                            // 이름이 "로딩 중..."이 아닐 때만 반영 (임시 객체 필터링)
+                            if (user.name != "로딩 중...") {
+                                binding.nameEditText.setText(user.name)
+                                binding.ageEditText.setText(if(user.age > 0) user.age.toString() else "")
 
-                            // 성별 초기값 설정
-                            updateGenderSelection(it.gender)
+                                selectedGender = user.gender
+                                updateGenderSelection(user.gender)
 
-                            binding.heightEditText.hint = it.heightCm.toString()
-                            binding.weightEditText.hint = it.weightKg.toString()
-                            binding.allergyEditText.hint = it.allergyInfo.joinToString(", ")
+                                binding.heightEditText.setText(if(user.heightCm > 0) user.heightCm.toString() else "")
+                                binding.weightEditText.setText(if(user.weightKg > 0.0) user.weightKg.toString() else "")
+                                binding.allergyEditText.setText(user.allergyInfo.joinToString(", "))
 
-                            val painLevel = it.currentPainLevel.toFloat().coerceIn(0f, 10f)
-                            binding.painLevelSlider.value = painLevel
-                            updatePainLevelText(painLevel.toInt())
+                                val painLevel = user.currentPainLevel.toFloat().coerceIn(0f, 10f)
+                                binding.painLevelSlider.value = painLevel
+                                updatePainLevelText(painLevel.toInt())
 
-                            binding.additionalNotesEditText.hint = it.additionalNotes ?: "추가 사항 없음"
+                                binding.additionalNotesEditText.setText(user.additionalNotes ?: "")
+
+                                // 사용자 데이터 로드 완료 표시
+                                checkDataLoaded()
+                            }
                         }
                     }
                 }
 
-                // 2. 부상 정보 관찰
                 launch {
                     viewModel.currentInjury.collectLatest { injury ->
-                        injury?.let {
-                            binding.injuryAreaEditText.hint = it.bodyPart
-                            binding.injuryNameEditText.hint = it.name
+                        // injury가 null일 수도 있음 (부상 정보가 없는 경우)
+                        // 하지만 "초기화"되는 문제를 막기 위해, null이 아닌 경우에만 확실하게 세팅
+                        if (injury != null) {
+                            binding.injuryAreaEditText.setText(injury.bodyPart)
+                            binding.injuryNameEditText.setText(injury.name)
                         }
+                        // 부상 정보 로드 시도 완료 (null이어도 로드는 된 것임)
+                        checkDataLoaded()
                     }
                 }
             }
         }
     }
 
+    // (★추가★) 데이터 로드 완료 체크 함수
+    private fun checkDataLoaded() {
+        // 사용자 정보가 있으면 로드된 것으로 간주하고 버튼 활성화
+        if (viewModel.currentUser.value != null) {
+            isDataLoaded = true
+            binding.saveButton.isEnabled = true
+        }
+    }
+
     private fun setupSaveButton() {
         binding.saveButton.setOnClickListener {
-            // (★수정★) 현재 로드된 데이터를 안전하게 가져옴 (dummyUser 사용 X)
-            val currentUser = viewModel.currentUser.value
-            val currentInjury = viewModel.currentInjury.value
-
-            // 데이터가 아직 로드되지 않았다면 저장 막기 (안전 장치)
-            if (currentUser == null) {
-                Toast.makeText(context, "데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.", Toast.LENGTH_SHORT).show()
+            // (★수정★) 데이터 로드 확인
+            if (!isDataLoaded) {
+                Toast.makeText(context, "데이터를 불러오는 중입니다.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+
+            // ViewModel의 현재 값 사용 (dummyUser 대신)
+            val currentUser = viewModel.currentUser.value!!
+
+            // (★수정★) 현재 입력된 환부/질환명/통증수준을 가져옵니다.
+            val currentInjuryBodyPart = binding.injuryAreaEditText.text.toString()
+            val currentInjuryName = binding.injuryNameEditText.text.toString()
+            val finalPainLevel = binding.painLevelSlider.value.toInt()
 
             val inputName = binding.nameEditText.text.toString()
             val inputAge = binding.ageEditText.text.toString()
@@ -194,73 +219,53 @@ class ProfileEditFragment : Fragment() {
             val inputHeight = binding.heightEditText.text.toString()
             val inputWeight = binding.weightEditText.text.toString()
             val inputAllergy = binding.allergyEditText.text.toString()
-            val inputInjuryArea = binding.injuryAreaEditText.text.toString()
-            val inputInjuryName = binding.injuryNameEditText.text.toString()
             val inputNotes = binding.additionalNotesEditText.text.toString()
 
-            val finalName = inputName.ifBlank { currentUser.name }
-            val finalAge = inputAge.toIntOrNull() ?: currentUser.age
-            val finalGender = inputGender
-            val finalHeight = inputHeight.toIntOrNull() ?: currentUser.heightCm
-            val finalWeight = inputWeight.toDoubleOrNull() ?: currentUser.weightKg
-            val finalInjuryArea = inputInjuryArea.ifBlank { currentInjury?.bodyPart ?: "" }
-            val finalInjuryName = inputInjuryName.ifBlank { currentInjury?.name ?: "" }
-
             // 유효성 검사
-            if (finalName.isBlank() || finalName == "신규 사용자") {
+            if (inputName.isBlank()) {
                 Toast.makeText(context, "이름을 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (finalAge <= 0) {
+            if (inputAge.toIntOrNull() == null || inputAge.toInt() <= 0) {
                 Toast.makeText(context, "나이를 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (finalGender.isBlank() || finalGender == "미설정") {
+            if (inputGender.isBlank() || inputGender == "미설정") {
                 Toast.makeText(context, "성별을 선택해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (finalHeight <= 0) {
+            if (inputHeight.toIntOrNull() == null || inputHeight.toInt() <= 0) {
                 Toast.makeText(context, "키를 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (finalWeight <= 0.0) {
+            if (inputWeight.toDoubleOrNull() == null || inputWeight.toDouble() <= 0.0) {
                 Toast.makeText(context, "몸무게를 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (finalInjuryArea.isBlank() || finalInjuryArea == "없음") {
+            // 환부/질환명 필수 체크
+            if (currentInjuryBodyPart.isBlank() || currentInjuryBodyPart == "없음") {
                 Toast.makeText(context, "환부(부상 부위)를 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (finalInjuryName.isBlank() || finalInjuryName == "없음") {
+            if (currentInjuryName.isBlank() || currentInjuryName == "없음") {
                 Toast.makeText(context, "질환명을 입력해주세요.", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
 
-            val updatedUser = User(
-                id = currentUser.id,
-                password = currentUser.password,
-                name = finalName,
-                gender = finalGender,
-                age = finalAge,
-                heightCm = finalHeight,
-                weightKg = finalWeight,
-                activityLevel = currentUser.activityLevel,
-                fitnessGoal = currentUser.fitnessGoal,
-                allergyInfo = if (inputAllergy.isNotBlank()) {
-                    inputAllergy.split(",").map { it.trim() }
-                } else {
-                    currentUser.allergyInfo
-                },
-                preferredDietType = currentUser.preferredDietType,
-                preferredDietaryTypes = currentUser.preferredDietaryTypes,
-                equipmentAvailable = currentUser.equipmentAvailable,
-                currentPainLevel = binding.painLevelSlider.value.toInt(),
-                additionalNotes = inputNotes.ifBlank { currentUser.additionalNotes },
-                targetCalories = currentUser.targetCalories,
-                currentInjuryId = currentUser.currentInjuryId
+            // 객체 생성
+            val updatedUser = currentUser.copy(
+                name = inputName,
+                gender = inputGender,
+                age = inputAge.toInt(),
+                heightCm = inputHeight.toInt(),
+                weightKg = inputWeight.toDouble(),
+                allergyInfo = if (inputAllergy.isNotBlank()) inputAllergy.split(",").map { it.trim() } else emptyList(),
+                currentPainLevel = finalPainLevel, // (★수정★) 최신 통증 레벨 반영
+                additionalNotes = inputNotes
             )
 
-            viewModel.updateUserProfile(updatedUser, finalInjuryName, finalInjuryArea)
+            // ViewModel에 업데이트 요청 (환부, 질환명도 함께 전달)
+            viewModel.updateUserProfile(updatedUser, currentInjuryName, currentInjuryBodyPart)
 
             Toast.makeText(context, "프로필이 저장되었습니다.", Toast.LENGTH_SHORT).show()
             findNavController().popBackStack()

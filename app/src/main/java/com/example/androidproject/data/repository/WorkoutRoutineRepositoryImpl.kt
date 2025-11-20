@@ -31,42 +31,41 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
 
         val userId = user.id
 
-        // 1. 강제 리로드 시 처리
+        // 1. [핵심] 상태 변경(forceReload) 시 기존 데이터 삭제 후 AI 재요청
         if (forceReload) {
-            // 로컬/서버 캐시 삭제 (새로 받을 거니까)
-            localDataSource.clearWorkouts(userId) // <-- LocalDataSource의 clearWorkouts 호출
+            android.util.Log.d("DEBUG_DELETE", "Repository: [1단계] 로컬 데이터 삭제 시도")
+            localDataSource.clearScheduledWorkouts(userId)
+            android.util.Log.d("DEBUG_DELETE", "Repository: [1단계] 로컬 데이터 삭제 완료")
+
             try {
+                android.util.Log.d("DEBUG_DELETE", "Repository: [2단계] 서버 데이터 삭제 시도")
                 firebaseDataSource.clearWorkouts(userId)
-                Log.d("WorkoutRepo", "Cleared remote and local workouts due to forceReload.")
+                android.util.Log.d("DEBUG_DELETE", "Repository: [2단계] 서버 데이터 삭제 완료")
             } catch (e: Exception) {
-                Log.e("WorkoutRepo", "Failed to clear remote workouts: ${e.message}")
+                android.util.Log.e("DEBUG_DELETE", "Repository: 서버 삭제 중 에러 발생: ${e.message}")
             }
         } else {
-            // 2. 강제 리로드 X -> 로컬/서버 캐시 확인
-
-            // A. 로컬 캐시 확인
+            // 2. 강제 리로드가 아니면 캐시 확인 (기존 로직 유지)
             val localCache = localDataSource.getWorkouts(userId).first()
             if (localCache.isNotEmpty()) {
                 emit(localCache.toDomainResult())
                 return@flow
             }
 
-            // B. 로컬 캐시 X -> 서버 캐시 확인
+            // 로컬 없으면 서버 확인
             try {
                 val remoteWorkouts = firebaseDataSource.getWorkouts(userId)
                 if (remoteWorkouts.isNotEmpty()) {
-                    // 서버에 있으면 로컬에 저장하고 반환 (화면 갱신)
                     localDataSource.upsertWorkouts(remoteWorkouts.toEntity(userId))
-                    emit(AIRecommendationResult(remoteWorkouts, emptyList(), "서버 캐시에서 불러온 루틴입니다."))
+                    emit(AIRecommendationResult(remoteWorkouts, emptyList(), "서버에서 불러옴"))
                     return@flow
                 }
             } catch (e: Exception) {
                 Log.e("WorkoutRepo", "Remote Cache Read Failed: ${e.message}")
-                // 서버 에러나도 AI 요청으로 진행
             }
         }
 
-        // 3. AI에게 새 루틴 요청 (캐시가 없거나, forceReload인 경우)
+        // 3. AI에게 새 루틴 요청 (캐시가 없거나, forceReload인 경우 실행됨)
         val pastSessions = rehabSessionRepository.getRehabHistory(userId).first()
         val recommendationParams = RecommendationParams(
             userId = user.id, age = user.age, gender = user.gender,
@@ -87,23 +86,33 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                 // 4. 결과 저장 (로컬 + 서버)
                 if (aiResult.scheduledWorkouts.isNotEmpty()) {
                     val entities = aiResult.toEntity(userId)
+
+                    // 로컬 저장 (동기적으로 실행됨)
                     localDataSource.upsertWorkouts(entities)
 
+                    // 서버 저장 (비동기 - 실패해도 로컬은 저장됨)
                     try {
-                        // 서버에 저장 (새 루틴이므로)
                         firebaseDataSource.upsertWorkouts(userId, aiResult.scheduledWorkouts)
                         Log.d("WorkoutRepo", "Firebase Save Success: New routine stored.")
                     } catch (e: Exception) {
                         Log.e("WorkoutRepo", "Firebase Save Failed: ${e.message}")
                         e.printStackTrace()
                     }
-                }
 
-                // 화면 갱신을 위해 로컬 데이터 다시 조회해서 내보냄
-                emit(localDataSource.getWorkouts(userId).first().toDomainResult())
+                    emit(aiResult)
+
+                } else {
+                    Log.w("WorkoutRepo", "AI returned empty workouts.")
+                    val localBackup = localDataSource.getWorkouts(userId).first()
+                    if (localBackup.isNotEmpty()) {
+                        emit(localBackup.toDomainResult())
+                    } else {
+                        // 진짜 아무것도 없으면 빈 화면
+                        emit(AIRecommendationResult(emptyList(), emptyList(), "데이터를 불러올 수 없습니다."))
+                    }
+                }
             }
     }
-
     // --- Mapper 함수들 ---
 
     private fun AIRecommendationResult.toEntity(userId: String): List<ScheduledWorkoutEntity> {

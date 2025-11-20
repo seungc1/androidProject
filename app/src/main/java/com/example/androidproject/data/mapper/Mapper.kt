@@ -33,7 +33,6 @@ fun ExerciseDto.toDomain(): Exercise {
         description = this.description,
         bodyPart = this.bodyPart,
         difficulty = this.difficulty,
-        videoUrl = this.videoUrl,
         precautions = this.precautions,
         aiRecommendationReason = this.aiRecommendationReason,
         sets = null, // (DTO에 sets/reps가 없으므로 null로 설정)
@@ -49,7 +48,6 @@ fun ExerciseEntity.toDomain(): Exercise {
         description = this.description,
         bodyPart = this.bodyPart,
         difficulty = this.difficulty,
-        videoUrl = this.videoUrl,
         precautions = this.precautions,
         aiRecommendationReason = this.aiRecommendationReason,
         sets = null, // (Entity에 sets/reps가 없으므로 null로 설정)
@@ -65,7 +63,6 @@ fun Exercise.toEntity(): ExerciseEntity {
         description = this.description,
         bodyPart = this.bodyPart,
         difficulty = this.difficulty,
-        videoUrl = this.videoUrl,
         precautions = this.precautions,
         aiRecommendationReason = this.aiRecommendationReason
     )
