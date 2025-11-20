@@ -11,6 +11,7 @@ import com.example.androidproject.data.mapper.toEntity // ★★★ [수정] toE
 import com.example.androidproject.domain.model.*
 import com.example.androidproject.domain.repository.*
 import com.example.androidproject.domain.usecase.AddDietSessionUseCase
+import com.example.androidproject.data.remote.datasource.FirebaseDataSource
 import com.example.androidproject.domain.usecase.AddRehabSessionUseCase
 import com.example.androidproject.presentation.main.MainUiState
 import com.example.androidproject.presentation.main.TodayExercise
@@ -30,6 +31,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RehabViewModel @Inject constructor(
+    // ★★★ [수정] 여기에 rehabSessionRepository를 추가했습니다 ★★★
+    private val rehabSessionRepository: RehabSessionRepository,
     private val addRehabSessionUseCase: AddRehabSessionUseCase,
     private val workoutRoutineRepository: WorkoutRoutineRepository,
     private val addDietSessionUseCase: AddDietSessionUseCase,
@@ -37,6 +40,8 @@ class RehabViewModel @Inject constructor(
     private val injuryRepository: InjuryRepository,
     private val dietRepository: DietRepository,
     private val sessionManager: SessionManager,
+    private val localDataSource: LocalDataSource,
+    private val firebaseDataSource: FirebaseDataSource
     private val localDataSource: LocalDataSource
 ) : ViewModel() {
 
@@ -57,22 +62,31 @@ class RehabViewModel @Inject constructor(
     // Legacy Support
     lateinit var dummyUser: User
     lateinit var dummyInjury: Injury
+    // Legacy Support
+    val dummyUser: User get() = _currentUser.value ?: User(id="", password="", name="로딩중", gender="", age=0, heightCm=0, weightKg=0.0, activityLevel="", fitnessGoal="", allergyInfo=emptyList(), preferredDietType="", preferredDietaryTypes=emptyList(), equipmentAvailable=emptyList(), currentPainLevel=0)
+    val dummyInjury: Injury get() = _currentInjury.value ?: createEmptyInjury()
     // endregion
 
     // region [Initialization & Entry Point]
     fun loadDataForUser(userId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            loadUserAndInjury(userId)
+            startDataObservation(userId)
         }
     }
 
+    private fun startDataObservation(userId: String) {
     private fun loadUserAndInjury(userId: String) {
         viewModelScope.launch {
             val user = userRepository.getUserProfile(userId).first()
             _currentUser.value = user
             dummyUser = user
 
+                if (user.currentInjuryId != null) {
+                    observeInjury(user.currentInjuryId!!)
+                } else {
+                    _currentInjury.value = null
+                }
             val injuryId = user.currentInjuryId
             if (injuryId != null) {
                 val injury = injuryRepository.getInjuryById(injuryId).first()
@@ -83,7 +97,22 @@ class RehabViewModel @Inject constructor(
                 dummyInjury = createEmptyInjury()
             }
 
+                if (_uiState.value.fullRoutine.isEmpty()) {
+                    loadMainDashboardData(forceReload = false)
+                }
+            }
             loadMainDashboardData(forceReload = false)
+        }
+    }
+
+    private var currentInjuryJob: kotlinx.coroutines.Job? = null
+
+    private fun observeInjury(injuryId: String) {
+        currentInjuryJob?.cancel()
+        currentInjuryJob = viewModelScope.launch {
+            injuryRepository.getInjuryById(injuryId).collectLatest { injury ->
+                _currentInjury.value = injury
+            }
         }
     }
     // endregion
@@ -93,6 +122,9 @@ class RehabViewModel @Inject constructor(
         viewModelScope.launch {
             val user = _currentUser.value ?: return@launch
             val isComplete = user.name != "신규 사용자"
+
+            // [핵심] 오늘 날짜의 완료된 운동 기록을 가져옵니다.
+            val todaySessions = fetchTodayCompletedSessions(user.id)
 
             if (!forceReload && _uiState.value.fullRoutine.isNotEmpty()) {
                 val todayExercises = filterTodayExercises(_uiState.value.fullRoutine)
@@ -107,6 +139,16 @@ class RehabViewModel @Inject constructor(
                     _currentUser.value?.let { loadAllSessionDates(it.id) }
                     return@launch
                 }
+                // [핵심] 가져온 기록을 필터 함수에 전달하여 체크 상태를 반영합니다.
+                val todayExercises = filterTodayExercises(_uiState.value.fullRoutine, todaySessions)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        todayExercises = todayExercises,
+                        isProfileComplete = isComplete
+                    )
+                }
+                return@launch
             }
 
             try {
@@ -132,7 +174,8 @@ class RehabViewModel @Inject constructor(
                             currentInjuryName = injury?.name,
                             currentInjuryArea = injury?.bodyPart,
                             fullRoutine = aiResult.scheduledWorkouts,
-                            todayExercises = filterTodayExercises(aiResult.scheduledWorkouts),
+                            // [핵심] 여기서도 완료 기록(todaySessions)을 반영합니다.
+                            todayExercises = filterTodayExercises(aiResult.scheduledWorkouts, todaySessions),
                             recommendedDiets = diets,
                             isProfileComplete = isComplete
                         )
@@ -221,6 +264,23 @@ class RehabViewModel @Inject constructor(
         viewModelScope.launch {
             val user = _currentUser.value ?: return@launch
 
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    fullRoutine = emptyList(),
+                    todayExercises = emptyList()
+                )
+            }
+
+            try {
+                val newInjury = Injury(
+                    id = _currentInjury.value?.id ?: "injury_${user.id}",
+                    name = updatedInjuryName,
+                    bodyPart = updatedInjuryArea,
+                    severity = _currentInjury.value?.severity ?: "경미",
+                    description = _currentInjury.value?.description ?: "정보 없음"
+                )
+                injuryRepository.upsertInjury(newInjury, user.id)
             val newInjury = Injury(
                 id = _currentInjury.value?.id ?: "injury_${user.id}",
                 name = updatedInjuryName,
@@ -232,12 +292,21 @@ class RehabViewModel @Inject constructor(
 
             val userToUpdate = updatedUser.copy(currentInjuryId = newInjury.id)
             userRepository.updateUserProfile(userToUpdate)
+                val userToUpdate = updatedUser.copy(currentInjuryId = newInjury.id)
+                userRepository.updateUserProfile(userToUpdate).collect()
 
             _currentUser.value = userToUpdate
             _currentInjury.value = newInjury
             dummyUser = userToUpdate
             dummyInjury = newInjury
+                _currentUser.value = userToUpdate
+                _currentInjury.value = newInjury
 
+                loadMainDashboardData(forceReload = true)
+
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = "저장 실패: ${e.message}") }
+            }
             loadMainDashboardData(forceReload = true)
         }
     }
@@ -254,6 +323,27 @@ class RehabViewModel @Inject constructor(
     /**
      * ★★★ [수정] 테스트 기록 생성 시 운동/식단 정의 데이터 추가 ★★★
      */
+    fun deleteAllUserData() {
+        viewModelScope.launch {
+            val userId = _currentUser.value?.id ?: return@launch
+
+            _uiState.update { it.copy(isLoading = true) }
+
+            try {
+                localDataSource.clearAllData()
+                firebaseDataSource.clearAllRehabData(userId)
+
+                sessionManager.clearSession()
+                _currentUser.value = null
+                _currentInjury.value = null
+                _uiState.update { MainUiState(isLoading = false, isProfileComplete = false) }
+
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = "데이터 삭제 실패: ${e.message}") }
+            }
+        }
+    }
+
     fun createTestHistory() {
         viewModelScope.launch {
             val user = _currentUser.value ?: return@launch
@@ -284,19 +374,18 @@ class RehabViewModel @Inject constructor(
                 calendar.add(Calendar.DAY_OF_YEAR, -1) // 하루씩 과거로 이동
                 val date = calendar.time
 
-                // 운동 기록 생성
-                val rehabSession = RehabSession(
-                    id = UUID.randomUUID().toString(),
-                    userId = user.id,
-                    exerciseId = exerciseDefinitions.random().name, // 정의된 ID 사용
-                    dateTime = date,
-                    sets = (2..4).random(),
-                    reps = (10..15).random(),
-                    durationMinutes = (15..40).random(),
-                    userRating = (3..5).random(),
-                    notes = "테스트 기록: $i 일 전 운동 완료"
-                )
-                addRehabSessionUseCase(rehabSession).collect()
+                    val rehabSession = RehabSession(
+                        id = UUID.randomUUID().toString(),
+                        userId = user.id,
+                        exerciseId = exerciseNames.random(),
+                        dateTime = date,
+                        sets = (2..4).random(),
+                        reps = (10..15).random(),
+                        durationMinutes = (15..40).random(),
+                        userRating = (3..5).random(),
+                        notes = "테스트 기록: $i 일 전 운동 완료"
+                    )
+                    addRehabSessionUseCase(rehabSession).collect()
 
                 // 식단 기록 생성
                 val dietSession = DietSession(
@@ -323,13 +412,68 @@ class RehabViewModel @Inject constructor(
 
     private fun createEmptyInjury() = Injury(id = "temp", name = "없음", bodyPart = "없음", severity = "없음", description = "")
 
-    private fun filterTodayExercises(fullRoutine: List<ScheduledWorkout>): List<TodayExercise> {
+    // [추가] 오늘 하루 동안 완료한 세션 목록을 가져오는 함수
+    private suspend fun fetchTodayCompletedSessions(userId: String): List<RehabSession> {
+        val calendar = Calendar.getInstance()
+
+        // 오늘의 시작 시간 (00:00:00.000)
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val startOfDay = calendar.time
+
+        // 오늘의 끝 시간 (23:59:59.999)
+        calendar.set(Calendar.HOUR_OF_DAY, 23)
+        calendar.set(Calendar.MINUTE, 59)
+        calendar.set(Calendar.SECOND, 59)
+        val endOfDay = calendar.time
+
+        // 주입받은 rehabSessionRepository를 사용하여 DB 조회
+        return try {
+            rehabSessionRepository.getRehabSessionsBetween(userId, startOfDay, endOfDay).first()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    // [수정] completedSessions(DB기록)과 비교하여 isCompleted 설정
+    private fun filterTodayExercises(
+        fullRoutine: List<ScheduledWorkout>,
+        completedSessions: List<RehabSession>
+    ): List<TodayExercise> {
         val todayString = SimpleDateFormat("M월 d일 (E)", Locale.KOREA).format(Date())
         val normalize = { s: String -> s.replace(" ", "").trim() }
 
         return fullRoutine.find {
             normalize(it.scheduledDate).contains(normalize(todayString))
         }?.exercises?.map { it.toTodayExercise() } ?: emptyList()
+        }?.exercises?.mapNotNull { aiRec ->
+            val matchingCatalogExercise = ExerciseCatalog.allExercises.find { it.name == aiRec.name }
+
+            if (matchingCatalogExercise != null) {
+                // ★ [핵심] DB 기록 중에 현재 운동 ID와 일치하는 것이 있는지 확인
+                val isDone = completedSessions.any { it.exerciseId == matchingCatalogExercise.id }
+
+                TodayExercise(
+                    exercise = Exercise(
+                        id = matchingCatalogExercise.id,
+                        name = aiRec.name,
+                        description = aiRec.description,
+                        bodyPart = aiRec.bodyPart,
+                        difficulty = aiRec.difficulty,
+                        precautions = matchingCatalogExercise.precautions,
+                        sets = aiRec.sets,
+                        reps = aiRec.reps,
+                        aiRecommendationReason = aiRec.aiRecommendationReason,
+                        imageName = matchingCatalogExercise.imageName
+                    ),
+                    isCompleted = isDone // ★ DB 상태 반영
+                )
+            } else {
+                null
+            }
+        } ?: emptyList()
     }
 
     private fun ExerciseRecommendation.toTodayExercise() = TodayExercise(
