@@ -96,12 +96,15 @@ class HistoryFragment : Fragment() {
 
                     val hasHistory = state.historyItems.isNotEmpty()
                     android.util.Log.d("HISTORY_FRAG", "hasHistory: $hasHistory, isLoading: ${state.isLoading}, items: ${state.historyItems.size}")
-                    
+
+                    // --- 수정 시작: 목록 및 빈 화면 메시지 가시성 로직 개선 ---
+                    // RecyclerView는 데이터가 있고 로딩/분석 중이 아닐 때만 보입니다.
                     binding.historyRecyclerView.isVisible = hasHistory && !state.isLoading
                     android.util.Log.d("HISTORY_FRAG", "RecyclerView visibility: ${binding.historyRecyclerView.isVisible}")
 
-                    // ★★★ ID를 emptyStateTextView로 변경합니다. ★★★
+                    // 빈 메시지는 데이터가 없고 로딩 중이 아닐 때만 보입니다.
                     binding.historyEmptyMessageTextView.isVisible = !hasHistory && !state.isLoading
+                    // --- 수정 종료 ---
 
                     historyAdapter.submitList(state.historyItems)
                     android.util.Log.d("HISTORY_FRAG", "Submitted ${state.historyItems.size} items to adapter")

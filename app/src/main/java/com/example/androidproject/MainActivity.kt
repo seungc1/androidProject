@@ -103,20 +103,25 @@ class MainActivity : AppCompatActivity() {
                 viewModel.uiState.collectLatest { state ->
                     if (!state.isLoading) {
 
+                        // --- 기존 코드 수정 시작: 프로필 미완성 시 탭바 숨김 로직을 제거하고,
+                        //     항상 탭바를 보이게 합니다. ---
                         if (!state.isProfileComplete) {
-                            // 프로필 미완성 시 탭바 숨기고 수정 화면 강제 이동
-                            binding.bottomNavigationView.visibility = View.GONE
+                            // [수정] 탭바를 숨기는 View.GONE 로직을 주석 처리하여 항상 보이게 함
+                            // binding.bottomNavigationView.visibility = View.GONE
 
                             val currentDest = navController.currentDestination?.id
                             if (currentDest != R.id.profileEditFragment) {
+                                // 프로필 입력 강제 이동 로직은 유지 (사용자에게 프로필 입력 필요함을 알림)
                                 Toast.makeText(this@MainActivity, "초기 설정을 위해 정보를 입력해주세요.", Toast.LENGTH_SHORT).show()
                                 try {
                                     navController.navigate(R.id.profileEditFragment)
-                                } catch (_: Exception) { }
+                                } catch (_: Exception) { /* 무시 */ }
                             }
-                        } else {
-                            binding.bottomNavigationView.visibility = View.VISIBLE
                         }
+
+                        // [추가] 로딩이 완료되면 내비게이션 바를 항상 보이도록 설정
+                        binding.bottomNavigationView.visibility = View.VISIBLE
+                        // --- 기존 코드 수정 끝 ---
                     }
                 }
             }

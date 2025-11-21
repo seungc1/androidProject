@@ -270,6 +270,124 @@
                 android:textColor="@color/errorColor"
                 android:layout_marginBottom="16dp" />
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="[코드 확인용] 운동 및 식단 기록 (오늘)"
+                android:textColor="@color/errorColor"
+                android:textAppearance="@style/TextAppearance.App.TitleLarge" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/testHistoryCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/divider"
+                app:cardBackgroundColor="@color/white">
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="150dp"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/testHistoryRecordsTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="데이터 로드 중..."
+                        android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                        android:textColor="?android:attr/textColorSecondary" />
+                </RelativeLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/testAnalysisCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="16dp"
+                app:cardBackgroundColor="@color/secondaryContainer"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/divider">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="24dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="[임시] 주간 AI 분석 리포트"
+                        android:textAppearance="@style/TextAppearance.App.TitleLarge" />
+
+                    <TextView
+                        android:id="@+id/testAnalysisSummaryTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                        android:textStyle="bold"
+                        android:text="데이터 로드 중..." />
+
+                    <TextView
+                        android:id="@+id/testAnalysisStrengthsTitleTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="✅ 잘하고 있는 점"
+                        android:textAppearance="@style/TextAppearance.App.TitleSmall" />
+                    <TextView
+                        android:id="@+id/testAnalysisStrengthsTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                        android:text="-" />
+
+                    <TextView
+                        android:id="@+id/testAnalysisImprovementTitleTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="⚠️ 개선이 필요한 점"
+                        android:textAppearance="@style/TextAppearance.App.TitleSmall" />
+                    <TextView
+                        android:id="@+id/testAnalysisImprovementTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                        android:text="-" />
+
+                    <TextView
+                        android:id="@+id/testAnalysisTipsTitleTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="💡 맞춤형 조언"
+                        android:textAppearance="@style/TextAppearance.App.TitleSmall" />
+                    <TextView
+                        android:id="@+id/testAnalysisTipsTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                        android:text="-" />
+
+                    <TextView
+                        android:id="@+id/testAnalysisNextStepsTextView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:textAppearance="@style/TextAppearance.App.TitleSmall"
+                        android:textStyle="italic"
+                        android:text="다음 단계 권장 사항: -" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
