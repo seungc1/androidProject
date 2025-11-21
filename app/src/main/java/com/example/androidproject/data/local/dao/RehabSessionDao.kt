@@ -1,3 +1,5 @@
+// seungc1/androidproject/androidProject-dev/app/src/main/java/com/example/androidproject/data/local/dao/RehabSessionDao.kt
+
 package com.example.androidproject.data.local.dao
 
 import androidx.room.Dao
@@ -16,7 +18,7 @@ interface RehabSessionDao {
     @Query("SELECT * FROM rehab_session_table WHERE userId = :userId ORDER BY dateTime DESC")
     fun getRehabHistory(userId: String): Flow<List<RehabSessionEntity>>
 
-    // UseCase에서 7일간의 기록을 요청하므로
-    @Query("SELECT * FROM rehab_session_table WHERE userId = :userId AND dateTime BETWEEN :startDate AND :endDate")
+    // [수정] BETWEEN 대신 >= :startDate AND dateTime < :endDate 를 사용
+    @Query("SELECT * FROM rehab_session_table WHERE userId = :userId AND dateTime >= :startDate AND dateTime < :endDate")
     fun getSessionsBetween(userId: String, startDate: Date, endDate: Date): Flow<List<RehabSessionEntity>>
 }

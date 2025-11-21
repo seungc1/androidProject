@@ -51,39 +51,22 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/historyTitleTextView">
 
-            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-                android:id="@+id/swipeRefreshLayout"
-                android:layout_width="match_parent"  android:layout_height="wrap_content"
-                app:layout_constraintVertical_bias="0.0">
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="150dp"
+                android:padding="16dp">
 
-                <RelativeLayout
+                <TextView
+                    android:id="@+id/historyRecordsTextView"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="200dp">
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/historyRecyclerView"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content" android:nestedScrollingEnabled="false"
-                        android:visibility="gone"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_exercise" />
-
-                    <TextView
-                        android:id="@+id/historyEmptyMessageTextView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerInParent="true"
-                        android:text="@string/history_empty_state"
-                        android:textAppearance="@style/TextAppearance.App.BodyLarge"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:visibility="gone"
-                        tools:visibility="gone" />
-
-                </RelativeLayout>
-
-            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+                    android:text="데이터 로드 중..."
+                    android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                    android:textColor="?android:attr/textColorSecondary" />
+            </RelativeLayout>
         </com.google.android.material.card.MaterialCardView>
+
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/analysisCard"
@@ -93,14 +76,16 @@
             android:layout_marginTop="16dp"
             android:visibility="gone"
             app:cardBackgroundColor="@color/secondaryContainer"
-
             app:cardCornerRadius="20dp"
             app:cardElevation="0dp"
             app:strokeWidth="1dp"
             app:strokeColor="@color/divider"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/historyCard"  app:layout_constraintBottom_toBottomOf="parent"  tools:visibility="visible">
+            app:layout_constraintTop_toBottomOf="@id/historyCard"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:visibility="visible">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -133,7 +118,59 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                    android:textStyle="bold"
                     tools:text="AI 요약: 지난 주 운동은 꾸준했지만, 식단 만족도가 낮습니다." />
+
+
+                <TextView
+                    android:id="@+id/analysisStrengthsTitleTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="✅ 잘하고 있는 점"
+                    android:textAppearance="@style/TextAppearance.App.TitleSmall" />
+                <TextView
+                    android:id="@+id/analysisStrengthsTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                    android:text="-" />
+
+                <TextView
+                    android:id="@+id/analysisImprovementTitleTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="⚠️ 개선이 필요한 점"
+                    android:textAppearance="@style/TextAppearance.App.TitleSmall" />
+                <TextView
+                    android:id="@+id/analysisImprovementTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                    android:text="-" />
+
+                <TextView
+                    android:id="@+id/analysisTipsTitleTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="💡 맞춤형 조언"
+                    android:textAppearance="@style/TextAppearance.App.TitleSmall" />
+                <TextView
+                    android:id="@+id/analysisTipsTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.App.BodyLarge"
+                    android:text="-" />
+
+                <TextView
+                    android:id="@+id/analysisNextStepsTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:textAppearance="@style/TextAppearance.App.TitleSmall"
+                    android:text="📈 다음 단계 권장 사항: -" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -144,7 +181,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@id/historyCard"  app:layout_constraintEnd_toEndOf="@id/historyCard"      app:layout_constraintStart_toStartOf="@id/historyCard"    app:layout_constraintTop_toTopOf="@id/historyCard"        tools:visibility="visible" />
+            app:layout_constraintBottom_toBottomOf="@id/historyCard"
+            app:layout_constraintEnd_toEndOf="@id/historyCard"
+            app:layout_constraintStart_toStartOf="@id/historyCard"
+            app:layout_constraintTop_toTopOf="@id/historyCard"
+            tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>

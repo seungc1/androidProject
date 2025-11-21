@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -17,8 +18,11 @@ import com.example.androidproject.R
 import com.example.androidproject.databinding.FragmentProfileBinding
 import com.example.androidproject.presentation.auth.LoginActivity
 import com.example.androidproject.presentation.viewmodel.RehabViewModel
+import com.google.android.material.card.MaterialCardView // 이 import는 이제 사용되지 않을 가능성이 높으나, 레이아웃에 MaterialCardView가 남아있으므로 일단 유지
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -57,18 +61,7 @@ class ProfileFragment : Fragment() {
             requireActivity().finish()
         }
 
-       /* // (★추가★) 테스트 데이터 생성 버튼 연결
-        binding.generateTestDataButton.setOnClickListener {
-            viewModel.createTestHistory()
-            Toast.makeText(requireContext(), "지난 7일간의 운동/식단 기록이 생성되었습니다.", Toast.LENGTH_SHORT).show()
-        }
-        // (★추가★) 테스트 데이터 생성 버튼 연결 (기존)
-        binding.generateTestDataButton.setOnClickListener {
-            viewModel.createTestHistory()
-            Toast.makeText(requireContext(), "지난 7일간의 운동/식단 기록이 생성되었습니다.", Toast.LENGTH_SHORT).show()
-        }*/
 
-        // ★★★ [추가] 모든 데이터 삭제 버튼 연결 ★★★
         binding.deleteAllDataButton.setOnClickListener {
             // 사용자에게 경고 메시지 표시 후 삭제 확인
             android.app.AlertDialog.Builder(requireContext())
@@ -76,7 +69,6 @@ class ProfileFragment : Fragment() {
                 .setMessage("계정의 모든 운동/식단 기록, AI 루틴, 캐시가 영구적으로 삭제되며, 로그아웃됩니다. 계속하시겠습니까?")
                 .setPositiveButton("삭제 및 로그아웃") { _, _ ->
                     viewModel.deleteAllUserData()
-                    // 로그아웃 후 로그인 화면으로 이동
                     val intent = android.content.Intent(requireActivity(), com.example.androidproject.presentation.auth.LoginActivity::class.java)
                     intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)
@@ -85,6 +77,7 @@ class ProfileFragment : Fragment() {
                 .setNegativeButton("취소", null)
                 .show()
         }
+
 
         observeData()
     }
@@ -120,8 +113,8 @@ class ProfileFragment : Fragment() {
 
                 launch {
                     viewModel.currentInjury.collectLatest { injury ->
-                        binding.injuryAreaTextView.text = injury?.bodyPart ?: "정보 없음"
-                        binding.injuryNameTextView.text = injury?.name ?: "정보 없음"
+                        binding.injuryAreaTextView?.text = injury?.bodyPart ?: "정보 없음"
+                        binding.injuryNameTextView?.text = injury?.name ?: "정보 없음"
                     }
                 }
             }

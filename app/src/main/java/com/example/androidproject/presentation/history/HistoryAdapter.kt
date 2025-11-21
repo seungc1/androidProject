@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
+import com.example.androidproject.data.ExerciseCatalog // 👈 추가: 운동 카탈로그 import
 import com.example.androidproject.databinding.ItemDietBinding
 import com.example.androidproject.databinding.ItemExerciseBinding
 import com.example.androidproject.domain.model.DietSession
@@ -69,9 +70,15 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     val exerciseBinding = binding as ItemExerciseBinding
                     val session = item.session
 
-                    // 1. 운동 이름: 기록된 운동 ID만 표시 (AI 추천처럼 이름 정보가 없으므로)
-                    // TODO: ViewModel에서 ExerciseCatalog를 통해 실제 운동 이름을 가져오도록 보강 필요
-                    exerciseBinding.exerciseNameTextView.text = "운동: ${session.exerciseId}"
+                    // 1. 운동 이름: 기록된 운동 ID 대신 실제 운동 이름을 표시하도록 수정합니다.
+                    // --- 수정 시작 ---
+                    val exerciseName = ExerciseCatalog.allExercises
+                        .find { it.id == session.exerciseId } // ID로 카탈로그에서 운동을 찾습니다.
+                        ?.name
+                        ?: "알 수 없는 운동 (${session.exerciseId})" // 찾지 못하면 대체 텍스트를 사용합니다.
+
+                    exerciseBinding.exerciseNameTextView.text = exerciseName
+                    // --- 수정 종료 ---
 
                     // 2. 상세 정보: 세트, 횟수, 만족도 결합
                     val ratingText = when (session.userRating) {
@@ -117,6 +124,7 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                                 " | 만족도: $satisfactionText"
 
                     // 3. 칼로리/시간: 우측에 시간 표시
+                    // AI 추천 식단의 칼로리 필드가 없으므로, 우측에는 시간만 표시
                     dietBinding.dietCaloriesTextView.text = timeFormatter.format(session.dateTime)
                 }
             }
