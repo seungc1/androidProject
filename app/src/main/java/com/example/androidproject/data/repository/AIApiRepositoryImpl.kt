@@ -1,23 +1,25 @@
 package com.example.androidproject.data.repository
 
 import com.example.androidproject.data.ExerciseCatalog
+// [추가] GptResponse, GptMessage, GptRequest 등 누락된 클래스들을 import 합니다.
+import com.example.androidproject.data.network.model.* // GptDtos.kt 파일에 정의된 클래스들
+
 import com.example.androidproject.domain.model.AIAnalysisResult
 import com.example.androidproject.domain.model.RehabData
 import com.example.androidproject.domain.model.AIRecommendationResult
 import com.example.androidproject.domain.model.RecommendationParams
 import com.example.androidproject.domain.repository.AIApiRepository
 import com.example.androidproject.data.network.GptApiService
-import com.example.androidproject.data.network.model.GptMessage
-import com.example.androidproject.data.network.model.GptRequest
-import com.example.androidproject.data.network.model.GptResponse
-import com.example.androidproject.data.network.model.ResponseFormat
+// import com.example.androidproject.data.network.model.GptMessage // 삭제됨 (상단 wildcard import로 대체)
+// import com.example.androidproject.data.network.model.GptRequest // 삭제됨
+// import com.example.androidproject.data.network.model.GptResponse // 삭제됨
+// import com.example.androidproject.data.network.model.ResponseFormat // 삭제됨
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 import android.util.Log
-
 class AIApiRepositoryImpl @Inject constructor(
     private val gptApiService: GptApiService,
     private val gson: Gson
@@ -29,7 +31,8 @@ class AIApiRepositoryImpl @Inject constructor(
         val userPrompt = createGptUserPrompt(params)
 
         val request = GptRequest(
-            model = "gpt-4-turbo", // 모델 유지
+            // [수정 1] 모델을 더 저렴한 버전으로 변경 (gpt-4-turbo -> gpt-3.5-turbo)
+            model = "gpt-3.5-turbo",
             messages = listOf(
                 GptMessage(role = "system", content = systemPrompt),
                 GptMessage(role = "user", content = userPrompt)
@@ -38,7 +41,8 @@ class AIApiRepositoryImpl @Inject constructor(
         )
 
         // ★★★ 429 오류 해결을 위한 재시도 로직 시작 ★★★
-        val MAX_RETRIES = 5
+        // [수정 2] API 재시도 횟수를 줄여 비용을 절감 (5 -> 3)
+        val MAX_RETRIES = 3
         var delayTime = 1000L // 1초부터 시작
         var gptResponse: GptResponse? = null
         var lastException: Exception? = null
@@ -84,7 +88,8 @@ class AIApiRepositoryImpl @Inject constructor(
         val userPrompt = createAnalysisUserPrompt(rehabData)
 
         val request = GptRequest(
-            model = "gpt-4-turbo",
+            // [수정 1] 모델을 더 저렴한 버전으로 변경 (gpt-4-turbo -> gpt-3.5-turbo)
+            model = "gpt-3.5-turbo",
             messages = listOf(
                 GptMessage(role = "system", content = systemPrompt),
                 GptMessage(role = "user", content = userPrompt)
@@ -93,7 +98,8 @@ class AIApiRepositoryImpl @Inject constructor(
         )
 
         // ★★★ 429 오류 해결을 위한 재시도 로직 시작 (analyzeProgress) ★★★
-        val MAX_RETRIES = 5
+        // [수정 2] API 재시도 횟수를 줄여 비용을 절감 (5 -> 3)
+        val MAX_RETRIES = 3
         var delayTime = 1000L
         var gptResponse: GptResponse? = null
         var lastException: Exception? = null

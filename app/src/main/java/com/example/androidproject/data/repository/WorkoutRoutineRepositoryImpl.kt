@@ -1,5 +1,3 @@
-// seungc1/androidproject/androidProject-dev/app/src/main/java/com/example/androidproject/data/repository/WorkoutRoutineRepositoryImpl.kt
-
 package com.example.androidproject.data.repository
 
 import android.util.Log
@@ -31,33 +29,15 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
     ): Flow<AIRecommendationResult> = flow {
 
         val userId = user.id
+        val forceApiCall: Boolean
 
         // ----------------------- [성능 측정 시작] -----------------------
         android.util.Log.d("REPO_PERF", "--- getWorkoutRoutine 시작 (forceReload: $forceReload) ---")
         val startTime = System.currentTimeMillis()
         // ----------------------------------------------------------------
 
-        // 1. [핵심] 상태 변경(forceReload) 시 기존 데이터 삭제 후 AI 재요청
         if (forceReload) {
-            android.util.Log.d("DEBUG_DELETE", "Repository: [1단계] 로컬 데이터 삭제 시도")
-            localDataSource.clearScheduledWorkouts(userId)
-            android.util.Log.d("DEBUG_DELETE", "Repository: [1단계] 로컬 데이터 삭제 완료")
-
-            try {
-                android.util.Log.d("DEBUG_DELETE", "Repository: [2단계] 서버 데이터 삭제 시도")
-                firebaseDataSource.clearWorkouts(userId)
-                android.util.Log.d("DEBUG_DELETE", "Repository: [2단계] 서버 데이터 삭제 완료")
-            } catch (e: Exception) {
-                android.util.Log.e("DEBUG_DELETE", "Repository: 서버 삭제 중 에러 발생: ${e.message}")
-            }
-
-            // [추가] 식단 데이터도 삭제
-            localDataSource.clearScheduledDiets(userId)
-            try {
-                firebaseDataSource.clearScheduledDiets(userId)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            forceApiCall = true
         } else {
             // 2. 강제 리로드가 아니면 로컬 캐시 확인
             val localCache = localDataSource.getWorkouts(userId).first()
@@ -68,27 +48,27 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             android.util.Log.d("REPO_PERF", "1. 로컬 캐시 확인 완료: ${cacheCheckTime - startTime}ms")
             // ----------------------------------------------------------------
 
-            // 운동 데이터와 식단 데이터가 *모두* 있어야 유효한 캐시로 인정
+            // 운동 데이터가 유효하지 않은지 확인하는 로직
             val hasInvalidData = localCache.any { workout ->
+                // 운동 JSON에 유효하지 않은 플래그가 포함되어 있는지 확인
                 workout.exercisesJson.contains("(Day")
             }
 
-            if (localCache.isNotEmpty() && localDietCache.size >= 7 && !hasInvalidData) {
+            // [수정] localCache의 크기가 3 이상이고 유효한 데이터일 때만 캐시 히트로 판단합니다.
+            if (localCache.size >= 3 && localDietCache.size >= 3 && !hasInvalidData) {
                 emit(AIRecommendationResult(
                     scheduledWorkouts = localCache.toDomainWorkouts(),
                     scheduledDiets = localDietCache.toDomainDiets(),
                     overallSummary = "로컬 캐시"
                 ))
-                // ----------------------- [성능 측정 로그] -----------------------
                 android.util.Log.d("REPO_PERF", "2. 캐시 히트! 총 소요 시간: ${System.currentTimeMillis() - startTime}ms")
-                // ----------------------------------------------------------------
                 return@flow // 로컬 캐시 있으면 즉시 반환 (가장 빠른 경로)
             }
 
-            // 캐시 미스 또는 forceReload인 경우
-            android.util.Log.d("REPO_PERF", "2. 로컬 캐시 미스. 서버 캐시 확인 시작...")
+            // 캐시 미스 (사이즈 부족 또는 유효하지 않은 데이터)인 경우
+            android.util.Log.d("REPO_PERF", "2. 로컬 캐시 미스 (size < 3 또는 invalid). 서버 캐시 확인 시작...")
 
-            // --- Firebase 원격 캐시 확인 로직 (유지) ---
+            // --- Firebase 원격 캐시 확인 로직 ---
             try {
                 val remoteWorkouts = firebaseDataSource.getWorkouts(userId)
                 val remoteDiets = firebaseDataSource.getScheduledDiets(userId)
@@ -97,7 +77,9 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                     workout.exercises.any { it.name.contains("(Day") }
                 }
 
-                if (remoteWorkouts.isNotEmpty() && remoteDiets.size >= 7 && !hasInvalidRemoteData) {
+                // [수정] remoteWorkouts의 크기가 3 이상이고 유효한 데이터일 때 캐시 히트로 판단합니다.
+                if (remoteWorkouts.size >= 3 && remoteDiets.size >= 3 && !hasInvalidRemoteData) {
+                    // 서버 캐시가 있다면 로컬 DB에 저장하고 반환합니다.
                     localDataSource.upsertWorkouts(remoteWorkouts.toWorkoutEntity(userId))
                     localDataSource.upsertScheduledDiets(remoteDiets.toDietEntity(userId))
 
@@ -112,12 +94,29 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             } catch (e: Exception) {
                 Log.e("WorkoutRepo", "Remote Cache Read Failed: ${e.message}")
             }
-            // ---------------------------------------------
+
+            forceApiCall = true // 로컬/원격 캐시 모두 미스 (size < 3)
         }
 
-        // 3. AI에게 새 루틴 요청 (캐시가 없거나, forceReload인 경우 실행됨)
+        // [자동 동기화] forceReload가 true이거나 캐시 미스(size < 3) 시, API 호출 전에 캐시를 비웁니다.
+        if (forceApiCall) {
+            android.util.Log.d("DEBUG_DELETE", "Repository: [API CALL NECESSARY] 로컬/서버 데이터 삭제 시도")
+            // 로컬 데이터 삭제
+            localDataSource.clearScheduledWorkouts(userId)
+            localDataSource.clearScheduledDiets(userId)
+
+            // 서버 데이터 삭제
+            try {
+                firebaseDataSource.clearWorkouts(userId)
+                firebaseDataSource.clearScheduledDiets(userId)
+            } catch (e: Exception) {
+                android.util.Log.e("DEBUG_DELETE", "Repository: 서버 삭제 중 에러 발생: ${e.message}")
+            }
+        }
+
+        // 3. AI에게 새 루틴 요청
         val pastSessions = rehabSessionRepository.getRehabHistory(userId).first()
-        val aiStartTime = System.currentTimeMillis() // ----------------------- [AI 요청 시간 측정 시작] -----------------------
+        val aiStartTime = System.currentTimeMillis()
 
         val recommendationParams = RecommendationParams(
             userId = user.id, age = user.age, gender = user.gender,
@@ -139,11 +138,11 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                 if (aiResult.scheduledWorkouts.isNotEmpty()) {
                     val entities = aiResult.scheduledWorkouts.toWorkoutEntity(userId)
 
-                    // 로컬 저장 (동기적으로 실행됨)
+                    // 로컬 저장 (이 시점에 캐시가 이미 삭제되었으므로, 새 루틴으로 완전히 교체됩니다.)
                     localDataSource.upsertWorkouts(entities)
                     localDataSource.upsertScheduledDiets(aiResult.scheduledDiets.toDietEntity(userId))
 
-                    // 서버 저장 (비동기 - 실패해도 로컬은 저장됨)
+                    // 서버 저장
                     try {
                         firebaseDataSource.upsertWorkouts(userId, aiResult.scheduledWorkouts)
                         firebaseDataSource.upsertScheduledDiets(userId, aiResult.scheduledDiets)
@@ -175,8 +174,6 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             }
     }
     // --- Mapper 함수들 ---
-
-    // 1. 운동 관련 Mapper
     private fun List<ScheduledWorkout>.toWorkoutEntity(userId: String): List<ScheduledWorkoutEntity> {
         return this.map {
             ScheduledWorkoutEntity(
@@ -190,7 +187,6 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
     private fun List<ScheduledWorkoutEntity>.toDomainWorkouts(): List<ScheduledWorkout> {
         val gson = Gson()
         val workouts = this.map {
-            // R8/ProGuard 오류 방지를 위해 TypeToken 대신 Array로 받아서 toList()로 변환
             val exercisesArray = gson.fromJson(it.exercisesJson, Array<ExerciseRecommendation>::class.java)
             ScheduledWorkout(
                 scheduledDate = it.scheduledDate,
@@ -200,7 +196,6 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
         return workouts
     }
 
-    // 2. 식단 관련 Mapper
     private fun List<ScheduledDiet>.toDietEntity(userId: String): List<ScheduledDietEntity> {
         return this.map {
             ScheduledDietEntity(
@@ -214,7 +209,6 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
     private fun List<ScheduledDietEntity>.toDomainDiets(): List<ScheduledDiet> {
         val gson = Gson()
         return this.map {
-            // JSON 문자열 -> DietRecommendation 배열 -> List
             val mealsArray = gson.fromJson(it.dietsJson, Array<DietRecommendation>::class.java)
             ScheduledDiet(
                 scheduledDate = it.scheduledDate,
