@@ -110,6 +110,7 @@ class FirebaseDataSource @Inject constructor(
      * ★★★ [수정] 서버 권한/네트워크 오류에 대한 try-catch 추가 (오류를 다시 던짐) ★★★
      */
     suspend fun checkUserExistsRemote(username: String): Boolean {
+        android.util.Log.d("DUPLICATION_CHECK", "Checking remote for username: $username")
         return try {
             // 'users' 컬렉션에서 'originalId'가 일치하는 문서가 있는지 쿼리
             val snapshot = firestore.collection("users")
@@ -117,8 +118,12 @@ class FirebaseDataSource @Inject constructor(
                 .limit(1)
                 .get()
                 .await()
-            return !snapshot.isEmpty
+            
+            val exists = !snapshot.isEmpty
+            android.util.Log.d("DUPLICATION_CHECK", "Remote result for $username: $exists (docs: ${snapshot.size()})")
+            return exists
         } catch (e: Exception) {
+            android.util.Log.e("DUPLICATION_CHECK", "Remote check failed: ${e.message}")
             // FirebaseFirestoreException (PERMISSION_DENIED 등) 발생 시, 오류를 던져 ViewModel에서 NetworkError로 처리하게 함
             throw e
         }
