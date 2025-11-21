@@ -8,6 +8,7 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import javax.inject.Inject
+import android.util.Log
 
 class FirebaseDataSource @Inject constructor(
     private val auth: FirebaseAuth,
@@ -172,6 +173,7 @@ class FirebaseDataSource @Inject constructor(
             "notes" to session.notes
         )
         getUserDocRef(uid).collection("rehab_sessions").document(session.id).set(data).await()
+        Log.d("REHAB_LOG_FIREBASE", "Firestore 저장 완료: ID=${session.exerciseId}, Time=${session.dateTime}")
     }
 
     suspend fun getRehabHistory(userId: String): List<RehabSession> {

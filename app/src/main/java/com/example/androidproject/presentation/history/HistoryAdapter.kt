@@ -69,10 +69,26 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     val exerciseBinding = binding as ItemExerciseBinding
                     val session = item.session
 
-                    exerciseBinding.exerciseNameTextView.text = "운동: ${session.exerciseId}" // (임시)
-                    exerciseBinding.exerciseDetailTextView.text =
-                        "${session.sets} 세트 / ${session.reps} 회 (평점: ${session.userRating ?: "없음"})"
+                    // 1. 운동 이름: 기록된 운동 ID만 표시 (AI 추천처럼 이름 정보가 없으므로)
+                    // TODO: ViewModel에서 ExerciseCatalog를 통해 실제 운동 이름을 가져오도록 보강 필요
+                    exerciseBinding.exerciseNameTextView.text = "운동: ${session.exerciseId}"
 
+                    // 2. 상세 정보: 세트, 횟수, 만족도 결합
+                    val ratingText = when (session.userRating) {
+                        5 -> "매우 좋음 (⭐)"
+                        4 -> "좋음 (👍)"
+                        3 -> "보통 (😐)"
+                        2 -> "힘듦 (💦)"
+                        1 -> "나쁨 (❌)"
+                        else -> "평가 없음"
+                    }
+
+                    // 홈 탭과 유사하게 상세 정보 구성
+                    exerciseBinding.exerciseDetailTextView.text =
+                        "수행: ${session.sets} 세트 / ${session.reps} 회" +
+                                " | 만족도: $ratingText"
+
+                    // 3. 체크박스 영역: 기록 시간 표시 및 비활성화
                     exerciseBinding.exerciseStatusCheckBox.text = timeFormatter.format(session.dateTime)
                     exerciseBinding.exerciseStatusCheckBox.isClickable = false
                     exerciseBinding.exerciseStatusCheckBox.isChecked = false
@@ -87,8 +103,10 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     val displayName = session.foodName ?: "식단: ${session.dietId}"
                     dietBinding.dietNameTextView.text = displayName
                     dietBinding.dietDetailTextView.text =
-                        "섭취량: ${session.actualQuantity} ${session.actualUnit} (만족도: ${session.userSatisfaction ?: "없음"})"
+                        "${session.actualQuantity} ${session.actualUnit} 섭취" +
+                                " | 만족도: $satisfactionText"
 
+                    // 3. 칼로리/시간: 우측에 시간 표시
                     dietBinding.dietCaloriesTextView.text = timeFormatter.format(session.dateTime)
                 }
             }

@@ -17,6 +17,7 @@ import org.threeten.bp.DateTimeUtils
 import org.threeten.bp.LocalDate
 import org.threeten.bp.ZoneId
 import javax.inject.Inject
+import android.util.Log // ★ DEBUG: Log import 추가 ★
 
 data class HistoryUiState(
     val isLoading: Boolean = false,
@@ -49,6 +50,7 @@ class HistoryViewModel @Inject constructor(
         val userId = sessionManager.getUserId() ?: return
 
         viewModelScope.launch {
+            Log.d("HISTORY_DEBUG", "LoadHistory 시작: 날짜=${date}") // DEBUG
             _historyUiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 val startDate = DateTimeUtils.toDate(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
@@ -83,11 +85,14 @@ class HistoryViewModel @Inject constructor(
         val userId = sessionManager.getUserId() ?: return
 
         viewModelScope.launch {
+            Log.d("HISTORY_DEBUG", "FetchAnalysis 시작") // DEBUG
+            // 분석 시작 시 로딩 상태 설정
             _historyUiState.update { it.copy(isAnalyzing = true, analysisResult = null) }
             try {
                 val user = userRepository.getUserProfile(userId).first()
                 getWeeklyAnalysisUseCase(user)
                     .catch { e ->
+                        Log.e("HISTORY_DEBUG", "AI 분석 실패: ${e.message}") // DEBUG
                         _historyUiState.update {
                             it.copy(
                                 isAnalyzing = false,
@@ -98,9 +103,21 @@ class HistoryViewModel @Inject constructor(
                         }
                     }
                     .collect { result ->
-                        _historyUiState.update { it.copy(isAnalyzing = false, analysisResult = result) }
+                        // ★★★ 핵심 수정 및 디버그 로깅: 기존 historyItems 유지 ★★★
+                        val currentHistoryItems = _historyUiState.value.historyItems
+                        Log.d("HISTORY_DEBUG", "FetchAnalysis 성공: 리포트 로드됨. 기존 기록 ${currentHistoryItems.size}개 유지") // DEBUG
+
+                        _historyUiState.update {
+                            it.copy(
+                                isAnalyzing = false,
+                                analysisResult = result,
+                                historyItems = currentHistoryItems // 기록 목록을 유지합니다.
+                            )
+                        }
+                        // ★★★ ★★★
                     }
             } catch (e: Exception) {
+                Log.e("HISTORY_DEBUG", "FetchAnalysis 외부 실패: ${e.message}") // DEBUG
                 _historyUiState.update { it.copy(isAnalyzing = false) }
             }
         }

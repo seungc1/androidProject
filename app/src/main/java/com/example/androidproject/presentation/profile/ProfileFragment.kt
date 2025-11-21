@@ -57,7 +57,7 @@ class ProfileFragment : Fragment() {
             requireActivity().finish()
         }
 
-        // (★추가★) 테스트 데이터 생성 버튼 연결
+       /* // (★추가★) 테스트 데이터 생성 버튼 연결
         binding.generateTestDataButton.setOnClickListener {
             viewModel.createTestHistory()
             Toast.makeText(requireContext(), "지난 7일간의 운동/식단 기록이 생성되었습니다.", Toast.LENGTH_SHORT).show()
@@ -66,7 +66,7 @@ class ProfileFragment : Fragment() {
         binding.generateTestDataButton.setOnClickListener {
             viewModel.createTestHistory()
             Toast.makeText(requireContext(), "지난 7일간의 운동/식단 기록이 생성되었습니다.", Toast.LENGTH_SHORT).show()
-        }
+        }*/
 
         // ★★★ [추가] 모든 데이터 삭제 버튼 연결 ★★★
         binding.deleteAllDataButton.setOnClickListener {
