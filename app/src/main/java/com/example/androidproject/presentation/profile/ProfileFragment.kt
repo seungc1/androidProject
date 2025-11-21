@@ -60,7 +60,16 @@ class ProfileFragment : Fragment() {
             startActivity(intent)
             requireActivity().finish()
         }
+        binding.generateTestDataButton.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                viewModel.createTestHistory()
+                // 기록 생성 완료 후 메시지 표시
+                Toast.makeText(context, "✅ 지난 7일 테스트 기록이 생성되었습니다.", Toast.LENGTH_LONG).show()
 
+                // HistoryFragment는 onResume 시점에 데이터를 다시 로드하므로,
+                // 사용자가 기록 탭으로 이동하면 생성된 기록이 즉시 표시됩니다.
+            }
+        }
 
         binding.deleteAllDataButton.setOnClickListener {
             // 사용자에게 경고 메시지 표시 후 삭제 확인

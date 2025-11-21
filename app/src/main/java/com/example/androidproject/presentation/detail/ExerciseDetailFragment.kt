@@ -90,7 +90,7 @@ class ExerciseDetailFragment : Fragment() {
                     )
 
                     if (imageResId != 0) {
-                        // binding.exerciseImageView.setImageResource(imageResId) // XML에 ImageView가 있다면 활성화
+                        binding.exerciseImageView.setImageResource(imageResId) // XML에 ImageView가 있다면 활성화
                         android.util.Log.d("ImageLoad", "Image found for: $imageName")
                     }
                 }

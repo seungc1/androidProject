@@ -452,6 +452,86 @@ class RehabViewModel @Inject constructor(
         return this.map { it.toDomain() }
     }
 
+    /**
+     * [개발용] 지난 7일간의 임의 운동 및 식단 기록을 생성합니다.
+     * (HomeFragment에서 운동을 완료할 때와 동일한 로직 사용)
+     */
+    fun createTestHistory() {
+        viewModelScope.launch {
+            val user = _currentUser.value ?: return@launch
+            val exerciseIds = com.example.androidproject.data.ExerciseCatalog.allExercises // ExerciseCatalog 사용
+                .filter { it.bodyPart in listOf("목/어깨", "허벅지/엉덩이", "복부/코어") }
+                .take(7)
+                .map { it.id }
+
+            val calendar = Calendar.getInstance()
+            val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.US)
+
+            for (i in 0..6) {
+                // 1. 날짜 설정 (오늘부터 7일 전까지)
+                calendar.time = Date()
+                calendar.add(Calendar.DAY_OF_YEAR, -i)
+                val pastDate = calendar.time
+                val dateString = dateFormat.format(pastDate)
+
+                // 2. 운동 기록 생성 (하루에 2가지 운동)
+                if (exerciseIds.isNotEmpty()) {
+                    val exerciseId1 = exerciseIds[i % exerciseIds.size]
+                    val exerciseId2 = exerciseIds[(i + 1) % exerciseIds.size]
+
+                    // 운동 1: 완료 (높은 만족도)
+                    val session1 = RehabSession(
+                        id = "${user.id}_${dateString}_${exerciseId1}_1",
+                        userId = user.id,
+                        exerciseId = exerciseId1,
+                        dateTime = pastDate,
+                        sets = 3, reps = 12, durationMinutes = 15,
+                        userRating = 5, notes = "테스트 기록: 운동하기 매우 수월했습니다."
+                    )
+                    addRehabSessionUseCase(session1).collect()
+
+                    // 운동 2: 완료 (낮은 만족도 - AI 학습용)
+                    val session2 = RehabSession(
+                        id = "${user.id}_${dateString}_${exerciseId2}_2",
+                        userId = user.id,
+                        exerciseId = exerciseId2,
+                        dateTime = pastDate,
+                        sets = 3, reps = 8, durationMinutes = 10,
+                        userRating = 1, notes = "테스트 기록: 통증이 약간 느껴져서 중단했습니다."
+                    )
+                    addRehabSessionUseCase(session2).collect()
+                }
+
+                // 3. 식단 기록 생성 (하루에 3가지 식단)
+                val mealTypes = listOf("아침", "점심", "저녁")
+                val foodNames = listOf("테스트 닭가슴살 샐러드", "테스트 현미밥", "테스트 요거트")
+
+                for (j in 0..2) {
+                    val mealTime = Calendar.getInstance().apply {
+                        time = pastDate
+                        set(Calendar.HOUR_OF_DAY, 8 + j * 5) // 8시, 13시, 18시
+                    }.time
+
+                    val dietSession = DietSession(
+                        id = UUID.randomUUID().toString() + "_$dateString" + "_$j",
+                        userId = user.id,
+                        dietId = "test_diet_ai",
+                        dateTime = mealTime,
+                        actualQuantity = 1.0,
+                        actualUnit = "인분",
+                        userSatisfaction = if (j == 0) 5 else 3, // 만족도 높게/보통
+                        notes = "테스트 기록: ${mealTypes[j]} 식사.",
+                        foodName = foodNames[j]
+                    )
+                    addDietSessionUseCase(dietSession).collect()
+                }
+            }
+
+            // 기록 생성 후 데이터 리로드 및 UI 업데이트 (필수)
+            // loadMainDashboardData를 호출하여 생성된 기록을 바탕으로 오늘의 운동 완료 상태를 다시 계산
+            loadMainDashboardData(forceReload = false)
+        }
+    }
     private fun DietRecommendation.toDomain() = Diet(
         id = foodItems?.joinToString() ?: UUID.randomUUID().toString(),
         mealType = mealType,
