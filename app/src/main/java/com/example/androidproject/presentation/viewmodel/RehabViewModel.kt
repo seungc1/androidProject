@@ -64,7 +64,8 @@ class RehabViewModel @Inject constructor(
             return // 이미 데이터가 있으면 로딩 스킵
         }
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            // 초기 로딩은 true로 시작
+            _uiState.update { it.copy(isLoading = true, isRoutineLoading = true) }
             startDataObservation(userId)
         }
     }
@@ -74,6 +75,15 @@ class RehabViewModel @Inject constructor(
             userRepository.getUserProfile(userId).collectLatest { user ->
                 _currentUser.value = user
 
+                // 1. 프로필 로드 완료 후 전체 로딩(isLoading) 해제 -> 기본 UI 즉시 표시
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        userName = user.name,
+                        isProfileComplete = user.name != "신규 사용자"
+                    )
+                }
+
                 if (user.currentInjuryId != null) {
                     observeInjury(user.currentInjuryId!!)
                 } else {
@@ -81,6 +91,7 @@ class RehabViewModel @Inject constructor(
                 }
 
                 if (_uiState.value.fullRoutine.isEmpty()) {
+                    // 2. AI 루틴 로드는 별도의 로딩 상태(isRoutineLoading) 하에 시작
                     loadMainDashboardData(forceReload = false)
                 }
             }
@@ -105,24 +116,12 @@ class RehabViewModel @Inject constructor(
             val user = _currentUser.value ?: return@launch
             val isComplete = user.name != "신규 사용자"
 
-            // [핵심] 1. 오늘 날짜의 완료된 운동 기록을 DB에서 가져옵니다.
+            // 1. 루틴 로드 시작 시점에 isRoutineLoading을 true로 설정 (운동/식단 영역 스피너 시작)
+            _uiState.update { it.copy(isRoutineLoading = true) }
+
+            // [핵심] 2. 오늘 날짜의 완료된 운동 기록을 DB에서 가져옵니다.
             val todaySessions = fetchTodayCompletedSessions(user.id)
             Log.d("REHAB_LOG", "로드 시점: 오늘 완료된 세션 수: ${todaySessions.size}")
-            todaySessions.forEach { Log.d("REHAB_LOG", " - 완료 세션 ID: ${it.exerciseId}") }
-
-            if (!forceReload && _uiState.value.fullRoutine.isNotEmpty()) {
-                // [핵심] 2. 캐시된 루틴에 완료 기록을 반영합니다.
-                val todayExercises = filterTodayExercises(_uiState.value.fullRoutine, todaySessions)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        todayExercises = todayExercises,
-                        isProfileComplete = isComplete
-                    )
-                }
-                Log.d("REHAB_LOG", "캐시 사용: 오늘의 운동 ${todayExercises.size}개 중 완료 ${todayExercises.count { it.isCompleted }}개 표시.")
-                return@launch
-            }
 
             try {
                 val injury = _currentInjury.value
@@ -130,14 +129,13 @@ class RehabViewModel @Inject constructor(
                     .catch { e ->
                         _uiState.update {
                             it.copy(
-                                isLoading = false,
-                                userName = user.name,
-                                isProfileComplete = isComplete,
+                                isRoutineLoading = false, // AI 오류 발생 시 로딩 해제
                                 errorMessage = "AI 루틴 오류: ${e.message}"
                             )
                         }
                     }
                     .collect { aiResult ->
+
                         // 1. 전체 식단을 DB에 저장 (flatten)
                         val allDiets = aiResult.scheduledDiets.flatMap { it.meals }.map { it.toDomain() }
                         dietRepository.upsertDiets(allDiets)
@@ -147,19 +145,21 @@ class RehabViewModel @Inject constructor(
 
                         Log.d("REHAB_LOG", "AI 로드: 오늘의 운동 ${updatedTodayExercises.size}개 중 완료 ${updatedTodayExercises.count { it.isCompleted }}개 표시.")
 
-                        _uiState.value = MainUiState(
-                            isLoading = false,
-                            userName = user.name,
-                            currentInjuryName = injury?.name,
-                            currentInjuryArea = injury?.bodyPart,
-                            fullRoutine = aiResult.scheduledWorkouts,
-                            todayExercises = updatedTodayExercises,
-                            recommendedDiets = filterTodayDiets(aiResult.scheduledDiets), // ✅ [수정] 오늘 식단만 필터링
-                            isProfileComplete = isComplete
-                        )
+                        _uiState.update {
+                            it.copy(
+                                isRoutineLoading = false, // AI 로드 완료 -> 로딩 해제
+                                userName = user.name,
+                                currentInjuryName = injury?.name,
+                                currentInjuryArea = injury?.bodyPart,
+                                fullRoutine = aiResult.scheduledWorkouts,
+                                todayExercises = updatedTodayExercises,
+                                recommendedDiets = filterTodayDiets(aiResult.scheduledDiets),
+                                isProfileComplete = isComplete
+                            )
+                        }
                     }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = "데이터 로드 실패: ${e.message}") }
+                _uiState.update { it.copy(isRoutineLoading = false, errorMessage = "데이터 로드 실패: ${e.message}") }
                 Log.e("REHAB_LOG", "loadMainDashboardData 실패: ${e.message}")
             }
         }
@@ -219,9 +219,11 @@ class RehabViewModel @Inject constructor(
         viewModelScope.launch {
             val user = _currentUser.value ?: return@launch
 
+            // UI를 즉시 업데이트하고 로딩 스피너만 보이도록 설정
             _uiState.update {
                 it.copy(
-                    isLoading = true,
+                    isLoading = false, // 메인 화면은 로딩 해제
+                    isRoutineLoading = true, // 운동 컨텐츠는 로딩 시작
                     fullRoutine = emptyList(),
                     todayExercises = emptyList()
                 )
@@ -246,7 +248,7 @@ class RehabViewModel @Inject constructor(
                 loadMainDashboardData(forceReload = true)
 
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false, errorMessage = "저장 실패: ${e.message}") }
+                _uiState.update { it.copy(isRoutineLoading = false, errorMessage = "저장 실패: ${e.message}") }
             }
         }
     }
@@ -296,7 +298,7 @@ class RehabViewModel @Inject constructor(
         viewModelScope.launch {
             val user = _currentUser.value
             android.util.Log.d("DIET_RECORD", "recordDiet called: user=${user?.id}, foodName=$foodName")
-            
+
             if (user == null) {
                 android.util.Log.e("DIET_RECORD", "User is null, cannot save diet")
                 return@launch
@@ -378,7 +380,7 @@ class RehabViewModel @Inject constructor(
 
         android.util.Log.d("RehabDebug", "Today: $todayString (Normalized: ${normalize(todayString)})")
         android.util.Log.d("RehabDebug", "FullRoutine Size: ${fullRoutine.size}")
-        fullRoutine.forEach { 
+        fullRoutine.forEach {
             android.util.Log.d("RehabDebug", "Routine Date: ${it.scheduledDate} (Normalized: ${normalize(it.scheduledDate)})")
         }
 
