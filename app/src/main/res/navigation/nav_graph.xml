@@ -46,11 +46,12 @@
     <fragment
         android:id="@+id/exerciseDetailFragment"
         android:name="com.example.androidproject.presentation.detail.ExerciseDetailFragment"
-        android:label="운동 상세 기록"
+        android:label="운동 상세 설명"
         tools:layout="@layout/fragment_exercise_detail">
         <argument
             android:name="exerciseId"
             app:argType="string" />
+
     </fragment>
 
     <fragment
@@ -68,5 +69,15 @@
         android:name="com.example.androidproject.presentation.profile.ProfileEditFragment"
         android:label="내 정보 수정"
         tools:layout="@layout/fragment_profile_edit" />
+
+    <fragment
+        android:id="@+id/exerciseFeedbackFragment"
+        android:name="com.example.androidproject.presentation.detail.ExerciseFeedbackFragment"
+        android:label="운동 후기 및 기록"
+        tools:layout="@layout/fragment_exercise_feedback">
+        <argument
+            android:name="exerciseId"
+            app:argType="string" />
+    </fragment>
 
 </navigation>

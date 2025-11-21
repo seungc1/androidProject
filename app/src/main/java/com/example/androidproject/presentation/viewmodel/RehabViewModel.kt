@@ -161,15 +161,16 @@ class RehabViewModel @Inject constructor(
         }
     }
 
-    fun saveRehabSessionDetails(exerciseId: String, rating: Int, notes: String) {
+    fun saveRehabSessionDetails(exerciseId: String, rating: Int, notes: String, isCompleted: Boolean) {
         viewModelScope.launch {
             val user = _currentUser.value ?: return@launch
             val exercise = _uiState.value.todayExercises.find { it.exercise.id == exerciseId }?.exercise
 
+            // 1. RehabSession 객체 생성 (rating과 notes를 포함)
             val session = RehabSession(
                 id = UUID.randomUUID().toString(),
                 userId = user.id,
-                exerciseId = exerciseId, // ★★★ 이 ID가 완료 기록에 저장됩니다. ★★★
+                exerciseId = exerciseId,
                 dateTime = Date(),
                 sets = exercise?.sets ?: 3,
                 reps = exercise?.reps ?: 10,
@@ -178,19 +179,19 @@ class RehabViewModel @Inject constructor(
                 userRating = rating
             )
 
-            Log.d("REHAB_LOG", "저장 요청: ID=${session.exerciseId}, Name=${exercise?.name}")
-            // 1. RehabSession을 DB에 저장합니다.
+            // 2. 기록 저장 (Local + Firebase)
             addRehabSessionUseCase(session).collect()
 
-            // 2. 현재 메모리 내 UI 상태를 업데이트합니다.
-            setExerciseCompleted(exerciseId, true)
-            Log.d("REHAB_LOG", "저장 완료 및 UI 업데이트: ID=${exerciseId}")
+            // 3. UI 상태 업데이트 (체크박스 상태 반영)
+            //    사용자가 '완수함'을 선택한 경우에만 true로 설정합니다.
+            setExerciseCompleted(exerciseId, isCompleted)
         }
     }
 
     private fun setExerciseCompleted(exerciseId: String, isCompleted: Boolean) {
         _uiState.update { currentState ->
             val updatedExercises = currentState.todayExercises.map {
+                // isCompleted 인자 값에 따라 체크박스 상태를 업데이트
                 if (it.exercise.id == exerciseId) it.copy(isCompleted = isCompleted) else it
             }
             currentState.copy(todayExercises = updatedExercises)
