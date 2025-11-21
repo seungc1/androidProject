@@ -13,5 +13,7 @@ data class DietSessionEntity(
     val actualQuantity: Double,
     val actualUnit: String,
     val userSatisfaction: Int?,
-    val notes: String?
+    val notes: String?,
+    val foodName: String?, // [추가] 사용자 입력 음식 이름
+    val photoUrl: String? // [추가] 사진 경로
 )

@@ -83,7 +83,9 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     val dietBinding = binding as ItemDietBinding
                     val session = item.session
 
-                    dietBinding.dietNameTextView.text = "식단: ${session.dietId}" // (임시)
+                    // [수정] foodName이 있으면 표시, 없으면 dietId 표시
+                    val displayName = session.foodName ?: "식단: ${session.dietId}"
+                    dietBinding.dietNameTextView.text = displayName
                     dietBinding.dietDetailTextView.text =
                         "섭취량: ${session.actualQuantity} ${session.actualUnit} (만족도: ${session.userSatisfaction ?: "없음"})"
 

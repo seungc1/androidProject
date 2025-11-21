@@ -256,7 +256,9 @@ fun DietSession.toEntity(): DietSessionEntity {
         actualQuantity = this.actualQuantity,
         actualUnit = this.actualUnit,
         userSatisfaction = this.userSatisfaction,
-        notes = this.notes
+        notes = this.notes,
+        foodName = this.foodName, // [추가]
+        photoUrl = this.photoUrl // [추가]
     )
 }
 
@@ -269,6 +271,8 @@ fun DietSessionEntity.toDomain(): DietSession {
         actualQuantity = this.actualQuantity,
         actualUnit = this.actualUnit,
         userSatisfaction = this.userSatisfaction,
-        notes = this.notes
+        notes = this.notes,
+        foodName = this.foodName, // [추가]
+        photoUrl = this.photoUrl // [추가]
     )
 }

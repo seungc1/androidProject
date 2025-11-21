@@ -18,7 +18,7 @@ import com.example.androidproject.data.local.entity.* // 👈 [수정] Wildcard 
         ScheduledWorkoutEntity::class,
         ScheduledDietEntity::class
     ],
-    version = 7,
+    version = 8, // [수정] DietSession에 foodName, photoUrl 필드 추가
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)

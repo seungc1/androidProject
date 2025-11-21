@@ -131,8 +131,9 @@ class RehabViewModel @Inject constructor(
                         }
                     }
                     .collect { aiResult ->
-                        val diets = aiResult.recommendedDiets.map { it.toDomain() }
-                        dietRepository.upsertDiets(diets)
+                        // 1. 전체 식단을 DB에 저장 (flatten)
+                        val allDiets = aiResult.scheduledDiets.flatMap { it.meals }.map { it.toDomain() }
+                        dietRepository.upsertDiets(allDiets)
 
                         _uiState.value = MainUiState(
                             isLoading = false,
@@ -142,7 +143,7 @@ class RehabViewModel @Inject constructor(
                             fullRoutine = aiResult.scheduledWorkouts,
                             // [핵심] 여기서도 완료 기록(todaySessions)을 반영합니다.
                             todayExercises = filterTodayExercises(aiResult.scheduledWorkouts, todaySessions),
-                            recommendedDiets = diets,
+                            recommendedDiets = filterTodayDiets(aiResult.scheduledDiets), // ✅ [수정] 오늘 식단만 필터링
                             isProfileComplete = isComplete
                         )
                     }
@@ -299,6 +300,54 @@ class RehabViewModel @Inject constructor(
     }
     // endregion
 
+    // region [Diet Recording]
+    fun recordDiet(
+        foodName: String,
+        photoUri: android.net.Uri?,
+        mealType: String,
+        quantity: Double,
+        unit: String,
+        satisfaction: Int
+    ) {
+        viewModelScope.launch {
+            val user = _currentUser.value
+            android.util.Log.d("DIET_RECORD", "recordDiet called: user=${user?.id}, foodName=$foodName")
+            
+            if (user == null) {
+                android.util.Log.e("DIET_RECORD", "User is null, cannot save diet")
+                return@launch
+            }
+
+            try {
+                // 사진 URI를 문자열로 저장 (실제로는 파일로 복사하거나 Firebase Storage에 업로드해야 함)
+                val photoPath = photoUri?.toString()
+
+                val dietSession = DietSession(
+                    id = UUID.randomUUID().toString(),
+                    userId = user.id,
+                    dietId = "user_recorded_${System.currentTimeMillis()}", // 사용자 기록은 특별한 ID
+                    dateTime = Date(),
+                    actualQuantity = quantity,
+                    actualUnit = unit,
+                    userSatisfaction = satisfaction,
+                    notes = "사용자가 직접 기록한 식단",
+                    foodName = foodName, // [추가] 사용자 입력 음식 이름
+                    photoUrl = photoPath // [추가] 사진 경로
+                )
+
+                android.util.Log.d("DIET_RECORD", "Calling addDietSessionUseCase with session: ${dietSession.id}")
+                addDietSessionUseCase(dietSession).collect {
+                    android.util.Log.d("DIET_RECORD", "Diet session saved successfully: ${dietSession.id}")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("DIET_RECORD", "Error saving diet: ${e.message}", e)
+                e.printStackTrace()
+                _uiState.update { it.copy(errorMessage = "식단 기록 실패: ${e.message}") }
+            }
+        }
+    }
+    // endregion
+
     // region [Helpers & Utils]
     fun clearErrorMessage() { _uiState.update { it.copy(errorMessage = null) } }
 
@@ -337,12 +386,29 @@ class RehabViewModel @Inject constructor(
         val todayString = SimpleDateFormat("M월 d일 (E)", Locale.KOREA).format(Date())
         val normalize = { s: String -> s.replace(" ", "").trim() }
 
-        return fullRoutine.find {
+        android.util.Log.d("RehabDebug", "Today: $todayString (Normalized: ${normalize(todayString)})")
+        android.util.Log.d("RehabDebug", "FullRoutine Size: ${fullRoutine.size}")
+        fullRoutine.forEach { 
+            android.util.Log.d("RehabDebug", "Routine Date: ${it.scheduledDate} (Normalized: ${normalize(it.scheduledDate)})")
+        }
+
+        val todayWorkout = fullRoutine.find {
             normalize(it.scheduledDate).contains(normalize(todayString))
-        }?.exercises?.mapNotNull { aiRec ->
+        }
+
+        if (todayWorkout == null) {
+            android.util.Log.d("RehabDebug", "No matching workout found for today.")
+            return emptyList()
+        }
+
+        android.util.Log.d("RehabDebug", "Found workout for today. Exercises: ${todayWorkout.exercises.size}")
+
+        return todayWorkout.exercises.mapNotNull { aiRec ->
+            android.util.Log.d("RehabDebug", "Processing AI Exercise: '${aiRec.name}'")
             val matchingCatalogExercise = ExerciseCatalog.allExercises.find { it.name == aiRec.name }
 
             if (matchingCatalogExercise != null) {
+                android.util.Log.d("RehabDebug", "Match found in Catalog: ${matchingCatalogExercise.name}")
                 // ★ [핵심] DB 기록 중에 현재 운동 ID와 일치하는 것이 있는지 확인
                 val isDone = completedSessions.any { it.exerciseId == matchingCatalogExercise.id }
 
@@ -362,9 +428,21 @@ class RehabViewModel @Inject constructor(
                     isCompleted = isDone // ★ DB 상태 반영
                 )
             } else {
+                android.util.Log.e("RehabDebug", "NO MATCH in Catalog for: '${aiRec.name}'")
                 null
             }
-        } ?: emptyList()
+        }
+    }
+
+    // ✅ [복구] 오늘 식단 필터링 함수
+    private fun filterTodayDiets(scheduledDiets: List<ScheduledDiet>): List<Diet> {
+        val todayDateString = SimpleDateFormat("M월 d일 (E)", Locale.KOREA).format(Date())
+        val todayDiet = scheduledDiets.find { it.scheduledDate.contains(todayDateString) }
+        return todayDiet?.meals?.toDietList() ?: emptyList()
+    }
+
+    private fun List<DietRecommendation>.toDietList(): List<Diet> {
+        return this.map { it.toDomain() }
     }
 
     private fun DietRecommendation.toDomain() = Diet(

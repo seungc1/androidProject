@@ -55,6 +55,13 @@ class HistoryFragment : Fragment() {
         viewModel.fetchWeeklyAnalysis()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // [추가] 탭으로 돌아올 때마다 기록된 날짜 새로고침 (다른 탭에서 식단/운동 기록 후)
+        viewModel.loadRecordedDates()
+    }
+
+
     private fun setupRecyclerView() {
         historyAdapter = HistoryAdapter()
         binding.historyRecyclerView.adapter = historyAdapter
@@ -77,6 +84,7 @@ class HistoryFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.historyUiState.collectLatest { state ->
                     binding.loadingProgressBar.isVisible = state.isLoading
+
                     binding.swipeRefreshLayout.isRefreshing = state.isAnalyzing
 
                     if (state.analysisResult != null) {
@@ -87,12 +95,16 @@ class HistoryFragment : Fragment() {
                     }
 
                     val hasHistory = state.historyItems.isNotEmpty()
+                    android.util.Log.d("HISTORY_FRAG", "hasHistory: $hasHistory, isLoading: ${state.isLoading}, items: ${state.historyItems.size}")
+                    
                     binding.historyRecyclerView.isVisible = hasHistory && !state.isLoading
+                    android.util.Log.d("HISTORY_FRAG", "RecyclerView visibility: ${binding.historyRecyclerView.isVisible}")
 
                     // ★★★ ID를 emptyStateTextView로 변경합니다. ★★★
                     binding.historyEmptyMessageTextView.isVisible = !hasHistory && !state.isLoading
 
                     historyAdapter.submitList(state.historyItems)
+                    android.util.Log.d("HISTORY_FRAG", "Submitted ${state.historyItems.size} items to adapter")
 
                     state.errorMessage?.let { message ->
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()

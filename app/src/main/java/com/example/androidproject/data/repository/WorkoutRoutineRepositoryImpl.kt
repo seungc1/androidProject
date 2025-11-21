@@ -44,20 +44,55 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             } catch (e: Exception) {
                 android.util.Log.e("DEBUG_DELETE", "Repository: 서버 삭제 중 에러 발생: ${e.message}")
             }
+
+            // [추가] 식단 데이터도 삭제
+            localDataSource.clearScheduledDiets(userId)
+            try {
+                firebaseDataSource.clearScheduledDiets(userId) // ✅ [추가]
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         } else {
             // 2. 강제 리로드가 아니면 캐시 확인 (기존 로직 유지)
             val localCache = localDataSource.getWorkouts(userId).first()
-            if (localCache.isNotEmpty()) {
-                emit(localCache.toDomainResult())
+            val localDietCache = localDataSource.getScheduledDiets(userId).first() // ✅ [추가] 식단 캐시 조회
+
+            // [수정] 운동 데이터와 식단 데이터가 *모두* 있어야 유효한 캐시로 인정
+            // 또한, 식단 데이터가 7일치 미만이면(예전 데이터면) 무시하고 새로 요청
+            // ★ [추가] 운동 이름에 "(Day"가 포함되어 있으면(테스트용 잘못된 데이터) 무시하고 새로 요청
+            val hasInvalidData = localCache.any { workout -> 
+                workout.exercisesJson.contains("(Day") 
+            }
+
+            if (localCache.isNotEmpty() && localDietCache.size >= 7 && !hasInvalidData) {
+                emit(AIRecommendationResult(
+                    scheduledWorkouts = localCache.toDomainWorkouts(),
+                    scheduledDiets = localDietCache.toDomainDiets(), // ✅ [수정] 식단 캐시 반환
+                    overallSummary = "로컬 캐시"
+                ))
                 return@flow
             }
 
             // 로컬 없으면 서버 확인
             try {
                 val remoteWorkouts = firebaseDataSource.getWorkouts(userId)
-                if (remoteWorkouts.isNotEmpty()) {
-                    localDataSource.upsertWorkouts(remoteWorkouts.toEntity(userId))
-                    emit(AIRecommendationResult(remoteWorkouts, emptyList(), "서버에서 불러옴"))
+                val remoteDiets = firebaseDataSource.getScheduledDiets(userId) // ✅ [추가]
+
+                // [수정] 서버에도 둘 다 있어야 함. 그리고 7일치 이상이어야 함.
+                // ★ [추가] 서버 데이터도 "(Day" 포함 여부 확인
+                val hasInvalidRemoteData = remoteWorkouts.any { workout ->
+                    workout.exercises.any { it.name.contains("(Day") }
+                }
+
+                if (remoteWorkouts.isNotEmpty() && remoteDiets.size >= 7 && !hasInvalidRemoteData) {
+                    localDataSource.upsertWorkouts(remoteWorkouts.toWorkoutEntity(userId))
+                    localDataSource.upsertScheduledDiets(remoteDiets.toDietEntity(userId)) // ✅ [추가]
+                    
+                    emit(AIRecommendationResult(
+                        scheduledWorkouts = remoteWorkouts, 
+                        scheduledDiets = remoteDiets, 
+                        overallSummary = "서버에서 불러옴"
+                    ))
                     return@flow
                 }
             } catch (e: Exception) {
@@ -85,14 +120,16 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
 
                 // 4. 결과 저장 (운동 + 식단)
                 if (aiResult.scheduledWorkouts.isNotEmpty()) {
-                    val entities = aiResult.toEntity(userId)
+                    val entities = aiResult.scheduledWorkouts.toWorkoutEntity(userId)
 
                     // 로컬 저장 (동기적으로 실행됨)
                     localDataSource.upsertWorkouts(entities)
+                    localDataSource.upsertScheduledDiets(aiResult.scheduledDiets.toDietEntity(userId)) // ✅ [추가] 식단 저장
 
                     // 서버 저장 (비동기 - 실패해도 로컬은 저장됨)
                     try {
                         firebaseDataSource.upsertWorkouts(userId, aiResult.scheduledWorkouts)
+                        firebaseDataSource.upsertScheduledDiets(userId, aiResult.scheduledDiets) // ✅ [추가] 식단 저장
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -102,8 +139,14 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                 } else {
                     Log.w("WorkoutRepo", "AI returned empty workouts.")
                     val localBackup = localDataSource.getWorkouts(userId).first()
+                    val localDietBackup = localDataSource.getScheduledDiets(userId).first() // ✅ [추가]
+
                     if (localBackup.isNotEmpty()) {
-                        emit(localBackup.toDomainResult())
+                        emit(AIRecommendationResult(
+                            scheduledWorkouts = localBackup.toDomainWorkouts(),
+                            scheduledDiets = localDietBackup.toDomainDiets(), // ✅ [수정]
+                            overallSummary = "로컬 백업"
+                        ))
                     } else {
                         // 진짜 아무것도 없으면 빈 화면
                         emit(AIRecommendationResult(emptyList(), emptyList(), "데이터를 불러올 수 없습니다."))
@@ -134,6 +177,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                 exercises = exercisesArray?.toList() ?: emptyList()
             )
         }
+        return workouts
     }
 
     // 2. ✅ [추가] 식단 관련 Mapper
