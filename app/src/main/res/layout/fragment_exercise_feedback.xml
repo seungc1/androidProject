@@ -27,31 +27,39 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/feedbackTitleTextView" />
 
-    <com.google.android.material.button.MaterialButtonToggleGroup
-        android:id="@+id/completionToggleGroup"
+    <LinearLayout
+        android:id="@+id/completionButtonContainer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/completionTitleTextView"
-        app:singleSelection="true"> <com.google.android.material.button.MaterialButton
-        android:id="@+id/completedYesButton"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="✅ 완수함"
-        android:checkable="true"/> <com.google.android.material.button.MaterialButton
-        android:id="@+id/completedNoButton"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="❌ 완수하지 못함"
-        android:checkable="true"/>
+        app:layout_constraintTop_toBottomOf="@id/completionTitleTextView">
 
-    </com.google.android.material.button.MaterialButtonToggleGroup>
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/completedYesButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text=" 완수 "
+            app:cornerRadius="100dp"
+            app:strokeColor="@color/divider"
+            app:strokeWidth="1dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/completedNoButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:text=" 불완수"
+            app:cornerRadius="100dp"
+            app:strokeColor="@color/divider"
+            app:strokeWidth="1dp" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/ratingTitleTextView"
@@ -61,43 +69,53 @@
         android:text="수행 만족도 (AI 피드백용)"
         android:textAppearance="@style/TextAppearance.App.TitleLarge"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/completionToggleGroup" /> <com.google.android.material.button.MaterialButtonToggleGroup
-    android:id="@+id/ratingToggleGroup"
+        app:layout_constraintTop_toBottomOf="@id/completionButtonContainer" /> <LinearLayout
+    android:id="@+id/ratingButtonContainer"
     android:layout_width="0dp"
     android:layout_height="wrap_content"
     android:layout_marginTop="8dp"
+    android:orientation="horizontal"
     app:layout_constraintEnd_toEndOf="parent"
     app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/ratingTitleTextView"
-    app:singleSelection="true">
+    app:layout_constraintTop_toBottomOf="@id/ratingTitleTextView">
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/ratingHighButton"
         style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
         android:layout_weight="1"
-        android:text="상 (매우 좋음)"
-        android:checkable="true"/>
+        android:layout_marginEnd="8dp"
+        android:text="상"
+        app:cornerRadius="100dp"
+        app:strokeColor="@color/divider"
+        app:strokeWidth="1dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/ratingMediumButton"
         style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
         android:layout_weight="1"
-        android:text="중 (보통)"
-        android:checkable="true"
-        android:checked="true"/> <com.google.android.material.button.MaterialButton
-    android:id="@+id/ratingLowButton"
-    style="@style/Widget.Material3.Button.OutlinedButton"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_weight="1"
-    android:text="하 (어려움/나쁨)"
-    android:checkable="true"/>
+        android:layout_marginHorizontal="4dp"
+        android:text="중"
+        app:cornerRadius="100dp"
+        app:strokeColor="@color/divider"
+        app:strokeWidth="1dp" />
 
-</com.google.android.material.button.MaterialButtonToggleGroup>
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/ratingLowButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_weight="1"
+        android:layout_marginStart="8dp"
+        android:text="하"
+        app:cornerRadius="100dp"
+        app:strokeColor="@color/divider"
+        app:strokeWidth="1dp" />
+
+</LinearLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/notesTextInputLayout"
@@ -109,7 +127,7 @@
         app:layout_constraintBottom_toTopOf="@id/saveButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ratingToggleGroup"> <com.google.android.material.textfield.TextInputEditText
+        app:layout_constraintTop_toBottomOf="@id/ratingButtonContainer"> <com.google.android.material.textfield.TextInputEditText
         android:id="@+id/notesEditText"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
