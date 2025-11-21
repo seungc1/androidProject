@@ -113,10 +113,10 @@ class SignupActivity : AppCompatActivity() {
                     binding.usernameInputLayout.requestFocus()
                 }
                 is CheckDuplicationState.NetworkError -> {
-                    // 서버 확인 오류
+                    // 서버 확인 오류 (PERMISSION_DENIED 등)
                     verifiedUsername = null
-                    binding.usernameInputLayout.error = "⚠️ 중복된 계정입니다. 다시 한 번 확인해주세요"
-                    Toast.makeText(this, "서버 접속에 실패하여 중복 확인을 완료할 수 없습니다.", Toast.LENGTH_LONG).show()
+                    binding.usernameInputLayout.error = "서버 확인 불가 (권한 오류)"
+                    Toast.makeText(this, "Firebase 권한 오류: Firestore 규칙을 확인해주세요.", Toast.LENGTH_LONG).show()
                 }
                 is CheckDuplicationState.Idle -> {}
             }

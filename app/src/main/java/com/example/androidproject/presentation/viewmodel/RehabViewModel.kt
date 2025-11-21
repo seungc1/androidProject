@@ -455,9 +455,26 @@ class RehabViewModel @Inject constructor(
     }
 
     // ✅ [복구] 오늘 식단 필터링 함수
+    // ✅ [복구] 오늘 식단 필터링 함수
     private fun filterTodayDiets(scheduledDiets: List<ScheduledDiet>): List<Diet> {
         val todayDateString = SimpleDateFormat("M월 d일 (E)", Locale.KOREA).format(Date())
+        android.util.Log.d("DIET_DEBUG", "Today's date string: '$todayDateString'")
+        
+        scheduledDiets.forEach { 
+            android.util.Log.d("DIET_DEBUG", "Available scheduled date: '${it.scheduledDate}'") 
+        }
+
         val todayDiet = scheduledDiets.find { it.scheduledDate.contains(todayDateString) }
+            ?: scheduledDiets.firstOrNull().also { 
+                android.util.Log.w("DIET_DEBUG", "Exact match failed. Falling back to first available: ${it?.scheduledDate}") 
+            }
+        
+        if (todayDiet != null) {
+            android.util.Log.d("DIET_DEBUG", "Match found (or fallback)! Diets count: ${todayDiet.meals.size}")
+        } else {
+            android.util.Log.w("DIET_DEBUG", "No matching diet found for today and list is empty.")
+        }
+
         return todayDiet?.meals?.toDietList() ?: emptyList()
     }
 

@@ -233,7 +233,7 @@ class AIApiRepositoryImpl @Inject constructor(
             $exerciseCatalogJson
 
             You MUST strictly adhere to the following rules for generating 'scheduledWorkouts':
-            - The 'scheduledDate' MUST start from Today ("$todayDate").
+            - The 'scheduledDate' of the FIRST item in the array MUST BE "$todayDate".
             - The 'name' field in your JSON output **MUST EXACTLY** match an entry in the 'AVAILABLE EXERCISES CATALOG' (Korean name).
             - The 'description', 'sets', 'reps', and 'aiRecommendationReason' fields must be newly generated based on the user's profile and injury condition.
 
