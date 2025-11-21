@@ -52,4 +52,9 @@
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/textSecondary</item>
     </style>
+    <style name="Widget.App.BottomNavigationView" parent="Widget.Material3.BottomNavigationView">
+        <item name="colorPrimaryContainer">@color/secondaryContainer</item>
+        <item name="colorSecondaryContainer">@color/secondaryContainer</item>
+    </style>
+
 </resources>
