@@ -99,7 +99,17 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     val dietBinding = binding as ItemDietBinding
                     val session = item.session
 
-                    // [수정] foodName이 있으면 표시, 없으면 dietId 표시
+                    // 1. 만족도 텍스트 생성
+                    val satisfactionText = when (session.userSatisfaction) {
+                        5 -> "매우 만족 (⭐)"
+                        4 -> "만족 (👍)"
+                        3 -> "보통 (😐)"
+                        2 -> "불만족 (💦)"
+                        1 -> "매우 불만족 (❌)"
+                        else -> "평가 없음"
+                    }
+
+                    // 2. 음식 이름 표시 (foodName이 있으면 표시, 없으면 dietId 표시)
                     val displayName = session.foodName ?: "식단: ${session.dietId}"
                     dietBinding.dietNameTextView.text = displayName
                     dietBinding.dietDetailTextView.text =

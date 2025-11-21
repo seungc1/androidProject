@@ -318,54 +318,6 @@ class RehabViewModel @Inject constructor(
     }
     // endregion
 
-    // region [Diet Recording]
-    fun recordDiet(
-        foodName: String,
-        photoUri: android.net.Uri?,
-        mealType: String,
-        quantity: Double,
-        unit: String,
-        satisfaction: Int
-    ) {
-        viewModelScope.launch {
-            val user = _currentUser.value
-            android.util.Log.d("DIET_RECORD", "recordDiet called: user=${user?.id}, foodName=$foodName")
-            
-            if (user == null) {
-                android.util.Log.e("DIET_RECORD", "User is null, cannot save diet")
-                return@launch
-            }
-
-            try {
-                // 사진 URI를 문자열로 저장 (실제로는 파일로 복사하거나 Firebase Storage에 업로드해야 함)
-                val photoPath = photoUri?.toString()
-
-                val dietSession = DietSession(
-                    id = UUID.randomUUID().toString(),
-                    userId = user.id,
-                    dietId = "user_recorded_${System.currentTimeMillis()}", // 사용자 기록은 특별한 ID
-                    dateTime = Date(),
-                    actualQuantity = quantity,
-                    actualUnit = unit,
-                    userSatisfaction = satisfaction,
-                    notes = "사용자가 직접 기록한 식단",
-                    foodName = foodName, // [추가] 사용자 입력 음식 이름
-                    photoUrl = photoPath // [추가] 사진 경로
-                )
-
-                android.util.Log.d("DIET_RECORD", "Calling addDietSessionUseCase with session: ${dietSession.id}")
-                addDietSessionUseCase(dietSession).collect {
-                    android.util.Log.d("DIET_RECORD", "Diet session saved successfully: ${dietSession.id}")
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("DIET_RECORD", "Error saving diet: ${e.message}", e)
-                e.printStackTrace()
-                _uiState.update { it.copy(errorMessage = "식단 기록 실패: ${e.message}") }
-            }
-        }
-    }
-    // endregion
-
     // region [Helpers & Utils]
     fun clearErrorMessage() { _uiState.update { it.copy(errorMessage = null) } }
 
