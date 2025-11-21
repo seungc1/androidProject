@@ -23,7 +23,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
-import android.util.Log // ★ DEBUG: Log import 추가 ★
+import android.util.Log
 
 @HiltViewModel
 class RehabViewModel @Inject constructor(
@@ -167,24 +167,35 @@ class RehabViewModel @Inject constructor(
             val user = _currentUser.value ?: return@launch
             val exercise = _uiState.value.todayExercises.find { it.exercise.id == exerciseId }?.exercise
 
+            // ★★★ [수정 핵심] 중복 방지를 위한 고유 ID 생성 ★★★
+            // 형식: USER_ID_YYYYMMDD_EXERCISE_ID
+            val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.US)
+            val todayDateString = dateFormat.format(Date())
+
+            // Note: isCompleted가 false일 때도 기록을 남길 수 있도록 ID는 유지합니다.
+            val uniqueSessionId = "${user.id}_${todayDateString}_${exerciseId}"
+
             // 1. RehabSession 객체 생성 (rating과 notes를 포함)
             val session = RehabSession(
-                id = UUID.randomUUID().toString(),
+                id = uniqueSessionId, // ★★★ 고유 ID 사용 ★★★
                 userId = user.id,
                 exerciseId = exerciseId,
                 dateTime = Date(),
                 sets = exercise?.sets ?: 3,
                 reps = exercise?.reps ?: 10,
                 durationMinutes = 15,
-                notes = notes,
-                userRating = rating
+                // 운동을 '완수하지 못했음'을 표시할 때 rating을 0으로 설정하여 분석에서 제외
+                userRating = if (isCompleted) rating else 0,
+                notes = notes
             )
+            Log.d("REHAB_LOG_SAVE", "저장 요청: ID=${uniqueSessionId}, isCompleted=$isCompleted")
 
             // 2. 기록 저장 (Local + Firebase)
+            // LocalDataSource와 FirebaseDataSource는 OnConflictStrategy.REPLACE(덮어쓰기)를 사용하므로
+            // ID가 같으면 덮어써져 중복 저장이 방지됩니다.
             addRehabSessionUseCase(session).collect()
 
             // 3. UI 상태 업데이트 (체크박스 상태 반영)
-            //    사용자가 '완수함'을 선택한 경우에만 true로 설정합니다.
             setExerciseCompleted(exerciseId, isCompleted)
         }
     }
