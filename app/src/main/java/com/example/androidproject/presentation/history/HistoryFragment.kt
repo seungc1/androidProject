@@ -25,13 +25,13 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.filterNotNull
 import com.example.androidproject.domain.usecase.GetDailyHistoryUseCase
 import com.example.androidproject.data.local.SessionManager
 import com.example.androidproject.domain.usecase.GetWeeklyAnalysisUseCase
 import com.example.androidproject.domain.repository.UserRepository
 import com.example.androidproject.data.ExerciseCatalog
 import android.util.Log
+import java.util.Date
 
 @AndroidEntryPoint
 class HistoryFragment : Fragment() {
@@ -39,12 +39,11 @@ class HistoryFragment : Fragment() {
     private var _binding: FragmentHistoryBinding? = null
     private val binding get() = _binding!!
 
-    // (★수정★) sharedViewModel 대신 전용 ViewModel 사용
     private val viewModel: HistoryViewModel by viewModels()
 
-    private lateinit var historyAdapter: HistoryAdapter
+    // [제거됨] private lateinit var historyAdapter: HistoryAdapter
 
-    // ★★★ [추가] 테스트용 의존성 주입 ★★★
+    // ★★★ [유지/재사용] 필요한 의존성 주입 ★★★
     @Inject
     lateinit var getDailyHistoryUseCase: GetDailyHistoryUseCase
     @Inject
@@ -53,7 +52,7 @@ class HistoryFragment : Fragment() {
     lateinit var getWeeklyAnalysisUseCase: GetWeeklyAnalysisUseCase
     @Inject
     lateinit var userRepository: UserRepository
-    // ★★★ [추가] 테스트용 의존성 주입 끝 ★★★
+    // ★★★ ★★★
 
 
     override fun onCreateView(
@@ -67,9 +66,9 @@ class HistoryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupRecyclerView()
+        // [삭제됨] setupRecyclerView()
         setupCalendarListener()
-        setupSwipeToRefresh()
+        // [삭제됨] setupSwipeToRefresh()
         observeUiState()
         observeRecordedDates()
 
@@ -77,45 +76,24 @@ class HistoryFragment : Fragment() {
         binding.calendarView.setCurrentDate(today)
         binding.calendarView.setSelectedDate(today)
 
-        // 메인 영역 로드 (Flow.first() 기반으로 수정됨)
-        viewModel.loadHistory(today.date)
+        // 메인 기록 로드
+        loadDailyHistory(today.date)
         viewModel.fetchWeeklyAnalysis()
-
-        // ★★★ [추가] 테스트 영역 로드 ★★★
-        loadDailyHistoryTest(today.date)
-        loadWeeklyAnalysisTest()
     }
 
     override fun onResume() {
         super.onResume()
-        // [추가] 탭으로 돌아올 때마다 기록된 날짜 새로고침 (다른 탭에서 식단/운동 기록 후)
+        // 1. 기록된 날짜 새로고침
         viewModel.loadRecordedDates()
 
         // 2. 현재 달력에서 선택된 날짜의 기록을 다시 로드하여 최신 상태 반영
         val selectedDate = binding.calendarView.selectedDate ?: CalendarDay.today()
-        viewModel.loadHistory(selectedDate.date)
-
-        // ★★★ [추가] 테스트 영역도 갱신 ★★★
-        loadDailyHistoryTest(selectedDate.date)
-        loadWeeklyAnalysisTest()
-    }
-
-
-    private fun setupRecyclerView() {
-        historyAdapter = HistoryAdapter()
-        binding.historyRecyclerView.adapter = historyAdapter
-    }
-
-    private fun setupSwipeToRefresh() {
-        binding.swipeRefreshLayout.setOnRefreshListener {
-            viewModel.fetchWeeklyAnalysis()
-        }
+        loadDailyHistory(selectedDate.date)
     }
 
     private fun setupCalendarListener() {
         binding.calendarView.setOnDateChangedListener { _, date, _ ->
-            viewModel.loadHistory(date.date)
-            loadDailyHistoryTest(date.date) // [추가] 날짜 변경 시 테스트 영역 갱신
+            loadDailyHistory(date.date) // [수정] 메인 로직 호출
         }
     }
 
@@ -123,31 +101,32 @@ class HistoryFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.historyUiState.collectLatest { state ->
-                    binding.loadingProgressBar.isVisible = state.isLoading
 
-                    binding.swipeRefreshLayout.isRefreshing = state.isAnalyzing
+                    // [삭제됨] binding.swipeRefreshLayout.isRefreshing = state.isAnalyzing
 
+                    // AI 분석 카드 (analysisCard) 관리 및 상세 데이터 바인딩
                     if (state.analysisResult != null) {
                         binding.analysisCard.isVisible = true
+
+                        // 1. 요약 정보
                         binding.analysisSummaryTextView.text = state.analysisResult.summary
+
+                        // 2. ★★★ [수정/추가] 상세 분석 필드 바인딩 ★★★
+                        binding.analysisStrengthsTextView.text =
+                            state.analysisResult.strengths.joinToString("\n") { "• $it" }.ifEmpty { "내용 없음" }
+                        binding.analysisImprovementTextView.text =
+                            state.analysisResult.areasForImprovement.joinToString("\n") { "• $it" }.ifEmpty { "내용 없음" }
+                        binding.analysisTipsTextView.text =
+                            state.analysisResult.personalizedTips.joinToString("\n") { "• $it" }.ifEmpty { "내용 없음" }
+                        binding.analysisNextStepsTextView.text =
+                            "다음 단계 권장 사항: ${state.analysisResult.nextStepsRecommendation}"
+                        // ★★★ ★★★
+
                     } else {
                         binding.analysisCard.isVisible = false
                     }
 
-                    val hasHistory = state.historyItems.isNotEmpty()
-                    android.util.Log.d("HISTORY_FRAG", "hasHistory: $hasHistory, isLoading: ${state.isLoading}, items: ${state.historyItems.size}")
-
-                    // --- 수정 시작: 목록 및 빈 화면 메시지 가시성 로직 개선 ---
-                    // RecyclerView는 데이터가 있고 로딩/분석 중이 아닐 때만 보입니다.
-                    binding.historyRecyclerView.isVisible = hasHistory && !state.isLoading
-                    android.util.Log.d("HISTORY_FRAG", "RecyclerView visibility: ${binding.historyRecyclerView.isVisible}")
-
-                    // 빈 메시지는 데이터가 없고 로딩 중이 아닐 때만 보입니다.
-                    binding.historyEmptyMessageTextView.isVisible = !hasHistory && !state.isLoading
-                    // --- 수정 종료 ---
-
-                    historyAdapter.submitList(state.historyItems)
-                    android.util.Log.d("HISTORY_FRAG", "Submitted ${state.historyItems.size} items to adapter")
+                    // [삭제됨] RecyclerView 관련 로직 제거
 
                     state.errorMessage?.let { message ->
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -157,6 +136,7 @@ class HistoryFragment : Fragment() {
             }
         }
     }
+
     private fun observeRecordedDates() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -180,10 +160,10 @@ class HistoryFragment : Fragment() {
         }
     }
 
-    // ★★★ [추가] 테스트용 함수 1: 선택된 날짜의 기록 로드 (ProfileFragment 로직과 동일) ★★★
-    private fun loadDailyHistoryTest(date: LocalDate) {
+    // ★★★ [수정/주력] 메인 기록 로드 함수 (이전 loadDailyHistoryTest 로직 사용) ★★★
+    private fun loadDailyHistory(date: LocalDate) {
         val userId = sessionManager.getUserId()
-        val textView = binding.testHistoryRecordsTextView
+        val textView = binding.historyRecordsTextView // [수정] 메인 ID 사용
 
         if (userId.isNullOrEmpty()) {
             textView.text = "로그인된 사용자 정보가 없습니다."
@@ -191,6 +171,9 @@ class HistoryFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
+            // 로딩 스피너 수동 제어 시작
+            binding.loadingProgressBar.isVisible = true
+
             try {
                 val localDate = DateTimeUtils.toDate(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
                 textView.text = "선택 날짜 ${SimpleDateFormat("M월 d일 (E)", Locale.KOREA).format(localDate)} 기록 로드 중..."
@@ -229,44 +212,15 @@ class HistoryFragment : Fragment() {
                     }
                 }
                 textView.text = output.toString()
+
             } catch (e: Exception) {
-                Log.e("HistoryFragment", "테스트 기록 로드 실패: ${e.message}", e)
-                textView.text = "테스트 기록 로드 중 오류 발생: ${e.message}"
+                Log.e("HistoryFragment", "메인 기록 로드 실패: ${e.message}", e)
+                textView.text = "기록 로드 중 오류 발생: ${e.message}"
+            } finally {
+                binding.loadingProgressBar.isVisible = false // 로딩 완료
             }
         }
     }
-
-    // ★★★ [추가] 테스트용 함수 2: 주간 AI 분석 리포트 로드 (ProfileFragment 로직과 동일) ★★★
-    private fun loadWeeklyAnalysisTest() {
-        val userId = sessionManager.getUserId()
-        val summaryTextView = binding.testAnalysisSummaryTextView
-
-        if (userId.isNullOrEmpty()) {
-            summaryTextView.text = "사용자 정보가 없어 분석을 로드할 수 없습니다."
-            return
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                // Flow.filterNotNull().first() 대신, repository에서 직접 first()를 호출하여 user 객체를 가져옵니다.
-                val user = userRepository.getUserProfile(userId).filterNotNull().first()
-
-                getWeeklyAnalysisUseCase(user)
-                    .collectLatest { result ->
-                        summaryTextView.text = "요약: ${result.summary}"
-                        binding.testAnalysisStrengthsTextView.text = result.strengths.joinToString("\n") { "• $it" }.ifEmpty { "내용 없음" }
-                        binding.testAnalysisImprovementTextView.text = result.areasForImprovement.joinToString("\n") { "• $it" }.ifEmpty { "내용 없음" }
-                        binding.testAnalysisTipsTextView.text = result.personalizedTips.joinToString("\n") { "• $it" }.ifEmpty { "내용 없음" }
-                        binding.testAnalysisNextStepsTextView.text = "다음 단계 권장 사항: ${result.nextStepsRecommendation}"
-                    }
-            } catch (e: Exception) {
-                Log.e("HistoryFragment", "주간 분석 로드 실패: ${e.message}", e)
-                summaryTextView.text = "AI 분석 로드 중 오류 발생: ${e.message}"
-                binding.testAnalysisStrengthsTextView.text = "오류로 인해 상세 분석을 불러올 수 없습니다."
-            }
-        }
-    }
-
 
     override fun onDestroyView() {
         super.onDestroyView()
