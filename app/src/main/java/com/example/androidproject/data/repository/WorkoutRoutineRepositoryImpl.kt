@@ -32,6 +32,11 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
 
         val userId = user.id
 
+        // ----------------------- [성능 측정 시작] -----------------------
+        android.util.Log.d("REPO_PERF", "--- getWorkoutRoutine 시작 (forceReload: $forceReload) ---")
+        val startTime = System.currentTimeMillis()
+        // ----------------------------------------------------------------
+
         // 1. [핵심] 상태 변경(forceReload) 시 기존 데이터 삭제 후 AI 재요청
         if (forceReload) {
             android.util.Log.d("DEBUG_DELETE", "Repository: [1단계] 로컬 데이터 삭제 시도")
@@ -58,6 +63,11 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             val localCache = localDataSource.getWorkouts(userId).first()
             val localDietCache = localDataSource.getScheduledDiets(userId).first()
 
+            // ----------------------- [성능 측정 로그] -----------------------
+            val cacheCheckTime = System.currentTimeMillis()
+            android.util.Log.d("REPO_PERF", "1. 로컬 캐시 확인 완료: ${cacheCheckTime - startTime}ms")
+            // ----------------------------------------------------------------
+
             // 운동 데이터와 식단 데이터가 *모두* 있어야 유효한 캐시로 인정
             val hasInvalidData = localCache.any { workout ->
                 workout.exercisesJson.contains("(Day")
@@ -69,14 +79,46 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                     scheduledDiets = localDietCache.toDomainDiets(),
                     overallSummary = "로컬 캐시"
                 ))
+                // ----------------------- [성능 측정 로그] -----------------------
+                android.util.Log.d("REPO_PERF", "2. 캐시 히트! 총 소요 시간: ${System.currentTimeMillis() - startTime}ms")
+                // ----------------------------------------------------------------
                 return@flow // 로컬 캐시 있으면 즉시 반환 (가장 빠른 경로)
             }
 
-            // >>> 로딩 속도 개선을 위해 Firebase 원격 캐시 확인 로직이 삭제되었습니다. <<<
+            // 캐시 미스 또는 forceReload인 경우
+            android.util.Log.d("REPO_PERF", "2. 로컬 캐시 미스. 서버 캐시 확인 시작...")
+
+            // --- Firebase 원격 캐시 확인 로직 (유지) ---
+            try {
+                val remoteWorkouts = firebaseDataSource.getWorkouts(userId)
+                val remoteDiets = firebaseDataSource.getScheduledDiets(userId)
+
+                val hasInvalidRemoteData = remoteWorkouts.any { workout ->
+                    workout.exercises.any { it.name.contains("(Day") }
+                }
+
+                if (remoteWorkouts.isNotEmpty() && remoteDiets.size >= 7 && !hasInvalidRemoteData) {
+                    localDataSource.upsertWorkouts(remoteWorkouts.toWorkoutEntity(userId))
+                    localDataSource.upsertScheduledDiets(remoteDiets.toDietEntity(userId))
+
+                    emit(AIRecommendationResult(
+                        scheduledWorkouts = remoteWorkouts,
+                        scheduledDiets = remoteDiets,
+                        overallSummary = "서버에서 불러옴"
+                    ))
+                    android.util.Log.d("REPO_PERF", "2. 서버 캐시 히트! 총 소요 시간: ${System.currentTimeMillis() - startTime}ms")
+                    return@flow
+                }
+            } catch (e: Exception) {
+                Log.e("WorkoutRepo", "Remote Cache Read Failed: ${e.message}")
+            }
+            // ---------------------------------------------
         }
 
-        // 3. AI에게 새 루틴 요청 (로컬 캐시가 없거나, forceReload인 경우 실행됨)
+        // 3. AI에게 새 루틴 요청 (캐시가 없거나, forceReload인 경우 실행됨)
         val pastSessions = rehabSessionRepository.getRehabHistory(userId).first()
+        val aiStartTime = System.currentTimeMillis() // ----------------------- [AI 요청 시간 측정 시작] -----------------------
+
         val recommendationParams = RecommendationParams(
             userId = user.id, age = user.age, gender = user.gender,
             heightCm = user.heightCm, weightKg = user.weightKg,
@@ -109,6 +151,9 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                         e.printStackTrace()
                     }
 
+                    // ----------------------- [성능 측정 로그] -----------------------
+                    android.util.Log.d("REPO_PERF", "3. AI 요청 및 처리 완료. 소요 시간: ${System.currentTimeMillis() - aiStartTime}ms")
+                    // ----------------------------------------------------------------
                     emit(aiResult)
 
                 } else {

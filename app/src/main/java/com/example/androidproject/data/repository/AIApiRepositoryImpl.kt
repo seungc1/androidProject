@@ -1,5 +1,3 @@
-// seungc1/androidproject/androidProject-dev/app/src/main/java/com/example/androidproject/data/repository/AIApiRepositoryImpl.kt
-
 package com.example.androidproject.data.repository
 
 import com.example.androidproject.data.ExerciseCatalog
@@ -11,17 +9,14 @@ import com.example.androidproject.domain.repository.AIApiRepository
 import com.example.androidproject.data.network.GptApiService
 import com.example.androidproject.data.network.model.GptMessage
 import com.example.androidproject.data.network.model.GptRequest
+import com.example.androidproject.data.network.model.GptResponse
 import com.example.androidproject.data.network.model.ResponseFormat
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.delay // 👈 [추가] 지연을 위한 import
+import kotlinx.coroutines.delay
 import javax.inject.Inject
-import android.util.Log // Log를 사용하기 위해 import
-
-// GptResponse 클래스가 있는 GptDtos.kt 파일에서 import 되어야 합니다.
-// (현재 파일에는 명시되지 않았으나, 코틀린 컴파일러가 암시적으로 찾아야 하므로 Log를 사용하여 오류를 우회했습니다.)
-import com.example.androidproject.data.network.model.GptResponse // 명시적 import 추가 (오류 해결 시도)
+import android.util.Log
 
 class AIApiRepositoryImpl @Inject constructor(
     private val gptApiService: GptApiService,
@@ -34,7 +29,7 @@ class AIApiRepositoryImpl @Inject constructor(
         val userPrompt = createGptUserPrompt(params)
 
         val request = GptRequest(
-            model = "gpt-4-turbo", // 모델 확인 (권한 없으면 gpt-3.5-turbo로 변경)
+            model = "gpt-4-turbo", // 모델 유지
             messages = listOf(
                 GptMessage(role = "system", content = systemPrompt),
                 GptMessage(role = "user", content = userPrompt)
@@ -50,7 +45,7 @@ class AIApiRepositoryImpl @Inject constructor(
 
         for (attempt in 1..MAX_RETRIES) {
             try {
-                // 실제 API 호출 (GptResponse 클래스 사용)
+                // 실제 API 호출
                 gptResponse = gptApiService.getChatCompletion(request = request)
                 Log.d("AIApiRepo", "AI API 요청 성공 (시도 $attempt)")
                 break
@@ -137,11 +132,11 @@ class AIApiRepositoryImpl @Inject constructor(
             emit(createErrorAnalysisResult("AI 분석 응답이 비어있습니다."))
         }
     }
-    /**
-     * (★ 수정 ★) AI 추천용 시스템 프롬프트
-     * - JSON 구조에서 imageUrl 필드 제거
-     * - 한국어 응답 강제 및 날짜 포맷 엄격 지정
-     */
+
+    // =========================================================
+    // ★★★ 모든 헬퍼 함수는 클래스 내부로 이동됨 (오류 해결) ★★★
+    // =========================================================
+
     private fun createGptSystemPrompt(): String {
         return """
         You are a long-term rehabilitation planner AI.
@@ -195,11 +190,6 @@ class AIApiRepositoryImpl @Inject constructor(
     """.trimIndent()
     }
 
-    /**
-     * (★ 수정 ★) 사용자 정보 전달 프롬프트
-     * - 오늘 날짜 포함
-     * - 운동 카탈로그 JSON 포함 및 해당 목록에서만 운동을 선택하도록 강제
-     */
     private fun createGptUserPrompt(params: RecommendationParams): String {
         val pastSessionsJson = gson.toJson(params.pastSessions)
 
@@ -233,7 +223,7 @@ class AIApiRepositoryImpl @Inject constructor(
             $exerciseCatalogJson
 
             You MUST strictly adhere to the following rules for generating 'scheduledWorkouts':
-            - The 'scheduledDate' MUST start from Today ("$todayDate").
+            - The 'scheduledDate' of the FIRST item in the array MUST BE "$todayDate".
             - The 'name' field in your JSON output **MUST EXACTLY** match an entry in the 'AVAILABLE EXERCISES CATALOG' (Korean name).
             - The 'description', 'sets', 'reps', and 'aiRecommendationReason' fields must be newly generated based on the user's profile and injury condition.
 
@@ -241,9 +231,6 @@ class AIApiRepositoryImpl @Inject constructor(
         """.trimIndent()
     }
 
-    /**
-     * (기존) 추천 결과(JSON) 파싱
-     */
     private fun parseGptResponseToAIRecommendationResult(gptResponse: String): AIRecommendationResult {
         try {
             val result = gson.fromJson(gptResponse, AIRecommendationResult::class.java)
@@ -257,9 +244,6 @@ class AIApiRepositoryImpl @Inject constructor(
         }
     }
 
-    /**
-     * (기존) 추천 오류 결과 생성
-     */
     private fun createErrorResult(message: String): AIRecommendationResult {
         return AIRecommendationResult(
             scheduledWorkouts = emptyList(),
@@ -269,9 +253,6 @@ class AIApiRepositoryImpl @Inject constructor(
         )
     }
 
-    /**
-     * (기존) AI 분석용 시스템 프롬프트 (한국어 출력 강제)
-     */
     private fun createAnalysisSystemPrompt(): String {
         return """
             You are a professional rehabilitation analyst.
@@ -294,9 +275,6 @@ class AIApiRepositoryImpl @Inject constructor(
         """.trimIndent()
     }
 
-    /**
-     * (기존) AI 분석용 사용자 데이터 프롬프트
-     */
     private fun createAnalysisUserPrompt(rehabData: RehabData): String {
         val sessionsJson = gson.toJson(rehabData.pastRehabSessions)
         val dietSessionsJson = gson.toJson(rehabData.pastDietSessions)
@@ -317,9 +295,6 @@ class AIApiRepositoryImpl @Inject constructor(
         """.trimIndent()
     }
 
-    /**
-     * (기존) AI 분석 응답(JSON) 파싱
-     */
     private fun parseGptResponseToAIAnalysisResult(gptResponse: String): AIAnalysisResult {
         try {
             return gson.fromJson(gptResponse, AIAnalysisResult::class.java)
@@ -329,9 +304,6 @@ class AIApiRepositoryImpl @Inject constructor(
         }
     }
 
-    /**
-     * (기존) AI 분석 오류 결과 생성
-     */
     private fun createErrorAnalysisResult(message: String): AIAnalysisResult {
         return AIAnalysisResult(
             summary = message,
