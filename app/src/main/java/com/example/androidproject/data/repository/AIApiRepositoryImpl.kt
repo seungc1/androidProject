@@ -1,3 +1,5 @@
+// seungc1/androidproject/androidProject-dev/app/src/main/java/com/example/androidproject/data/repository/AIApiRepositoryImpl.kt
+
 package com.example.androidproject.data.repository
 
 import com.example.androidproject.data.ExerciseCatalog
@@ -13,7 +15,13 @@ import com.example.androidproject.data.network.model.ResponseFormat
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.delay // 👈 [추가] 지연을 위한 import
 import javax.inject.Inject
+import android.util.Log // Log를 사용하기 위해 import
+
+// GptResponse 클래스가 있는 GptDtos.kt 파일에서 import 되어야 합니다.
+// (현재 파일에는 명시되지 않았으나, 코틀린 컴파일러가 암시적으로 찾아야 하므로 Log를 사용하여 오류를 우회했습니다.)
+import com.example.androidproject.data.network.model.GptResponse // 명시적 import 추가 (오류 해결 시도)
 
 class AIApiRepositoryImpl @Inject constructor(
     private val gptApiService: GptApiService,
@@ -34,12 +42,43 @@ class AIApiRepositoryImpl @Inject constructor(
             response_format = ResponseFormat(type = "json_object")
         )
 
-        val gptResponse = gptApiService.getChatCompletion(request = request)
-        val jsonResponseString = gptResponse.choices.firstOrNull()?.message?.content
+        // ★★★ 429 오류 해결을 위한 재시도 로직 시작 ★★★
+        val MAX_RETRIES = 5
+        var delayTime = 1000L // 1초부터 시작
+        var gptResponse: GptResponse? = null
+        var lastException: Exception? = null
+
+        for (attempt in 1..MAX_RETRIES) {
+            try {
+                // 실제 API 호출 (GptResponse 클래스 사용)
+                gptResponse = gptApiService.getChatCompletion(request = request)
+                Log.d("AIApiRepo", "AI API 요청 성공 (시도 $attempt)")
+                break
+            } catch (e: Exception) {
+                lastException = e
+                Log.w("AIApiRepo", "AI API 요청 실패 (시도 $attempt/$MAX_RETRIES): ${e.message}")
+
+                if (attempt == MAX_RETRIES) {
+                    Log.e("AIApiRepo", "AI API 요청 최종 실패: ${e.message}")
+                    break
+                }
+
+                // 지수 백오프: 다음 시도 전까지 대기 시간을 두 배로 늘립니다.
+                delay(delayTime)
+                delayTime *= 2
+            }
+        }
+        // ★★★ 429 오류 해결을 위한 재시도 로직 종료 ★★★
+
+        // gptResponse의 필드에 접근 (choices, message, content)
+        val jsonResponseString = gptResponse?.choices?.firstOrNull()?.message?.content
 
         if (jsonResponseString != null) {
             val aiResult = parseGptResponseToAIRecommendationResult(jsonResponseString)
             emit(aiResult)
+        } else if (lastException != null) {
+            // 재시도 후에도 최종적으로 실패한 경우 오류 반환
+            emit(createErrorResult("AI 응답을 가져오는 데 최종 실패했습니다. (오류: ${lastException.message})"))
         } else {
             emit(createErrorResult("AI 응답이 비어있습니다."))
         }
@@ -58,16 +97,45 @@ class AIApiRepositoryImpl @Inject constructor(
             response_format = ResponseFormat(type = "json_object")
         )
 
-        val gptResponse = gptApiService.getChatCompletion(request = request)
-        val jsonResponseString = gptResponse.choices.firstOrNull()?.message?.content
+        // ★★★ 429 오류 해결을 위한 재시도 로직 시작 (analyzeProgress) ★★★
+        val MAX_RETRIES = 5
+        var delayTime = 1000L
+        var gptResponse: GptResponse? = null
+        var lastException: Exception? = null
+
+        for (attempt in 1..MAX_RETRIES) {
+            try {
+                // 실제 API 호출
+                gptResponse = gptApiService.getChatCompletion(request = request)
+                Log.d("AIApiRepo", "AI 분석 요청 성공 (시도 $attempt)")
+                break
+            } catch (e: Exception) {
+                lastException = e
+                Log.w("AIApiRepo", "AI 분석 요청 실패 (시도 $attempt/$MAX_RETRIES): ${e.message}")
+
+                if (attempt == MAX_RETRIES) {
+                    Log.e("AIApiRepo", "AI 분석 요청 최종 실패: ${e.message}")
+                    break
+                }
+
+                // 지수 백오프: 다음 시도 전까지 대기 시간을 두 배로 늘립니다.
+                delay(delayTime)
+                delayTime *= 2
+            }
+        }
+        // ★★★ 429 오류 해결을 위한 재시도 로직 종료 (analyzeProgress) ★★★
+
+        val jsonResponseString = gptResponse?.choices?.firstOrNull()?.message?.content
 
         if (jsonResponseString != null) {
             val analysisResult = parseGptResponseToAIAnalysisResult(jsonResponseString)
             emit(analysisResult)
+        } else if (lastException != null) {
+            // 재시도 후에도 최종적으로 실패한 경우 오류 반환
+            emit(createErrorAnalysisResult("AI 분석 응답을 가져오는 데 최종 실패했습니다. (오류: ${lastException.message})"))
         } else {
             emit(createErrorAnalysisResult("AI 분석 응답이 비어있습니다."))
         }
-
     }
     /**
      * (★ 수정 ★) AI 추천용 시스템 프롬프트

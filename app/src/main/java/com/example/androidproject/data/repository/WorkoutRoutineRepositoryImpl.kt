@@ -1,9 +1,10 @@
-// 파일 경로: app/src/main/java/com/example/androidproject/data/repository/WorkoutRoutineRepositoryImpl.kt
+// seungc1/androidproject/androidProject-dev/app/src/main/java/com/example/androidproject/data/repository/WorkoutRoutineRepositoryImpl.kt
+
 package com.example.androidproject.data.repository
 
-import android.util.Log // ★★★ 이 구문이 누락되었을 수 있습니다. ★★★
+import android.util.Log
 import com.example.androidproject.data.local.datasource.LocalDataSource
-import com.example.androidproject.data.local.entity.ScheduledDietEntity // ✅ [추가]
+import com.example.androidproject.data.local.entity.ScheduledDietEntity
 import com.example.androidproject.data.local.entity.ScheduledWorkoutEntity
 import com.example.androidproject.data.remote.datasource.FirebaseDataSource
 import com.example.androidproject.domain.model.*
@@ -48,18 +49,16 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             // [추가] 식단 데이터도 삭제
             localDataSource.clearScheduledDiets(userId)
             try {
-                firebaseDataSource.clearScheduledDiets(userId) // ✅ [추가]
+                firebaseDataSource.clearScheduledDiets(userId)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         } else {
-            // 2. 강제 리로드가 아니면 캐시 확인 (기존 로직 유지)
+            // 2. 강제 리로드가 아니면 로컬 캐시 확인
             val localCache = localDataSource.getWorkouts(userId).first()
-            val localDietCache = localDataSource.getScheduledDiets(userId).first() // ✅ [추가] 식단 캐시 조회
+            val localDietCache = localDataSource.getScheduledDiets(userId).first()
 
-            // [수정] 운동 데이터와 식단 데이터가 *모두* 있어야 유효한 캐시로 인정
-            // 또한, 식단 데이터가 7일치 미만이면(예전 데이터면) 무시하고 새로 요청
-            // ★ [추가] 운동 이름에 "(Day"가 포함되어 있으면(테스트용 잘못된 데이터) 무시하고 새로 요청
+            // 운동 데이터와 식단 데이터가 *모두* 있어야 유효한 캐시로 인정
             val hasInvalidData = localCache.any { workout ->
                 workout.exercisesJson.contains("(Day")
             }
@@ -67,40 +66,16 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             if (localCache.isNotEmpty() && localDietCache.size >= 7 && !hasInvalidData) {
                 emit(AIRecommendationResult(
                     scheduledWorkouts = localCache.toDomainWorkouts(),
-                    scheduledDiets = localDietCache.toDomainDiets(), // ✅ [수정] 식단 캐시 반환
+                    scheduledDiets = localDietCache.toDomainDiets(),
                     overallSummary = "로컬 캐시"
                 ))
-                return@flow
+                return@flow // 로컬 캐시 있으면 즉시 반환 (가장 빠른 경로)
             }
 
-            // 로컬 없으면 서버 확인
-            try {
-                val remoteWorkouts = firebaseDataSource.getWorkouts(userId)
-                val remoteDiets = firebaseDataSource.getScheduledDiets(userId) // ✅ [추가]
-
-                // [수정] 서버에도 둘 다 있어야 함. 그리고 7일치 이상이어야 함.
-                // ★ [추가] 서버 데이터도 "(Day" 포함 여부 확인
-                val hasInvalidRemoteData = remoteWorkouts.any { workout ->
-                    workout.exercises.any { it.name.contains("(Day") }
-                }
-
-                if (remoteWorkouts.isNotEmpty() && remoteDiets.size >= 7 && !hasInvalidRemoteData) {
-                    localDataSource.upsertWorkouts(remoteWorkouts.toWorkoutEntity(userId))
-                    localDataSource.upsertScheduledDiets(remoteDiets.toDietEntity(userId)) // ✅ [추가]
-
-                    emit(AIRecommendationResult(
-                        scheduledWorkouts = remoteWorkouts,
-                        scheduledDiets = remoteDiets,
-                        overallSummary = "서버에서 불러옴"
-                    ))
-                    return@flow
-                }
-            } catch (e: Exception) {
-                Log.e("WorkoutRepo", "Remote Cache Read Failed: ${e.message}")
-            }
+            // >>> 로딩 속도 개선을 위해 Firebase 원격 캐시 확인 로직이 삭제되었습니다. <<<
         }
 
-        // 3. AI에게 새 루틴 요청 (캐시가 없거나, forceReload인 경우 실행됨)
+        // 3. AI에게 새 루틴 요청 (로컬 캐시가 없거나, forceReload인 경우 실행됨)
         val pastSessions = rehabSessionRepository.getRehabHistory(userId).first()
         val recommendationParams = RecommendationParams(
             userId = user.id, age = user.age, gender = user.gender,
@@ -124,12 +99,12 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
 
                     // 로컬 저장 (동기적으로 실행됨)
                     localDataSource.upsertWorkouts(entities)
-                    localDataSource.upsertScheduledDiets(aiResult.scheduledDiets.toDietEntity(userId)) // ✅ [추가] 식단 저장
+                    localDataSource.upsertScheduledDiets(aiResult.scheduledDiets.toDietEntity(userId))
 
                     // 서버 저장 (비동기 - 실패해도 로컬은 저장됨)
                     try {
                         firebaseDataSource.upsertWorkouts(userId, aiResult.scheduledWorkouts)
-                        firebaseDataSource.upsertScheduledDiets(userId, aiResult.scheduledDiets) // ✅ [추가] 식단 저장
+                        firebaseDataSource.upsertScheduledDiets(userId, aiResult.scheduledDiets)
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -139,12 +114,12 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                 } else {
                     Log.w("WorkoutRepo", "AI returned empty workouts.")
                     val localBackup = localDataSource.getWorkouts(userId).first()
-                    val localDietBackup = localDataSource.getScheduledDiets(userId).first() // ✅ [추가]
+                    val localDietBackup = localDataSource.getScheduledDiets(userId).first()
 
                     if (localBackup.isNotEmpty()) {
                         emit(AIRecommendationResult(
                             scheduledWorkouts = localBackup.toDomainWorkouts(),
-                            scheduledDiets = localDietBackup.toDomainDiets(), // ✅ [수정]
+                            scheduledDiets = localDietBackup.toDomainDiets(),
                             overallSummary = "로컬 백업"
                         ))
                     } else {
@@ -156,7 +131,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
     }
     // --- Mapper 함수들 ---
 
-    // 1. 운동 관련 Mapper (기존 유지, 이름만 명확하게 변경)
+    // 1. 운동 관련 Mapper
     private fun List<ScheduledWorkout>.toWorkoutEntity(userId: String): List<ScheduledWorkoutEntity> {
         return this.map {
             ScheduledWorkoutEntity(
@@ -180,7 +155,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
         return workouts
     }
 
-    // 2. ✅ [추가] 식단 관련 Mapper
+    // 2. 식단 관련 Mapper
     private fun List<ScheduledDiet>.toDietEntity(userId: String): List<ScheduledDietEntity> {
         return this.map {
             ScheduledDietEntity(
