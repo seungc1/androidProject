@@ -51,29 +51,30 @@ class HistoryViewModel @Inject constructor(
 
         viewModelScope.launch {
             Log.d("HISTORY_DEBUG", "LoadHistory 시작: 날짜=${date}") // DEBUG
+            // 1. 로딩 상태 설정
             _historyUiState.update { it.copy(isLoading = true, errorMessage = null) }
             try {
+                // 2. 날짜 범위 계산 (생략)
                 val startDate = DateTimeUtils.toDate(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
                 val endDate = DateTimeUtils.toDate(date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant())
 
-                android.util.Log.d("HISTORY_VM", "loadHistory called for date: $date")
                 android.util.Log.d("HISTORY_VM", "Date range: $startDate ~ $endDate")
 
                 val rehabFlow = rehabSessionRepository.getRehabSessionsBetween(userId, startDate, endDate)
                 val dietFlow = dietSessionRepository.getDietSessionsBetween(userId, startDate, endDate)
 
-                combine(rehabFlow, dietFlow) { rehabSessions, dietSessions ->
+                // 3. [수정 핵심] combine의 첫 번째 결과를 강제로 가져와서 데이터 로드를 보장합니다.
+                val historyItems = combine(rehabFlow, dietFlow) { rehabSessions, dietSessions ->
                     android.util.Log.d("HISTORY_VM", "Rehab sessions: ${rehabSessions.size}, Diet sessions: ${dietSessions.size}")
-                    dietSessions.forEach { session ->
-                        android.util.Log.d("HISTORY_VM", "Diet: ${session.foodName ?: session.dietId}, time: ${session.dateTime}")
-                    }
                     val exerciseItems = rehabSessions.map { HistoryItem.Exercise(it) }
                     val dietItems = dietSessions.map { HistoryItem.Diet(it) }
                     (exerciseItems + dietItems).sortedByDescending { it.dateTime }
-                }.collect { historyItems ->
-                    android.util.Log.d("HISTORY_VM", "Total history items: ${historyItems.size}")
-                    _historyUiState.update { it.copy(isLoading = false, historyItems = historyItems) }
-                }
+                }.first() // <--- Flow.first() 적용
+
+                // 4. UI 상태 업데이트
+                android.util.Log.d("HISTORY_VM", "Total history items: ${historyItems.size}. Setting isLoading=false")
+                _historyUiState.update { it.copy(isLoading = false, historyItems = historyItems) }
+
             } catch (e: Exception) {
                 android.util.Log.e("HISTORY_VM", "Error loading history: ${e.message}", e)
                 _historyUiState.update { it.copy(isLoading = false, errorMessage = "로드 실패: ${e.message}") }
