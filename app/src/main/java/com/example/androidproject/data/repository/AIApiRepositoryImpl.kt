@@ -227,7 +227,12 @@ class AIApiRepositoryImpl @Inject constructor(
             - The 'name' field in your JSON output **MUST EXACTLY** match an entry in the 'AVAILABLE EXERCISES CATALOG' (Korean name).
             - The 'description', 'sets', 'reps', and 'aiRecommendationReason' fields must be newly generated based on the user's profile and injury condition.
 
-            Based on ALL this data, create a new multi-day workout plan starting from "$todayDate".
+            🚨 [DIET INSTRUCTION] 🚨
+            - You MUST provide a **different** diet menu for each day. Do NOT repeat the same meal plan for multiple days.
+            - You MUST generate a plan for **7 days** (both workouts and diets).
+            - Consider the user's dietary preferences and allergies.
+
+            Based on ALL this data, create a new **7-day workout and diet plan** starting from "$todayDate".
         """.trimIndent()
     }
 
