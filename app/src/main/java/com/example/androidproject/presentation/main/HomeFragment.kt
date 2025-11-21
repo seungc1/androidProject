@@ -84,6 +84,11 @@ class HomeFragment : Fragment() {
             val action = HomeFragmentDirections.actionNavigationHomeToProfileEditFragment()
             findNavController().navigate(action)
         }
+        
+        // [추가] 식단 기록 FAB 클릭 리스너
+        binding.recordDietFab.setOnClickListener {
+            DietRecordDialog().show(childFragmentManager, DietRecordDialog.TAG)
+        }
     }
 
     private fun observeViewModel() {

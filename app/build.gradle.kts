@@ -5,9 +5,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.androidx.navigation.safeargs.kotlin)
+    alias(libs.plugins.google.services)
     id("org.jetbrains.kotlin.kapt")
     id("com.google.dagger.hilt.android")
-    id("com.google.gms.google-services")
 }
 
 // local.properties 파일에서 API 키를 읽어오기 위한 설정

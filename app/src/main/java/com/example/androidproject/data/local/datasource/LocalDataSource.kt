@@ -20,7 +20,8 @@ class LocalDataSource @Inject constructor(
     private val dietSessionDao: DietSessionDao,
     private val injuryDao: InjuryDao,
     private val dietDao: DietDao,
-    private val scheduledWorkoutDao: ScheduledWorkoutDao
+    private val scheduledWorkoutDao: ScheduledWorkoutDao,
+    private val scheduledDietDao: ScheduledDietDao
 ) {
     /**
      * (★수정★) DB 전체 삭제 (로그아웃 시 호출됨)
@@ -106,5 +107,19 @@ class LocalDataSource @Inject constructor(
     suspend fun clearScheduledWorkouts(userId: String) {
         android.util.Log.d("DEBUG_DELETE", "LocalDataSource: Room DB에서 루틴 삭제 실행 (User: $userId)")
         scheduledWorkoutDao.clearWorkouts(userId)
+    }
+
+    // --- ScheduledDietDao 관련 함수 ---
+
+    suspend fun upsertScheduledDiets(diets: List<ScheduledDietEntity>) {
+        scheduledDietDao.upsertDiets(diets)
+    }
+
+    fun getScheduledDiets(userId: String): Flow<List<ScheduledDietEntity>> {
+        return scheduledDietDao.getScheduledDiets(userId)
+    }
+
+    suspend fun clearScheduledDiets(userId: String) {
+        scheduledDietDao.clearScheduledDiets(userId)
     }
 }

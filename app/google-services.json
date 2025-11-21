@@ -12,7 +12,12 @@
           "package_name": "com.example.androidproject"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1053114952156-t9v70b8tnkihdlsjlut9vnkrfvh5dcvm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAbKO9Os8KgH5ZEnrr43JaszFjlpoc9qrI"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1053114952156-t9v70b8tnkihdlsjlut9vnkrfvh5dcvm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

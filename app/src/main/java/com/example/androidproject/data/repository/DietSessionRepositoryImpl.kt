@@ -23,10 +23,23 @@ class DietSessionRepositoryImpl @Inject constructor(
 ) : DietSessionRepository {
 
     override suspend fun addDietSession(session: DietSession): Flow<Unit> {
-        // 1. Firebase 저장
-        firebaseDataSource.addDietSession(session)
-        // 2. Local 저장
-        localDataSource.addDietSession(session.toEntity())
+        android.util.Log.d("DIET_REPO", "addDietSession called: ${session.id}, foodName=${session.foodName}")
+        
+        try {
+            // 1. Firebase 저장
+            android.util.Log.d("DIET_REPO", "Saving to Firebase...")
+            firebaseDataSource.addDietSession(session)
+            android.util.Log.d("DIET_REPO", "Firebase save complete")
+            
+            // 2. Local 저장
+            android.util.Log.d("DIET_REPO", "Saving to local DB...")
+            localDataSource.addDietSession(session.toEntity())
+            android.util.Log.d("DIET_REPO", "Local DB save complete")
+        } catch (e: Exception) {
+            android.util.Log.e("DIET_REPO", "Error in addDietSession: ${e.message}", e)
+            throw e
+        }
+        
         return flowOf(Unit)
     }
 

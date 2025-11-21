@@ -207,23 +207,16 @@ fun InjuryEntity.toDomain(): Injury {
 
 
 // --- AI Result Mapper ---
-// (기존 팀원 코드 유지 - 임시 코드 포함)
 fun AIRecommendationResultDto.toDomain(): AIRecommendationResult {
-    // ⬇️ --- [임시 주석 처리] --- ⬇️
-    // "설계도 충돌" 오류가 나는 기존 코드입니다.
-    // return AIRecommendationResult(
-    //     recommendedExercises = this.recommendedExercises.map { it.toDomain() },
-    //     recommendedDiets = this.recommendedDiets.map { it.toDomain() }
-    // )
-    // ⬆️ --- [임시 주석 처리] --- ⬆️
-
-    // ⬇️ --- [임시 코드] --- ⬇️
     return AIRecommendationResult(
         scheduledWorkouts = emptyList(),
-        recommendedDiets = emptyList(),
-        overallSummary = "AI 추천을 불러오는 중입니다..."
+
+        // ✅ [수정] 누락된 파라미터 추가 (필수!)
+        scheduledDiets = emptyList(),
+
+        overallSummary = "AI 추천을 불러오는 중입니다...",
+        disclaimer = ""
     )
-    // ⬆️ --- [임시 코드] --- ⬆️
 }
 
 fun RehabSession.toEntity(): RehabSessionEntity {
@@ -263,7 +256,9 @@ fun DietSession.toEntity(): DietSessionEntity {
         actualQuantity = this.actualQuantity,
         actualUnit = this.actualUnit,
         userSatisfaction = this.userSatisfaction,
-        notes = this.notes
+        notes = this.notes,
+        foodName = this.foodName, // [추가]
+        photoUrl = this.photoUrl // [추가]
     )
 }
 
@@ -276,6 +271,8 @@ fun DietSessionEntity.toDomain(): DietSession {
         actualQuantity = this.actualQuantity,
         actualUnit = this.actualUnit,
         userSatisfaction = this.userSatisfaction,
-        notes = this.notes
+        notes = this.notes,
+        foodName = this.foodName, // [추가]
+        photoUrl = this.photoUrl // [추가]
     )
 }

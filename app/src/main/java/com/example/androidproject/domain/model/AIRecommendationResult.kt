@@ -6,7 +6,7 @@ package com.example.androidproject.domain.model
  */
 data class AIRecommendationResult(
     val scheduledWorkouts: List<ScheduledWorkout>, // GPT가 생성한 '멀티-데이' 운동 계획
-    val recommendedDiets: List<DietRecommendation>, // GPT가 추천한 식단 목록
+    val scheduledDiets: List<ScheduledDiet>, // 날짜별 식단 리스트로 변경
     val overallSummary: String? = null,
     val disclaimer: String = "본 추천은 AI에 의해 생성되었으며, 전문 의료인의 진단 및 조언을 대체할 수 없습니다."
 )
