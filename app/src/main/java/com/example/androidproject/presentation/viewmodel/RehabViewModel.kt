@@ -60,6 +60,9 @@ class RehabViewModel @Inject constructor(
 
     // region [Initialization & Entry Point]
     fun loadDataForUser(userId: String) {
+        if (_uiState.value.fullRoutine.isNotEmpty() && _currentUser.value != null) {
+            return // 이미 데이터가 있으면 로딩 스킵
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             startDataObservation(userId)
