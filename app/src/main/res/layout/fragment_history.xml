@@ -170,8 +170,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:textAppearance="@style/TextAppearance.App.TitleSmall"
-                    android:textStyle="italic"
-                    android:text="다음 단계 권장 사항: -" />
+                    android:text="📈 다음 단계 권장 사항: -" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>

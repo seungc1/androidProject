@@ -182,7 +182,7 @@ class HistoryFragment : Fragment() {
                 val (rehabSessions, dietSessions) = getDailyHistoryUseCase(userId, localDate).first()
 
                 val output = StringBuilder()
-                output.append("--- 운동 기록 (${rehabSessions.size}개) ---\n")
+                output.append("운동 기록 (${rehabSessions.size}개)\n")
                 if (rehabSessions.isEmpty()) {
                     output.append("기록된 운동이 없습니다.\n")
                 } else {
@@ -194,11 +194,11 @@ class HistoryFragment : Fragment() {
                             5 -> "매우 좋음" 4 -> "좋음" 3 -> "보통" 2 -> "힘듦" 1 -> "나쁨" else -> "평가 없음"
                         }
                         val time = SimpleDateFormat("a h:mm", Locale.KOREA).format(session.dateTime)
-                        output.append("• [운동] $time: $exerciseName (${session.sets}세트, ${session.reps}회) / 평점: $ratingText\n")
+                        output.append("• $exerciseName (${session.sets}세트, ${session.reps}회) / 평점: $ratingText\n")
                     }
                 }
 
-                output.append("\n--- 식단 기록 (${dietSessions.size}개) ---\n")
+                output.append("\n식단 기록 (${dietSessions.size}개) \n")
                 if (dietSessions.isEmpty()) {
                     output.append("기록된 식단이 없습니다.\n")
                 } else {
