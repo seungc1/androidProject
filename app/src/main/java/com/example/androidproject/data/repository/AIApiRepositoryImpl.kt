@@ -103,19 +103,24 @@ class AIApiRepositoryImpl @Inject constructor(
               ]
             }
           ],
-          "recommendedDiets": [
+          "scheduledDiets": [
             {
-              "mealType": "String (아침, 점심, 저녁, 간식)",
-              "foodItems": ["String", "String"],
-              "ingredients": ["String", "String"],
-              "calories": "Double?",
-              "proteinGrams": "Double?",
-              "carbs": "Double?",
-              "fats": "Double?",
-              "aiRecommendationReason": "String"
+              "scheduledDate": "String (Format: 'M월 d일 (E)', same as workouts)",
+              "meals": [
+                {
+                  "mealType": "String (아침, 점심, 저녁, 간식)",
+                  "foodItems": ["String"],
+                  "ingredients": ["String"],
+                  "calories": "Double?",
+                  "proteinGrams": "Double?",
+                  "carbs": "Double?",
+                  "fats": "Double?",
+                  "aiRecommendationReason": "String"
+                }
+              ]
             }
           ],
-          "overallSummary": "String (Korean summary)",
+          "overallSummary": "String",
           "disclaimer": "String"
         }
         Ensure the response is ONLY the valid JSON object.
@@ -190,7 +195,7 @@ class AIApiRepositoryImpl @Inject constructor(
     private fun createErrorResult(message: String): AIRecommendationResult {
         return AIRecommendationResult(
             scheduledWorkouts = emptyList(),
-            recommendedDiets = emptyList(),
+            scheduledDiets = emptyList(),
             overallSummary = message,
             disclaimer = "오류가 발생했습니다."
         )

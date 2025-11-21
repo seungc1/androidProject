@@ -33,4 +33,11 @@
 
     <string name="default_web_client_id">1053114952156-YOUR_WEB_CLIENT_ID_GOES_HERE.apps.googleusercontent.com</string>
 
+    <string-array name="meal_types">
+        <item>아침</item>
+        <item>점심</item>
+        <item>저녁</item>
+        <item>간식</item>
+    </string-array>
+
 </resources>

@@ -61,7 +61,7 @@ class GetAIRecommendationUseCase @Inject constructor(
                 //    AI가 반환한 'scheduledWorkouts'를 그대로 반환합니다.
                 AIRecommendationResult(
                     scheduledWorkouts = aiResult.scheduledWorkouts,
-                    recommendedDiets = aiResult.recommendedDiets, // (식단은 그대로)
+                    scheduledDiets = aiResult.scheduledDiets, // (식단은 그대로)
                     overallSummary = aiResult.overallSummary
                 )
             }
