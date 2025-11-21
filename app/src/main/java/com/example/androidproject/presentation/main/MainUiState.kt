@@ -11,6 +11,7 @@ data class TodayExercise(
 
 data class MainUiState(
     val isLoading: Boolean = true,
+    val isRoutineLoading: Boolean = true,      // 👈 [추가] 운동/식단 컨텐츠 로딩 상태 (핵심)
     val userName: String = "",
     val currentInjuryName: String? = null,
     val currentInjuryArea: String? = null,

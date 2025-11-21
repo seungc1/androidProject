@@ -48,12 +48,7 @@ class HomeFragment : Fragment() {
         setupClickListeners()
         observeViewModel()
     }
-    override fun onResume() {
-        super.onResume()
-        // forceReload=false로 호출하여 ViewModel에서 캐시 유효성을 검사하게 합니다.
-        // (날짜가 바뀌었는지 ViewModel이 판단하게 됩니다.)
-        viewModel.loadMainDashboardData(forceReload = false)
-    }
+
     private fun setupAdapters() {
         exerciseAdapter = ExerciseAdapter { exercise ->
             val action = HomeFragmentDirections.actionNavigationHomeToExerciseDetailFragment(
@@ -101,44 +96,65 @@ class HomeFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
 
                 viewModel.uiState.collectLatest { state ->
-                    // 1. '로딩 스피너'
-                    binding.loadingProgressBar.isVisible = state.isLoading
+
+                    // 1. 전체 로딩 (스플래시 화면 종료 후 최초 로딩용)
+                    // state.isLoading이 true일 때는 MainActivity에서 navHostFragment가 가려지므로, 여기서는 루틴 로딩만 신경씁니다.
+
+                    // A. 기본 화면 로드 완료 (Profile 로드 완료)
+                    val isContentReady = !state.isRoutineLoading // 루틴 로딩이 끝나야 컨텐츠가 표시됨
+                    val hasProfile = state.userName.isNotEmpty()
+                    val hasExercises = state.todayExercises.isNotEmpty()
+                    val hasDiets = state.recommendedDiets.isNotEmpty()
+
+                    // 컨텐츠 카드 전체의 가시성 (프로필 로딩이 끝나면 보여주기 시작)
                     binding.exerciseCard.isVisible = !state.isLoading
                     binding.dietCard.isVisible = !state.isLoading
 
-                    val hasExercises = state.todayExercises.isNotEmpty()
-                    val hasProfile = state.userName.isNotEmpty()
+                    // 2. 운동 컨텐츠 로딩 상태 제어 (isRoutineLoading에 따라 UI 전환)
 
-                    // 2. 운동 '빈 화면' 로직
-                    binding.exerciseRecyclerView.isVisible = hasExercises
-                    binding.emptyViewExercise.isVisible = !hasExercises
+                    // 운동 목록/빈 화면 표시 여부: 컨텐츠 로딩이 완료되었을 때만 표시
+                    binding.exerciseRecyclerView.isVisible = isContentReady && hasExercises
+                    binding.emptyViewExercise.isVisible = isContentReady && !hasExercises
 
-                    if (!hasExercises) { // 운동이 없을 때
-                        if (hasProfile) {
-                            // 프로필O, 운동X -> "오늘은 운동 없음" (API 실패 또는 휴식일)
-                            binding.emptyViewExercise.findViewById<TextView>(R.id.emptyExerciseTextView).text = getString(R.string.home_no_exercises_today)
-                            binding.goToProfileFromExerciseButton.isVisible = false
-                        } else {
-                            // 프로필X, 운동X -> "개인정보 입력"
-                            binding.emptyViewExercise.findViewById<TextView>(R.id.emptyExerciseTextView).text = getString(R.string.home_empty_message)
-                            binding.goToProfileFromExerciseButton.isVisible = true
+                    if (state.isRoutineLoading) {
+                        // 루틴 로딩 중일 때: 리사이클러뷰와 빈 화면은 숨깁니다. (컨텐츠 영역에 스피너가 있다고 가정)
+                        binding.exerciseRecyclerView.isVisible = false
+                        binding.emptyViewExercise.isVisible = false
+                    } else {
+                        // 로딩 완료 후:
+                        if (!hasExercises) { // 운동이 없을 때
+                            if (hasProfile) {
+                                // 프로필O, 운동X -> "오늘은 운동 없음" (API 실패 또는 휴식일)
+                                binding.emptyViewExercise.findViewById<TextView>(R.id.emptyExerciseTextView).text = getString(R.string.home_no_exercises_today)
+                                binding.goToProfileFromExerciseButton.isVisible = false
+                            } else {
+                                // 프로필X, 운동X -> "개인정보 입력"
+                                binding.emptyViewExercise.findViewById<TextView>(R.id.emptyExerciseTextView).text = getString(R.string.home_empty_message)
+                                binding.goToProfileFromExerciseButton.isVisible = true
+                            }
                         }
                     }
 
-                    // 3. 식단 '빈 화면' 로직
-                    val hasDiets = state.recommendedDiets.isNotEmpty()
-                    binding.dietRecyclerView.isVisible = hasDiets
-                    binding.emptyViewDiet.isVisible = !hasDiets
+                    // 3. 식단 컨텐츠 로딩 상태 제어
+                    binding.dietRecyclerView.isVisible = isContentReady && hasDiets
+                    binding.emptyViewDiet.isVisible = isContentReady && !hasDiets
 
-                    if (!hasDiets) { // 식단이 없을 때
-                        if (hasProfile) {
-                            // 프로필O, 식단X -> "오늘은 식단 없음" (임시 텍스트)
-                            binding.emptyViewDiet.findViewById<TextView>(R.id.emptyDietTextView).text = "오늘은 추천된 식단이 없습니다."
-                            binding.goToProfileFromDietButton.isVisible = false
-                        } else {
-                            // 프로필X, 식단X -> "개인정보 입력"
-                            binding.emptyViewDiet.findViewById<TextView>(R.id.emptyDietTextView).text = getString(R.string.home_empty_message)
-                            binding.goToProfileFromDietButton.isVisible = true
+                    if (state.isRoutineLoading) {
+                        // 로딩 중일 때 숨김
+                        binding.dietRecyclerView.isVisible = false
+                        binding.emptyViewDiet.isVisible = false
+                    } else {
+                        // 로딩 완료 후:
+                        if (!hasDiets) { // 식단이 없을 때
+                            if (hasProfile) {
+                                // 프로필O, 식단X -> "오늘은 식단 없음" (임시 텍스트)
+                                binding.emptyViewDiet.findViewById<TextView>(R.id.emptyDietTextView).text = "오늘은 추천된 식단이 없습니다."
+                                binding.goToProfileFromDietButton.isVisible = false
+                            } else {
+                                // 프로필X, 식단X -> "개인정보 입력"
+                                binding.emptyViewDiet.findViewById<TextView>(R.id.emptyDietTextView).text = getString(R.string.home_empty_message)
+                                binding.goToProfileFromDietButton.isVisible = true
+                            }
                         }
                     }
 
