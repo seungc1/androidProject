@@ -60,8 +60,8 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             // [수정] 운동 데이터와 식단 데이터가 *모두* 있어야 유효한 캐시로 인정
             // 또한, 식단 데이터가 7일치 미만이면(예전 데이터면) 무시하고 새로 요청
             // ★ [추가] 운동 이름에 "(Day"가 포함되어 있으면(테스트용 잘못된 데이터) 무시하고 새로 요청
-            val hasInvalidData = localCache.any { workout -> 
-                workout.exercisesJson.contains("(Day") 
+            val hasInvalidData = localCache.any { workout ->
+                workout.exercisesJson.contains("(Day")
             }
 
             if (localCache.isNotEmpty() && localDietCache.size >= 7 && !hasInvalidData) {
@@ -87,10 +87,10 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                 if (remoteWorkouts.isNotEmpty() && remoteDiets.size >= 7 && !hasInvalidRemoteData) {
                     localDataSource.upsertWorkouts(remoteWorkouts.toWorkoutEntity(userId))
                     localDataSource.upsertScheduledDiets(remoteDiets.toDietEntity(userId)) // ✅ [추가]
-                    
+
                     emit(AIRecommendationResult(
-                        scheduledWorkouts = remoteWorkouts, 
-                        scheduledDiets = remoteDiets, 
+                        scheduledWorkouts = remoteWorkouts,
+                        scheduledDiets = remoteDiets,
                         overallSummary = "서버에서 불러옴"
                     ))
                     return@flow

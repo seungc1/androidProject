@@ -77,9 +77,12 @@ class RehabViewModel @Inject constructor(
                     _currentInjury.value = null
                 }
 
-                if (_uiState.value.fullRoutine.isEmpty()) {
-                    loadMainDashboardData(forceReload = false)
-                }
+                // [수정] 이 로직은 onResume()에서 처리하도록 하여 중복 로드를 방지합니다.
+                // if (_uiState.value.fullRoutine.isEmpty()) {
+                //     loadMainDashboardData(forceReload = false)
+                // }
+                // 대신, 초기 로딩 시 무조건 데이터를 로드하도록 변경
+                loadMainDashboardData(forceReload = false)
             }
         }
     }
@@ -97,6 +100,8 @@ class RehabViewModel @Inject constructor(
     // endregion
 
     // region [Dashboard Feature]
+
+    // ★★★ [수정 핵심] 날짜 기반 캐시 유효성 검사 로직 추가 ★★★
     fun loadMainDashboardData(forceReload: Boolean) {
         viewModelScope.launch {
             val user = _currentUser.value ?: return@launch
@@ -107,24 +112,47 @@ class RehabViewModel @Inject constructor(
             Log.d("REHAB_LOG", "로드 시점: 오늘 완료된 세션 수: ${todaySessions.size}")
             todaySessions.forEach { Log.d("REHAB_LOG", " - 완료 세션 ID: ${it.exerciseId}") }
 
-            if (!forceReload && _uiState.value.fullRoutine.isNotEmpty()) {
-                // [핵심] 2. 캐시된 루틴에 완료 기록을 반영합니다.
-                val todayExercises = filterTodayExercises(_uiState.value.fullRoutine, todaySessions)
+            // ★★★ [수정 핵심 시작] 캐시 유효성 검사 (날짜 포함) ★★★
+            val routineDateFormat = SimpleDateFormat("M월 d일 (E)", Locale.KOREA)
+            val todayString = routineDateFormat.format(Date())
+
+            val cachedRoutine = _uiState.value.fullRoutine
+
+            // 캐시가 유효한 조건:
+            // 1) forceReload가 아닐 것
+            // 2) 루틴이 비어있지 않을 것
+            // 3) 루틴의 첫 번째 scheduledDate가 '오늘 날짜'와 일치할 것 (날짜 유효성 검사)
+            val isRoutineCacheValid = !forceReload &&
+                    cachedRoutine.isNotEmpty() &&
+                    cachedRoutine.firstOrNull()?.scheduledDate == todayString &&
+                    cachedRoutine.size >= 7 // 루틴이 7일치 이상인지도 확인
+
+            if (isRoutineCacheValid) {
+                // [핵심] 캐시된 루틴에 완료 기록을 반영하고 UI 업데이트
+                val todayExercises = filterTodayExercises(cachedRoutine, todaySessions)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         todayExercises = todayExercises,
-                        isProfileComplete = isComplete
+                        isProfileComplete = isComplete,
+                        userName = user.name, // 사용자 정보는 최신 상태로 업데이트
+                        currentInjuryName = _currentInjury.value?.name,
+                        currentInjuryArea = _currentInjury.value?.bodyPart
                     )
                 }
-                Log.d("REHAB_LOG", "캐시 사용: 오늘의 운동 ${todayExercises.size}개 중 완료 ${todayExercises.count { it.isCompleted }}개 표시.")
+                Log.d("REHAB_LOG", "캐시 HIT: ${todayExercises.size}개의 운동을 캐시에서 표시. (날짜 유효)")
                 return@launch
             }
+            // ★★★ [수정 핵심 끝] ★★★
 
             try {
                 val injury = _currentInjury.value
-                workoutRoutineRepository.getWorkoutRoutine(forceReload, user, injury)
+
+                // 캐시가 유효하지 않으므로, AI/DB에서 강제로 새로 요청합니다. (forceReload = true로 호출)
+                // ★★★ 날짜가 바뀌면 forceReload를 true로 전달하여 무조건 새 루틴을 가져오도록 함 ★★★
+                workoutRoutineRepository.getWorkoutRoutine(true, user, injury)
                     .catch { e ->
+                        Log.e("REHAB_LOG", "AI 루틴 요청 중 오류 발생: ${e.message}")
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -151,7 +179,7 @@ class RehabViewModel @Inject constructor(
                             currentInjuryArea = injury?.bodyPart,
                             fullRoutine = aiResult.scheduledWorkouts,
                             todayExercises = updatedTodayExercises,
-                            recommendedDiets = filterTodayDiets(aiResult.scheduledDiets), // ✅ [수정] 오늘 식단만 필터링
+                            recommendedDiets = filterTodayDiets(aiResult.scheduledDiets), // ✅ 오늘 식단만 필터링
                             isProfileComplete = isComplete
                         )
                     }
@@ -161,6 +189,7 @@ class RehabViewModel @Inject constructor(
             }
         }
     }
+
 
     fun saveRehabSessionDetails(exerciseId: String, rating: Int, notes: String, isCompleted: Boolean) {
         viewModelScope.launch {
@@ -293,7 +322,7 @@ class RehabViewModel @Inject constructor(
         viewModelScope.launch {
             val user = _currentUser.value
             android.util.Log.d("DIET_RECORD", "recordDiet called: user=${user?.id}, foodName=$foodName")
-            
+
             if (user == null) {
                 android.util.Log.e("DIET_RECORD", "User is null, cannot save diet")
                 return@launch
@@ -371,16 +400,15 @@ class RehabViewModel @Inject constructor(
 
         Log.d("REHAB_LOG_MAP", "=== 매핑 시작 (오늘의 날짜: $todayString) ===")
 
-        Log.d("REHAB_LOG_MAP", "=== 매핑 시작 (오늘의 날짜: $todayString) ===")
-
         android.util.Log.d("RehabDebug", "Today: $todayString (Normalized: ${normalize(todayString)})")
         android.util.Log.d("RehabDebug", "FullRoutine Size: ${fullRoutine.size}")
-        fullRoutine.forEach { 
+        fullRoutine.forEach {
             android.util.Log.d("RehabDebug", "Routine Date: ${it.scheduledDate} (Normalized: ${normalize(it.scheduledDate)})")
         }
 
         val todayWorkout = fullRoutine.find {
-            normalize(it.scheduledDate).contains(normalize(todayString))
+            // 날짜만 비교하도록 수정
+            normalize(it.scheduledDate) == normalize(todayString)
         }
 
         if (todayWorkout == null) {

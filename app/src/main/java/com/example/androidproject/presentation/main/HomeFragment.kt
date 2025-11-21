@@ -48,7 +48,12 @@ class HomeFragment : Fragment() {
         setupClickListeners()
         observeViewModel()
     }
-
+    override fun onResume() {
+        super.onResume()
+        // forceReload=false로 호출하여 ViewModel에서 캐시 유효성을 검사하게 합니다.
+        // (날짜가 바뀌었는지 ViewModel이 판단하게 됩니다.)
+        viewModel.loadMainDashboardData(forceReload = false)
+    }
     private fun setupAdapters() {
         exerciseAdapter = ExerciseAdapter { exercise ->
             val action = HomeFragmentDirections.actionNavigationHomeToExerciseDetailFragment(
@@ -84,7 +89,7 @@ class HomeFragment : Fragment() {
             val action = HomeFragmentDirections.actionNavigationHomeToProfileEditFragment()
             findNavController().navigate(action)
         }
-        
+
         // [추가] 식단 기록 FAB 클릭 리스너
         binding.recordDietFab.setOnClickListener {
             DietRecordDialog().show(childFragmentManager, DietRecordDialog.TAG)
