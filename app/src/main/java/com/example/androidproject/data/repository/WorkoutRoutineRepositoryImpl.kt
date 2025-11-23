@@ -50,9 +50,45 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
 
             // 운동 데이터가 유효하지 않은지 확인하는 로직
             val hasInvalidData = localCache.any { workout ->
-                // 운동 JSON에 유효하지 않은 플래그가 포함되어 있는지 확인
+            // 운동 JSON에 유효하지 않은 플래그가 포함되어 있는지 확인
                 workout.exercisesJson.contains("(Day")
             }
+
+            // [Auto-Refill Logic] 미래의 식단 개수 확인
+            val dateFormat = java.text.SimpleDateFormat("M월 d일 (E)", java.util.Locale.KOREA)
+            val todayCal = java.util.Calendar.getInstance().apply {
+                set(java.util.Calendar.HOUR_OF_DAY, 0)
+                set(java.util.Calendar.MINUTE, 0)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }
+
+            val futureDietsCount = localDietCache.count { diet ->
+                try {
+                    val date = dateFormat.parse(diet.scheduledDate)
+                    if (date != null) {
+                        val dietCal = java.util.Calendar.getInstance().apply { time = date }
+                        // 연도 보정 (12월 -> 1월 넘어가는 경우 등) - 간단히 현재 연도 또는 내년으로 가정
+                        val currentYear = todayCal.get(java.util.Calendar.YEAR)
+                        val currentMonth = todayCal.get(java.util.Calendar.MONTH)
+                        val dietMonth = dietCal.get(java.util.Calendar.MONTH)
+
+                        var dietYear = currentYear
+                        if (currentMonth == 11 && dietMonth == 0) {
+                            dietYear += 1
+                        } else if (currentMonth == 0 && dietMonth == 11) {
+                            dietYear -= 1 // 혹시 과거 데이터일 경우
+                        }
+                        dietCal.set(java.util.Calendar.YEAR, dietYear)
+
+                        !dietCal.before(todayCal) // 오늘 포함 미래
+                    } else false
+                } catch (e: Exception) {
+                    false
+                }
+            }
+            
+            val needRefill = futureDietsCount < 2
 
             // [수정] localCache의 크기가 3 이상이고 유효한 데이터일 때만 캐시 히트로 판단합니다.
             if (localCache.size >= 3 && localDietCache.size >= 3 && !hasInvalidData) {
@@ -63,6 +99,10 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                 ))
                 android.util.Log.d("REPO_PERF", "2. 캐시 히트! 총 소요 시간: ${System.currentTimeMillis() - startTime}ms")
                 return@flow // 로컬 캐시 있으면 즉시 반환 (가장 빠른 경로)
+            } else {
+                if (needRefill) {
+                    android.util.Log.d("REPO_AUTO_REFILL", "식단 데이터 부족 (남은 일수: $futureDietsCount). AI 재요청을 시작합니다.")
+                }
             }
 
             // 캐시 미스 (사이즈 부족 또는 유효하지 않은 데이터)인 경우

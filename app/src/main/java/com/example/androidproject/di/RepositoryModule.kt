@@ -8,6 +8,7 @@ import com.example.androidproject.data.repository.UserRepositoryImpl
 import com.example.androidproject.data.repository.InjuryRepositoryImpl     // 👈 [추가]
 import com.example.androidproject.data.repository.DietRepositoryImpl      // 👈 [추가]
 import com.example.androidproject.data.repository.WorkoutRoutineRepositoryImpl // 👈 [추가]
+import com.example.androidproject.data.repository.AIApiRepositoryImpl // 👈 [추가]
 
 // (Domain Layer)
 import com.example.androidproject.domain.repository.DietSessionRepository
@@ -17,6 +18,7 @@ import com.example.androidproject.domain.repository.UserRepository
 import com.example.androidproject.domain.repository.InjuryRepository     // 👈 [추가]
 import com.example.androidproject.domain.repository.DietRepository      // 👈 [추가]
 import com.example.androidproject.domain.repository.WorkoutRoutineRepository // 👈 [추가]
+import com.example.androidproject.domain.repository.AIApiRepository // 👈 [추가]
 
 // (Dagger/Hilt)
 import dagger.Binds
@@ -72,4 +74,10 @@ abstract class RepositoryModule {
     abstract fun bindWorkoutRoutineRepository(
         workoutRoutineRepositoryImpl: WorkoutRoutineRepositoryImpl
     ): WorkoutRoutineRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAIApiRepository(
+        aiApiRepositoryImpl: AIApiRepositoryImpl
+    ): AIApiRepository
 }
