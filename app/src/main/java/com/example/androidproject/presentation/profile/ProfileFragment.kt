@@ -18,7 +18,7 @@ import com.example.androidproject.R
 import com.example.androidproject.databinding.FragmentProfileBinding
 import com.example.androidproject.presentation.auth.LoginActivity
 import com.example.androidproject.presentation.viewmodel.RehabViewModel
-import com.google.android.material.card.MaterialCardView // 이 import는 이제 사용되지 않을 가능성이 높으나, 레이아웃에 MaterialCardView가 남아있으므로 일단 유지
+import com.google.android.material.card.MaterialCardView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
@@ -60,17 +60,25 @@ class ProfileFragment : Fragment() {
             startActivity(intent)
             requireActivity().finish()
         }
+
+        // ====================================================================
+        // [수정: 개발용 버튼 숨기기 - 코드 유지, 가시성 GONE]
+        // ====================================================================
+
+        // [개발용] 지난 7일 기록 생성 버튼
         binding.generateTestDataButton.setOnClickListener {
             viewLifecycleOwner.lifecycleScope.launch {
                 viewModel.createTestHistory()
                 // 기록 생성 완료 후 메시지 표시
                 Toast.makeText(context, "✅ 지난 7일 테스트 기록이 생성되었습니다.", Toast.LENGTH_LONG).show()
 
-                // HistoryFragment는 onResume 시점에 데이터를 다시 로드하므로,
-                // 사용자가 기록 탭으로 이동하면 생성된 기록이 즉시 표시됩니다.
+                // 기록 생성 후 데이터 리로드 및 UI 업데이트 (필수)
+                // loadMainDashboardData를 호출하여 생성된 기록을 바탕으로 오늘의 운동 완료 상태를 다시 계산
             }
         }
+        binding.generateTestDataButton.visibility = View.GONE // 👈 숨김 처리
 
+        // [위험!] 계정의 모든 데이터 삭제 버튼
         binding.deleteAllDataButton.setOnClickListener {
             // 사용자에게 경고 메시지 표시 후 삭제 확인
             android.app.AlertDialog.Builder(requireContext())
@@ -86,7 +94,9 @@ class ProfileFragment : Fragment() {
                 .setNegativeButton("취소", null)
                 .show()
         }
+        binding.deleteAllDataButton.visibility = View.GONE // 👈 숨김 처리
 
+        // ====================================================================
 
         observeData()
     }

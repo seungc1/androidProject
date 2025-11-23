@@ -211,7 +211,7 @@ fun AIRecommendationResultDto.toDomain(): AIRecommendationResult {
     return AIRecommendationResult(
         scheduledWorkouts = emptyList(),
 
-        // ✅ [수정] 누락된 파라미터 추가 (필수!)
+        //  누락된 파라미터 추가
         scheduledDiets = emptyList(),
 
         overallSummary = "AI 추천을 불러오는 중입니다...",

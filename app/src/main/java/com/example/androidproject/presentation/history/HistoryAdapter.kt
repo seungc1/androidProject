@@ -71,14 +71,12 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     val session = item.session
 
                     // 1. 운동 이름: 기록된 운동 ID 대신 실제 운동 이름을 표시하도록 수정합니다.
-                    // --- 수정 시작 ---
                     val exerciseName = ExerciseCatalog.allExercises
                         .find { it.id == session.exerciseId } // ID로 카탈로그에서 운동을 찾습니다.
                         ?.name
                         ?: "알 수 없는 운동 (${session.exerciseId})" // 찾지 못하면 대체 텍스트를 사용합니다.
 
                     exerciseBinding.exerciseNameTextView.text = exerciseName
-                    // --- 수정 종료 ---
 
                     // 2. 상세 정보: 세트, 횟수, 만족도 결합
                     val ratingText = when (session.userRating) {

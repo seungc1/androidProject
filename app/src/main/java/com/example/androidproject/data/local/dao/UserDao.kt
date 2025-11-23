@@ -8,8 +8,7 @@ import com.example.androidproject.data.local.entity.UserEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * [수정 파일 7/8] 'UserDao'
- * (★ 추가 ★) '아이디' '중복' '확인' '쿼리' '추가'
+ * '아이디' '중복' '확인' '쿼리' '추가'
  */
 @Dao
 interface UserDao {
@@ -17,11 +16,11 @@ interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertUser(user: UserEntity)
 
-    // (기존) 'ID'로 '사용자' '조회'
+    // 'ID'로 '사용자' '조회'
     @Query("SELECT * FROM UserEntity WHERE id = :userId LIMIT 1")
     fun getUserById(userId: String) : Flow<UserEntity?>
 
-    // (★ 추가 ★) 'ID' '중복' '확인' '쿼리' ('회원가입'용)
+    // 'ID' '중복' '확인' '쿼리' ('회원가입'용)
     @Query("SELECT COUNT(*) FROM UserEntity WHERE id = :id")
     suspend fun getUserCountById(id: String): Int
 }

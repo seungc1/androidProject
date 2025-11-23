@@ -54,7 +54,6 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // 나머지 로직은 기존과 동일
             clearErrors(excludeUsername = true) // 중복 확인은 통과했으므로 제외
 
             val password = binding.passwordEditText.text.toString()
@@ -65,7 +64,7 @@ class SignupActivity : AppCompatActivity() {
 
         // 4. ViewModel의 결과 관찰
         observeSignupState()
-        observeDuplicationState() // ★★★ 신규 관찰 ★★★
+        observeDuplicationState()
     }
 
     private fun clearErrors(excludeUsername: Boolean = false) {
@@ -81,7 +80,7 @@ class SignupActivity : AppCompatActivity() {
         binding.usernameInputLayout.helperText = null
     }
 
-    // ★★★ [수정] 아이디 중복 확인 결과 처리 ★★★
+    // ★★★ 아이디 중복 확인 결과 처리 ★★★
     private fun observeDuplicationState() {
         viewModel.duplicationState.observe(this) { state ->
             // 로딩 상태에서만 버튼 비활성화 (UX 향상)

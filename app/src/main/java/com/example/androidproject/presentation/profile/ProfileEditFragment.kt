@@ -164,7 +164,6 @@ class ProfileEditFragment : Fragment() {
         }
     }
 
-    // ★★★ [수정] 다중 선택 다이얼로그 호출 로직 (버튼에 연결) ★★★
     private fun setupInjurySelectors() {
         // 1. 환부 선택 버튼 (selectInjuryAreaButton)에 리스너 연결
         binding.selectInjuryAreaButton.setOnClickListener {
