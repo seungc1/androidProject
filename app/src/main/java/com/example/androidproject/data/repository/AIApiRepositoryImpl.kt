@@ -1,19 +1,13 @@
 package com.example.androidproject.data.repository
 
 import com.example.androidproject.data.ExerciseCatalog
-// [추가] GptResponse, GptMessage, GptRequest 등 누락된 클래스들을 import 합니다.
 import com.example.androidproject.data.network.model.* // GptDtos.kt 파일에 정의된 클래스들
-
 import com.example.androidproject.domain.model.AIAnalysisResult
 import com.example.androidproject.domain.model.RehabData
 import com.example.androidproject.domain.model.AIRecommendationResult
 import com.example.androidproject.domain.model.RecommendationParams
 import com.example.androidproject.domain.repository.AIApiRepository
 import com.example.androidproject.data.network.GptApiService
-// import com.example.androidproject.data.network.model.GptMessage // 삭제됨 (상단 wildcard import로 대체)
-// import com.example.androidproject.data.network.model.GptRequest // 삭제됨
-// import com.example.androidproject.data.network.model.GptResponse // 삭제됨
-// import com.example.androidproject.data.network.model.ResponseFormat // 삭제됨
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -41,7 +35,6 @@ class AIApiRepositoryImpl @Inject constructor(
         )
 
         // ★★★ 429 오류 해결을 위한 재시도 로직 시작 ★★★
-        // [수정 2] API 재시도 횟수를 줄여 비용을 절감 (5 -> 3)
         val MAX_RETRIES = 3
         var delayTime = 1000L // 1초부터 시작
         var gptResponse: GptResponse? = null
@@ -67,7 +60,6 @@ class AIApiRepositoryImpl @Inject constructor(
                 delayTime *= 2
             }
         }
-        // ★★★ 429 오류 해결을 위한 재시도 로직 종료 ★★★
 
         // gptResponse의 필드에 접근 (choices, message, content)
         val jsonResponseString = gptResponse?.choices?.firstOrNull()?.message?.content
@@ -140,7 +132,7 @@ class AIApiRepositoryImpl @Inject constructor(
     }
 
     // =========================================================
-    // ★★★ 모든 헬퍼 함수는 클래스 내부로 이동됨 (오류 해결) ★★★
+    // ★★★ 헬퍼 함수들 (새로운 최소 운동 개수 규칙 추가) ★★★
     // =========================================================
 
     private fun createGptSystemPrompt(): String {
@@ -152,6 +144,7 @@ class AIApiRepositoryImpl @Inject constructor(
         1. You MUST respond in **Korean** (한국어).
         2. You MUST respond in a valid JSON format.
         3. The 'scheduledDate' MUST strictly follow the format "M월 d일 (E)" (e.g., "11월 20일 (수)").
+        4. Each day's plan within `scheduledWorkouts` MUST contain a minimum of 3 exercises. // 👈 최소 3개 운동 규칙 추가
         
         JSON Structure:
         {

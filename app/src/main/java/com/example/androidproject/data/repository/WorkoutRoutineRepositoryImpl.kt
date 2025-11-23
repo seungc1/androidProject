@@ -130,6 +130,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             pastSessions = pastSessions
         )
 
+        // 🚨 수정된 부분: Repository에서 ViewModel 상태를 업데이트하는 코드를 제거했습니다.
         aiApiRepository.getAIRehabAndDietRecommendation(recommendationParams)
             .collect { aiResult ->
                 Log.d("WorkoutRepo", "AI Generated: ${aiResult.scheduledWorkouts.size} workout days, ${aiResult.scheduledDiets.size} diet days")
