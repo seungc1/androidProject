@@ -5,20 +5,20 @@ import com.example.androidproject.data.repository.DietSessionRepositoryImpl
 import com.example.androidproject.data.repository.RehabRepositoryImpl
 import com.example.androidproject.data.repository.RehabSessionRepositoryImpl
 import com.example.androidproject.data.repository.UserRepositoryImpl
-import com.example.androidproject.data.repository.InjuryRepositoryImpl     // 👈 [추가]
-import com.example.androidproject.data.repository.DietRepositoryImpl      // 👈 [추가]
-import com.example.androidproject.data.repository.WorkoutRoutineRepositoryImpl // 👈 [추가]
-import com.example.androidproject.data.repository.AIApiRepositoryImpl // 👈 [추가]
+import com.example.androidproject.data.repository.InjuryRepositoryImpl
+import com.example.androidproject.data.repository.DietRepositoryImpl
+import com.example.androidproject.data.repository.WorkoutRoutineRepositoryImpl
+// import com.example.androidproject.data.repository.AIApiRepositoryImpl // 👈 이 import는 더 이상 필요하지 않습니다.
 
 // (Domain Layer)
 import com.example.androidproject.domain.repository.DietSessionRepository
 import com.example.androidproject.domain.repository.RehabRepository
 import com.example.androidproject.domain.repository.RehabSessionRepository
 import com.example.androidproject.domain.repository.UserRepository
-import com.example.androidproject.domain.repository.InjuryRepository     // 👈 [추가]
-import com.example.androidproject.domain.repository.DietRepository      // 👈 [추가]
-import com.example.androidproject.domain.repository.WorkoutRoutineRepository // 👈 [추가]
-import com.example.androidproject.domain.repository.AIApiRepository // 👈 [추가]
+import com.example.androidproject.domain.repository.InjuryRepository
+import com.example.androidproject.domain.repository.DietRepository
+import com.example.androidproject.domain.repository.WorkoutRoutineRepository
+// import com.example.androidproject.domain.repository.AIApiRepository // 👈 이 import는 bindAIApiRepository가 없으므로 필요하지 않습니다.
 
 // (Dagger/Hilt)
 import dagger.Binds
@@ -55,8 +55,6 @@ abstract class RepositoryModule {
         dietSessionRepositoryImpl: DietSessionRepositoryImpl
     ): DietSessionRepository
 
-    // 🚨 [추가] 3개의 새 Repository 바인딩
-
     @Binds
     @Singleton
     abstract fun bindInjuryRepository(
@@ -75,9 +73,12 @@ abstract class RepositoryModule {
         workoutRoutineRepositoryImpl: WorkoutRoutineRepositoryImpl
     ): WorkoutRoutineRepository
 
+    // 🚨🚨🚨 이 바인딩은 'src/debug'와 'src/release'의 AIApiModule에 의해 중복되므로 삭제합니다.
+    /*
     @Binds
     @Singleton
     abstract fun bindAIApiRepository(
         aiApiRepositoryImpl: AIApiRepositoryImpl
     ): AIApiRepository
+    */
 }

@@ -50,7 +50,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
 
             // 운동 데이터가 유효하지 않은지 확인하는 로직
             val hasInvalidData = localCache.any { workout ->
-            // 운동 JSON에 유효하지 않은 플래그가 포함되어 있는지 확인
+                // 운동 JSON에 유효하지 않은 플래그가 포함되어 있는지 확인
                 workout.exercisesJson.contains("(Day")
             }
 
@@ -87,7 +87,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                     false
                 }
             }
-            
+
             val needRefill = futureDietsCount < 2
 
             // [수정] localCache의 크기가 3 이상이고 유효한 데이터일 때만 캐시 히트로 판단합니다.
@@ -141,6 +141,8 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
         // [자동 동기화] forceReload가 true이거나 캐시 미스(size < 3) 시, API 호출 전에 캐시를 비웁니다.
         if (forceApiCall) {
             android.util.Log.d("DEBUG_DELETE", "Repository: [API CALL NECESSARY] 로컬/서버 데이터 삭제 시도")
+            // 🚨🚨🚨 [수정] API 호출 실패 시 데이터 유실 방지를 위해 삭제 로직을 주석 처리 (캐싱 로직의 치명적 결함 수정)
+            /*
             // 로컬 데이터 삭제
             localDataSource.clearScheduledWorkouts(userId)
             localDataSource.clearScheduledDiets(userId)
@@ -152,6 +154,8 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
             } catch (e: Exception) {
                 android.util.Log.e("DEBUG_DELETE", "Repository: 서버 삭제 중 에러 발생: ${e.message}")
             }
+            */
+            // 🚨🚨🚨
         }
 
         // 3. AI에게 새 루틴 요청
@@ -178,7 +182,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                 if (aiResult.scheduledWorkouts.isNotEmpty()) {
                     val entities = aiResult.scheduledWorkouts.toWorkoutEntity(userId)
 
-                    // 로컬 저장 (이 시점에 캐시가 이미 삭제되었으므로, 새 루틴으로 완전히 교체됩니다.)
+                    // 로컬 저장
                     localDataSource.upsertWorkouts(entities)
                     localDataSource.upsertScheduledDiets(aiResult.scheduledDiets.toDietEntity(userId))
 
@@ -200,6 +204,7 @@ class WorkoutRoutineRepositoryImpl @Inject constructor(
                     val localBackup = localDataSource.getWorkouts(userId).first()
                     val localDietBackup = localDataSource.getScheduledDiets(userId).first()
 
+                    // AI 실패 시 기존 데이터를 삭제하지 않았다면 로컬 백업을 시도합니다.
                     if (localBackup.isNotEmpty()) {
                         emit(AIRecommendationResult(
                             scheduledWorkouts = localBackup.toDomainWorkouts(),
