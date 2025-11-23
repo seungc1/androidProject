@@ -25,7 +25,6 @@ object DatabaseModule {
             AppDatabase::class.java,
             "rehab_ai_db"
         )
-            // (DB 버전이 2->3으로 올라갔으므로, 기존 DB는 삭제하고 새로 만듭니다)
             .fallbackToDestructiveMigration()
             .build()
     }

@@ -7,7 +7,6 @@ import com.google.gson.reflect.TypeToken
 import java.util.Date
 
 class TypeConverters {
-    // (기존) Date <-> Long 변환기
     @TypeConverter
     fun fromTimestamp(value: Long?): Date? {
         return value?.let { Date(it) }

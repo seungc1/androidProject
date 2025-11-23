@@ -25,7 +25,6 @@ class AIApiRepositoryImpl @Inject constructor(
         val userPrompt = createGptUserPrompt(params)
 
         val request = GptRequest(
-            // [수정 1] 모델을 더 저렴한 버전으로 변경 (gpt-4-turbo -> gpt-3.5-turbo)
             model = "gpt-3.5-turbo",
             messages = listOf(
                 GptMessage(role = "system", content = systemPrompt),
@@ -34,7 +33,6 @@ class AIApiRepositoryImpl @Inject constructor(
             response_format = ResponseFormat(type = "json_object")
         )
 
-        // ★★★ 429 오류 해결을 위한 재시도 로직 시작 ★★★
         val MAX_RETRIES = 3
         var delayTime = 1000L // 1초부터 시작
         var gptResponse: GptResponse? = null
@@ -90,7 +88,6 @@ class AIApiRepositoryImpl @Inject constructor(
         )
 
         // ★★★ 429 오류 해결을 위한 재시도 로직 시작 (analyzeProgress) ★★★
-        // [수정 2] API 재시도 횟수를 줄여 비용을 절감 (5 -> 3)
         val MAX_RETRIES = 3
         var delayTime = 1000L
         var gptResponse: GptResponse? = null
