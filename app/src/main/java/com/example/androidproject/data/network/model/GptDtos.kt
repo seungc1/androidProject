@@ -6,7 +6,8 @@ package com.example.androidproject.data.network.model
 data class GptRequest(
     val model: String,
     val messages: List<GptMessage>,
-    val response_format: ResponseFormat? = null // JSON 모드 요청
+    val response_format: ResponseFormat? = null, // JSON 모드 요청
+    val max_tokens: Int? = null // 최대 토큰 수 제한
 )
 
 /**
