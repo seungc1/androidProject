@@ -1,19 +1,21 @@
 package com.example.androidproject.data.repository
 
 import com.example.androidproject.data.ExerciseCatalog
+import com.example.androidproject.data.network.model.* // GptDtos.kt 파일에 정의된 클래스들
 import com.example.androidproject.domain.model.AIAnalysisResult
 import com.example.androidproject.domain.model.RehabData
 import com.example.androidproject.domain.model.AIRecommendationResult
 import com.example.androidproject.domain.model.RecommendationParams
+import com.example.androidproject.domain.model.ScheduledWorkout
+import com.example.androidproject.domain.model.ScheduledDiet
 import com.example.androidproject.domain.repository.AIApiRepository
 import com.example.androidproject.data.network.GptApiService
-import com.example.androidproject.data.network.model.GptMessage
-import com.example.androidproject.data.network.model.GptRequest
-import com.example.androidproject.data.network.model.ResponseFormat
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.delay
 import javax.inject.Inject
+import android.util.Log
 
 class AIApiRepositoryImpl @Inject constructor(
     private val gptApiService: GptApiService,
@@ -21,28 +23,124 @@ class AIApiRepositoryImpl @Inject constructor(
 ) : AIApiRepository {
 
     override suspend fun getAIRehabAndDietRecommendation(params: RecommendationParams): Flow<AIRecommendationResult> = flow {
+        // ★★★ 토큰 제한 해결: 운동과 식단을 별도로 요청 ★★★
 
-        val systemPrompt = createGptSystemPrompt()
-        val userPrompt = createGptUserPrompt(params)
+        try {
+            // 1. 운동 계획 요청
+            val workoutsResult = fetchWorkouts(params)
+            Log.d("AIApiRepo", "운동 계획 수신 완료: ${workoutsResult.size}일치")
+
+            // 2. 식단 계획 요청
+            val dietsResult = fetchDiets(params)
+            Log.d("AIApiRepo", "식단 계획 수신 완료: ${dietsResult.size}일치")
+
+            // 3. 결과 합치기
+            emit(AIRecommendationResult(
+                scheduledWorkouts = workoutsResult,
+                scheduledDiets = dietsResult,
+                overallSummary = "AI 맞춤 재활 및 식단 계획이 생성되었습니다.",
+                disclaimer = "본 추천은 AI에 의해 생성되었으며, 전문 의료인의 진단 및 조언을 대체할 수 없습니다."
+            ))
+
+        } catch (e: Exception) {
+            Log.e("AIApiRepo", "AI 추천 생성 실패: ${e.message}")
+            // 🚨 [수정] Unresolved reference 오류 해결을 위해 함수 호출
+            emit(createErrorResult("AI 추천을 생성하는 데 실패했습니다. (오류: ${e.message})"))
+        }
+    }
+
+    // ★★★ 운동 계획만 요청하는 함수 ★★★
+    private suspend fun fetchWorkouts(params: RecommendationParams): List<ScheduledWorkout> {
+        val systemPrompt = createWorkoutSystemPrompt()
+        val userPrompt = createWorkoutUserPrompt(params)
 
         val request = GptRequest(
-            model = "gpt-4-turbo", // 모델 확인 (권한 없으면 gpt-3.5-turbo로 변경)
+            model = "gpt-3.5-turbo",
             messages = listOf(
                 GptMessage(role = "system", content = systemPrompt),
                 GptMessage(role = "user", content = userPrompt)
             ),
-            response_format = ResponseFormat(type = "json_object")
+            response_format = ResponseFormat(type = "json_object"),
+            max_tokens = 3000
         )
 
-        val gptResponse = gptApiService.getChatCompletion(request = request)
-        val jsonResponseString = gptResponse.choices.firstOrNull()?.message?.content
+        val MAX_RETRIES = 3
+        var delayTime = 1000L
+        var gptResponse: GptResponse? = null
+        var lastException: Exception? = null
 
-        if (jsonResponseString != null) {
-            val aiResult = parseGptResponseToAIRecommendationResult(jsonResponseString)
-            emit(aiResult)
-        } else {
-            emit(createErrorResult("AI 응답이 비어있습니다."))
+        for (attempt in 1..MAX_RETRIES) {
+            try {
+                gptResponse = gptApiService.getChatCompletion(request = request)
+                Log.d("AIApiRepo", "운동 API 요청 성공 (시도 $attempt)")
+                break
+            } catch (e: Exception) {
+                lastException = e
+                Log.w("AIApiRepo", "운동 API 요청 실패 (시도 $attempt/$MAX_RETRIES): ${e.message}")
+                if (attempt == MAX_RETRIES) {
+                    Log.e("AIApiRepo", "운동 API 요청 최종 실패: ${e.message}")
+                    throw e
+                }
+                delay(delayTime)
+                delayTime *= 2
+            }
         }
+
+        val jsonResponseString = gptResponse?.choices?.firstOrNull()?.message?.content
+        // 🚨 [수정] 널 안정성 강화: 널이면 즉시 예외 발생
+            ?: throw Exception("운동 API 응답이 비어있습니다.")
+
+        Log.d("AIApiRepo", "운동 Raw JSON Response: $jsonResponseString")
+        val cleanJson = jsonResponseString.replace(Regex("^```json\\s*|\\s*```$"), "").trim()
+
+        return parseWorkoutsResponse(cleanJson)
+    }
+
+    // ★★★ 식단 계획만 요청하는 함수 ★★★
+    private suspend fun fetchDiets(params: RecommendationParams): List<ScheduledDiet> {
+        val systemPrompt = createDietSystemPrompt()
+        val userPrompt = createDietUserPrompt(params)
+
+        val request = GptRequest(
+            model = "gpt-3.5-turbo",
+            messages = listOf(
+                GptMessage(role = "system", content = systemPrompt),
+                GptMessage(role = "user", content = userPrompt)
+            ),
+            response_format = ResponseFormat(type = "json_object"),
+            max_tokens = 4000
+        )
+
+        val MAX_RETRIES = 3
+        var delayTime = 1000L
+        var gptResponse: GptResponse? = null
+        var lastException: Exception? = null
+
+        for (attempt in 1..MAX_RETRIES) {
+            try {
+                gptResponse = gptApiService.getChatCompletion(request = request)
+                Log.d("AIApiRepo", "식단 API 요청 성공 (시도 $attempt)")
+                break
+            } catch (e: Exception) {
+                lastException = e
+                Log.w("AIApiRepo", "식단 API 요청 실패 (시도 $attempt/$MAX_RETRIES): ${e.message}")
+                if (attempt == MAX_RETRIES) {
+                    Log.e("AIApiRepo", "식단 API 요청 최종 실패: ${e.message}")
+                    throw e
+                }
+                delay(delayTime)
+                delayTime *= 2
+            }
+        }
+
+        val jsonResponseString = gptResponse?.choices?.firstOrNull()?.message?.content
+        // 🚨 [수정] 널 안정성 강화: 널이면 즉시 예외 발생
+            ?: throw Exception("식단 API 응답이 비어있습니다.")
+
+        Log.d("AIApiRepo", "식단 Raw JSON Response: $jsonResponseString")
+        val cleanJson = jsonResponseString.replace(Regex("^```json\\s*|\\s*```$"), "").trim()
+
+        return parseDietsResponse(cleanJson)
     }
 
     override suspend fun analyzeRehabProgress(rehabData: RehabData): Flow<AIAnalysisResult> = flow {
@@ -50,7 +148,8 @@ class AIApiRepositoryImpl @Inject constructor(
         val userPrompt = createAnalysisUserPrompt(rehabData)
 
         val request = GptRequest(
-            model = "gpt-4-turbo",
+            // [수정 1] 모델을 더 저렴한 버전으로 변경 (gpt-4-turbo -> gpt-3.5-turbo)
+            model = "gpt-3.5-turbo",
             messages = listOf(
                 GptMessage(role = "system", content = systemPrompt),
                 GptMessage(role = "user", content = userPrompt)
@@ -58,26 +157,54 @@ class AIApiRepositoryImpl @Inject constructor(
             response_format = ResponseFormat(type = "json_object")
         )
 
-        val gptResponse = gptApiService.getChatCompletion(request = request)
-        val jsonResponseString = gptResponse.choices.firstOrNull()?.message?.content
+        // ★★★ 429 오류 해결을 위한 재시도 로직 시작 (analyzeProgress) ★★★
+        val MAX_RETRIES = 3
+        var delayTime = 1000L
+        var gptResponse: GptResponse? = null
+        var lastException: Exception? = null
+
+        for (attempt in 1..MAX_RETRIES) {
+            try {
+                // 실제 API 호출
+                gptResponse = gptApiService.getChatCompletion(request = request)
+                Log.d("AIApiRepo", "AI 분석 요청 성공 (시도 $attempt)")
+                break
+            } catch (e: Exception) {
+                lastException = e
+                Log.w("AIApiRepo", "AI 분석 요청 실패 (시도 $attempt/$MAX_RETRIES): ${e.message}")
+
+                if (attempt == MAX_RETRIES) {
+                    Log.e("AIApiRepo", "AI 분석 요청 최종 실패: ${e.message}")
+                    break
+                }
+
+                // 지수 백오프: 다음 시도 전까지 대기 시간을 두 배로 늘립니다.
+                delay(delayTime)
+                delayTime *= 2
+            }
+        }
+        // ★★★ 429 오류 해결을 위한 재시도 로직 종료 (analyzeProgress) ★★★
+
+        val jsonResponseString = gptResponse?.choices?.firstOrNull()?.message?.content
 
         if (jsonResponseString != null) {
             val analysisResult = parseGptResponseToAIAnalysisResult(jsonResponseString)
             emit(analysisResult)
+        } else if (lastException != null) {
+            // 재시도 후에도 최종적으로 실패한 경우 오류 반환
+            emit(createErrorAnalysisResult("AI 분석 응답을 가져오는 데 최종 실패했습니다. (오류: ${lastException.message})"))
         } else {
             emit(createErrorAnalysisResult("AI 분석 응답이 비어있습니다."))
         }
-
     }
-    /**
-     * (★ 수정 ★) AI 추천용 시스템 프롬프트
-     * - JSON 구조에서 imageUrl 필드 제거
-     * - 한국어 응답 강제 및 날짜 포맷 엄격 지정
-     */
-    private fun createGptSystemPrompt(): String {
+
+    // =========================================================
+    // ★★★ 헬퍼 함수들 (주요 로직) ★★★
+    // =========================================================
+
+    private fun createWorkoutSystemPrompt(): String {
         return """
-        You are a long-term rehabilitation planner AI.
-        Your goal is to create a systematic, multi-day workout plan (e.g., 5-7 days) that adapts to the user's progress.
+        You are a rehabilitation workout planner AI.
         
         🚨 IMPORTANT INSTRUCTIONS:
         1. You MUST respond in **Korean** (한국어).
@@ -92,113 +219,134 @@ class AIApiRepositoryImpl @Inject constructor(
               "exercises": [
                 {
                   "name": "String (MUST match the name in AVAILABLE EXERCISES CATALOG)",
-                  "description": "String (New detailed description based on user's injury/notes)",
+                  "description": "String (Detailed description based on user's injury)",
                   "bodyPart": "String",
                   "sets": "Int",
                   "reps": "Int",
                   "difficulty": "String (초급, 중급, 고급)",
                   "aiRecommendationReason": "String"
-                  // imageUrl 필드는 앱에서 로컬로 처리하므로 제거되었습니다.
                 }
               ]
             }
-          ],
-          "recommendedDiets": [
-            {
-              "mealType": "String (아침, 점심, 저녁, 간식)",
-              "foodItems": ["String", "String"],
-              "ingredients": ["String", "String"],
-              "calories": "Double?",
-              "proteinGrams": "Double?",
-              "carbs": "Double?",
-              "fats": "Double?",
-              "aiRecommendationReason": "String"
-            }
-          ],
-          "overallSummary": "String (Korean summary)",
-          "disclaimer": "String"
+          ]
         }
         Ensure the response is ONLY the valid JSON object.
     """.trimIndent()
     }
 
-    /**
-     * (★ 수정 ★) 사용자 정보 전달 프롬프트
-     * - 오늘 날짜 포함
-     * - 운동 카탈로그 JSON 포함 및 해당 목록에서만 운동을 선택하도록 강제
-     */
-    private fun createGptUserPrompt(params: RecommendationParams): String {
-        val pastSessionsJson = gson.toJson(params.pastSessions)
-
-        // (중요) 오늘 날짜 구하기 (앱과 동일한 포맷 사용)
+    private fun createWorkoutUserPrompt(params: RecommendationParams): String {
         val todayDate = java.text.SimpleDateFormat("M월 d일 (E)", java.util.Locale.KOREA).format(java.util.Date())
-
-        // ★★★ 운동 카탈로그 JSON 가져오기 ★★★
         val exerciseCatalogJson = ExerciseCatalog.getExercisesJson()
 
         return """
-            Here is the user's information and past performance:
-            
-            1. User Profile (Static):
-            User ID: ${params.userId}
-            Age: ${params.age}
-            Gender: ${params.gender}
-            Height: ${params.heightCm} cm
-            Weight: ${params.weightKg} kg
+            User Profile:
+            Age: ${params.age}, Gender: ${params.gender}
+            Height: ${params.heightCm} cm, Weight: ${params.weightKg} kg
             Injury Area: ${params.injuryArea ?: "None"}
             Injury Type: ${params.injuryType ?: "N/A"}
             Injury Severity: ${params.injurySeverity ?: "N/A"}
             Additional Notes: ${params.additionalNotes ?: "None"}
-
-            2. Past Performance (Learning Data):
-            $pastSessionsJson
+            Past Sessions (for AI learning): ${gson.toJson(params.pastSessions)}
 
             🚨 [CRITICAL INSTRUCTION] 🚨
             Today is "$todayDate".
             
-            3. AVAILABLE EXERCISES CATALOG (You MUST select the 'name' field ONLY from this list):
+            AVAILABLE EXERCISES CATALOG (You MUST select the 'name' field ONLY from this list):
             $exerciseCatalogJson
 
-            You MUST strictly adhere to the following rules for generating 'scheduledWorkouts':
-            - The 'scheduledDate' MUST start from Today ("$todayDate").
-            - The 'name' field in your JSON output **MUST EXACTLY** match an entry in the 'AVAILABLE EXERCISES CATALOG' (Korean name).
-            - The 'description', 'sets', 'reps', and 'aiRecommendationReason' fields must be newly generated based on the user's profile and injury condition.
-
-            Based on ALL this data, create a new multi-day workout plan starting from "$todayDate".
+            Rules:
+            - The 'scheduledDate' of the FIRST item MUST BE "$todayDate".
+            - The 'name' field **MUST EXACTLY** match an entry in the AVAILABLE EXERCISES CATALOG (Korean name).
+            - Generate a **7-day workout plan** starting from "$todayDate".
+            - Each day MUST contain a minimum of 3 exercises and a maximum of 5, appropriate for the user's injury. // 👈 최소 3개 운동 규칙 적용
         """.trimIndent()
     }
 
-    /**
-     * (기존) 추천 결과(JSON) 파싱
-     */
-    private fun parseGptResponseToAIRecommendationResult(gptResponse: String): AIRecommendationResult {
+    private fun createDietSystemPrompt(): String {
+        return """
+        You are a nutrition and diet planner AI for rehabilitation patients.
+        
+        🚨 IMPORTANT INSTRUCTIONS:
+        1. You MUST respond in **Korean** (한국어).
+        2. You MUST respond in a valid JSON format.
+        3. The 'scheduledDate' MUST strictly follow the format "M월 d일 (E)" (e.g., "11월 20일 (수)").
+        4. Keep 'aiRecommendationReason' VERY SHORT (maximum 10-15 characters in Korean).
+        
+        JSON Structure:
+        {
+          "scheduledDiets": [
+            {
+              "scheduledDate": "String (Format: 'M월 d일 (E)', example: '11월 20일 (수)')",
+              "meals": [
+                {
+                  "mealType": "String (아침, 점심, 저녁, 간식)",
+                  "foodItems": ["String"],
+                  "ingredients": ["String"],
+                  "calories": "Double",
+                  "proteinGrams": "Double",
+                  "carbs": "Double",
+                  "fats": "Double",
+                  "aiRecommendationReason": "String (MUST be very short, e.g., '단백질 보충', '에너지 공급')"
+                }
+              ]
+            }
+          ]
+        }
+        Ensure the response is ONLY the valid JSON object.
+    """.trimIndent()
+    }
+
+    private fun createDietUserPrompt(params: RecommendationParams): String {
+        val todayDate = java.text.SimpleDateFormat("M월 d일 (E)", java.util.Locale.KOREA).format(java.util.Date())
+
+        return """
+            User Profile:
+            Age: ${params.age}, Gender: ${params.gender}
+            Height: ${params.heightCm} cm, Weight: ${params.weightKg} kg
+            Dietary Preferences: ${params.dietaryPreferences ?: "None"}
+            Allergies: ${params.allergies ?: "None"}
+            Injury Area: ${params.injuryArea ?: "None"}
+
+            🚨 [CRITICAL INSTRUCTION] 🚨
+            Today is "$todayDate".
+            
+            Rules:
+            - The 'scheduledDate' of the FIRST item MUST BE "$todayDate".
+            - Generate a **7-day diet plan** starting from "$todayDate".
+            - Each day should have 3 meals (아침, 점심, 저녁 only - NO 간식).
+            - You MUST provide a **different** menu for each day. Do NOT repeat the same meals.
+            - Keep 'aiRecommendationReason' EXTREMELY SHORT (e.g., "단백질 보충", "에너지 공급", "회복 지원").
+            - Consider the user's dietary preferences and allergies.
+            - Focus on nutrition that supports rehabilitation and recovery.
+        """.trimIndent()
+    }
+
+    // 운동 응답 파싱
+    private fun parseWorkoutsResponse(jsonResponse: String): List<ScheduledWorkout> {
         try {
-            val result = gson.fromJson(gptResponse, AIRecommendationResult::class.java)
-            return result.copy(
-                scheduledWorkouts = result.scheduledWorkouts ?: emptyList(),
-                disclaimer = result.disclaimer.ifEmpty { "본 추천은 AI에 의해 생성되었으며, 전문 의료인의 진단 및 조언을 대체할 수 없습니다." }
-            )
+            data class WorkoutResponse(val scheduledWorkouts: List<ScheduledWorkout>)
+            val response = gson.fromJson(jsonResponse, WorkoutResponse::class.java)
+            return response.scheduledWorkouts
         } catch (e: Exception) {
             e.printStackTrace()
-            return createErrorResult("GPT 응답 JSON 파싱 실패: ${e.message}")
+            Log.e("AIApiRepo", "운동 JSON 파싱 실패: ${e.message}")
+            throw Exception("운동 데이터 파싱 실패: ${e.message}")
         }
     }
 
-    /**
-     * (기존) 추천 오류 결과 생성
-     */
-    private fun createErrorResult(message: String): AIRecommendationResult {
-        return AIRecommendationResult(
-            scheduledWorkouts = emptyList(),
-            recommendedDiets = emptyList(),
-            overallSummary = message,
-            disclaimer = "오류가 발생했습니다."
-        )
+    // 식단 응답 파싱
+    private fun parseDietsResponse(jsonResponse: String): List<ScheduledDiet> {
+        try {
+            data class DietResponse(val scheduledDiets: List<ScheduledDiet>)
+            val response = gson.fromJson(jsonResponse, DietResponse::class.java)
+            return response.scheduledDiets
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Log.e("AIApiRepo", "식단 JSON 파싱 실패: ${e.message}")
+            throw Exception("식단 데이터 파싱 실패: ${e.message}")
+        }
     }
 
-    /**
-     * (기존) AI 분석용 시스템 프롬프트 (한국어 출력 강제)
-     */
     private fun createAnalysisSystemPrompt(): String {
         return """
             You are a professional rehabilitation analyst.
@@ -221,9 +369,6 @@ class AIApiRepositoryImpl @Inject constructor(
         """.trimIndent()
     }
 
-    /**
-     * (기존) AI 분석용 사용자 데이터 프롬프트
-     */
     private fun createAnalysisUserPrompt(rehabData: RehabData): String {
         val sessionsJson = gson.toJson(rehabData.pastRehabSessions)
         val dietSessionsJson = gson.toJson(rehabData.pastDietSessions)
@@ -244,9 +389,6 @@ class AIApiRepositoryImpl @Inject constructor(
         """.trimIndent()
     }
 
-    /**
-     * (기존) AI 분석 응답(JSON) 파싱
-     */
     private fun parseGptResponseToAIAnalysisResult(gptResponse: String): AIAnalysisResult {
         try {
             return gson.fromJson(gptResponse, AIAnalysisResult::class.java)
@@ -256,9 +398,17 @@ class AIApiRepositoryImpl @Inject constructor(
         }
     }
 
-    /**
-     * (기존) AI 분석 오류 결과 생성
-     */
+    // 🚨 [수정] Unresolved reference 'createErrorResult' 오류 해결을 위해 함수를 명확히 정의합니다.
+    private fun createErrorResult(message: String): AIRecommendationResult {
+        return AIRecommendationResult(
+            scheduledWorkouts = emptyList(),
+            scheduledDiets = emptyList(),
+            overallSummary = message,
+            disclaimer = "오류가 발생했습니다."
+        )
+    }
+
+    // 🚨 [수정] Unresolved reference 'createErrorAnalysisResult' 오류 해결을 위해 함수를 명확히 정의합니다.
     private fun createErrorAnalysisResult(message: String): AIAnalysisResult {
         return AIAnalysisResult(
             summary = message,

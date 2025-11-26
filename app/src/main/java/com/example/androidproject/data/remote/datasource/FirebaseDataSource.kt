@@ -8,6 +8,7 @@ import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import javax.inject.Inject
+import android.util.Log
 
 class FirebaseDataSource @Inject constructor(
     private val auth: FirebaseAuth,
@@ -109,6 +110,7 @@ class FirebaseDataSource @Inject constructor(
      * ★★★ [수정] 서버 권한/네트워크 오류에 대한 try-catch 추가 (오류를 다시 던짐) ★★★
      */
     suspend fun checkUserExistsRemote(username: String): Boolean {
+        android.util.Log.d("DUPLICATION_CHECK", "Checking remote for username: $username")
         return try {
             // 'users' 컬렉션에서 'originalId'가 일치하는 문서가 있는지 쿼리
             val snapshot = firestore.collection("users")
@@ -116,8 +118,12 @@ class FirebaseDataSource @Inject constructor(
                 .limit(1)
                 .get()
                 .await()
-            return !snapshot.isEmpty
+            
+            val exists = !snapshot.isEmpty
+            android.util.Log.d("DUPLICATION_CHECK", "Remote result for $username: $exists (docs: ${snapshot.size()})")
+            return exists
         } catch (e: Exception) {
+            android.util.Log.e("DUPLICATION_CHECK", "Remote check failed: ${e.message}")
             // FirebaseFirestoreException (PERMISSION_DENIED 등) 발생 시, 오류를 던져 ViewModel에서 NetworkError로 처리하게 함
             throw e
         }
@@ -172,6 +178,7 @@ class FirebaseDataSource @Inject constructor(
             "notes" to session.notes
         )
         getUserDocRef(uid).collection("rehab_sessions").document(session.id).set(data).await()
+        Log.d("REHAB_LOG_FIREBASE", "Firestore 저장 완료: ID=${session.exerciseId}, Time=${session.dateTime}")
     }
 
     suspend fun getRehabHistory(userId: String): List<RehabSession> {
@@ -223,7 +230,11 @@ class FirebaseDataSource @Inject constructor(
     // ------------------------------------------------------------------------
 
     suspend fun addDietSession(session: DietSession) {
+        android.util.Log.d("FIREBASE_DS", "addDietSession called: userId=${session.userId}, foodName=${session.foodName}")
+        
         val uid = getUid(session.userId)
+        android.util.Log.d("FIREBASE_DS", "Got UID: $uid")
+        
         val data = hashMapOf(
             "id" to session.id,
             "userId" to session.userId,
@@ -232,9 +243,20 @@ class FirebaseDataSource @Inject constructor(
             "actualQuantity" to session.actualQuantity,
             "actualUnit" to session.actualUnit,
             "userSatisfaction" to session.userSatisfaction,
-            "notes" to session.notes
+            "notes" to session.notes,
+            "foodName" to session.foodName, // [추가] 사용자 입력 음식 이름
+            "photoUrl" to session.photoUrl // [추가] 사진 경로
         )
-        getUserDocRef(uid).collection("diet_sessions").document(session.id).set(data).await()
+        
+        android.util.Log.d("FIREBASE_DS", "Data to save: $data")
+        
+        try {
+            getUserDocRef(uid).collection("diet_sessions").document(session.id).set(data).await()
+            android.util.Log.d("FIREBASE_DS", "Firebase save successful for session: ${session.id}")
+        } catch (e: Exception) {
+            android.util.Log.e("FIREBASE_DS", "Firebase save failed: ${e.message}", e)
+            throw e
+        }
     }
 
     suspend fun getDietHistory(userId: String): List<DietSession> {
@@ -252,7 +274,9 @@ class FirebaseDataSource @Inject constructor(
                 actualQuantity = doc.getDouble("actualQuantity") ?: 0.0,
                 actualUnit = doc.getString("actualUnit") ?: "",
                 userSatisfaction = doc.getLong("userSatisfaction")?.toInt(),
-                notes = doc.getString("notes")
+                notes = doc.getString("notes"),
+                foodName = doc.getString("foodName"), // [추가] 음식 이름 읽기
+                photoUrl = doc.getString("photoUrl") // [추가] 사진 경로 읽기
             )
         }
     }
@@ -313,6 +337,58 @@ class FirebaseDataSource @Inject constructor(
         }
     }
 
+    // ✅ [추가] 식단 관련 Firebase 메서드
+
+    suspend fun upsertScheduledDiets(userId: String, diets: List<ScheduledDiet>) {
+        val uid = getUid(userId)
+        val batch = firestore.batch()
+        val collectionRef = getUserDocRef(uid).collection("scheduled_diets")
+
+        diets.forEach { diet ->
+            val docRef = collectionRef.document(diet.scheduledDate.replace(" ", "_"))
+
+            val data = hashMapOf(
+                "scheduledDate" to diet.scheduledDate,
+                "meals" to diet.meals
+            )
+            batch.set(docRef, data)
+        }
+        batch.commit().await()
+    }
+
+    suspend fun getScheduledDiets(userId: String): List<ScheduledDiet> {
+        val uid = getUid(userId)
+        val snapshot = getUserDocRef(uid).collection("scheduled_diets").get().await()
+
+        return snapshot.documents.mapNotNull { doc ->
+            val date = doc.getString("scheduledDate") ?: return@mapNotNull null
+            val mealsList = doc.get("meals") as? List<Map<String, Any>> ?: emptyList()
+
+            val meals = mealsList.map { map ->
+                DietRecommendation(
+                    mealType = map["mealType"] as? String ?: "",
+                    foodItems = (map["foodItems"] as? List<String>) ?: emptyList(),
+                    calories = (map["calories"] as? Number)?.toDouble(),
+                    proteinGrams = (map["proteinGrams"] as? Number)?.toDouble(),
+                    carbs = (map["carbs"] as? Number)?.toDouble(),
+                    fats = (map["fats"] as? Number)?.toDouble(),
+                    ingredients = (map["ingredients"] as? List<String>) ?: emptyList(),
+                    aiRecommendationReason = map["aiRecommendationReason"] as? String
+                )
+            }
+            ScheduledDiet(date, meals)
+        }
+    }
+
+    suspend fun clearScheduledDiets(userId: String) {
+        val uid = getUid(userId)
+        val collectionRef = getUserDocRef(uid).collection("scheduled_diets")
+        val snapshot = collectionRef.get().await()
+        val batch = firestore.batch()
+        snapshot.documents.forEach { batch.delete(it.reference) }
+        batch.commit().await()
+    }
+
 // -----------------------------------------------------------------------
 // 6. AI 분석 캐시 (Analysis Cache)
 // ------------------------------------------------------------------------
@@ -371,6 +447,7 @@ class FirebaseDataSource @Inject constructor(
             "rehab_sessions",
             "diet_sessions",
             "scheduled_workouts",
+            "scheduled_diets", // ✅ [추가]
             "analysis_cache"
             // Injury는 보통 users 문서 아래에 'injuries' 컬렉션에 있으므로, 함께 삭제합니다.
             // 유저 문서 자체(User Profile)는 삭제하지 않고, 기록만 삭제합니다.

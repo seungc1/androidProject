@@ -6,6 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
+import com.example.androidproject.data.ExerciseCatalog // 👈 추가: 운동 카탈로그 import
 import com.example.androidproject.databinding.ItemDietBinding
 import com.example.androidproject.databinding.ItemExerciseBinding
 import com.example.androidproject.domain.model.DietSession
@@ -69,10 +70,30 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     val exerciseBinding = binding as ItemExerciseBinding
                     val session = item.session
 
-                    exerciseBinding.exerciseNameTextView.text = "운동: ${session.exerciseId}" // (임시)
-                    exerciseBinding.exerciseDetailTextView.text =
-                        "${session.sets} 세트 / ${session.reps} 회 (평점: ${session.userRating ?: "없음"})"
+                    // 1. 운동 이름: 기록된 운동 ID 대신 실제 운동 이름을 표시하도록 수정합니다.
+                    val exerciseName = ExerciseCatalog.allExercises
+                        .find { it.id == session.exerciseId } // ID로 카탈로그에서 운동을 찾습니다.
+                        ?.name
+                        ?: "알 수 없는 운동 (${session.exerciseId})" // 찾지 못하면 대체 텍스트를 사용합니다.
 
+                    exerciseBinding.exerciseNameTextView.text = exerciseName
+
+                    // 2. 상세 정보: 세트, 횟수, 만족도 결합
+                    val ratingText = when (session.userRating) {
+                        5 -> "매우 좋음 (⭐)"
+                        4 -> "좋음 (👍)"
+                        3 -> "보통 (😐)"
+                        2 -> "힘듦 (💦)"
+                        1 -> "나쁨 (❌)"
+                        else -> "평가 없음"
+                    }
+
+                    // 홈 탭과 유사하게 상세 정보 구성
+                    exerciseBinding.exerciseDetailTextView.text =
+                        "수행: ${session.sets} 세트 / ${session.reps} 회" +
+                                " | 만족도: $ratingText"
+
+                    // 3. 체크박스 영역: 기록 시간 표시 및 비활성화
                     exerciseBinding.exerciseStatusCheckBox.text = timeFormatter.format(session.dateTime)
                     exerciseBinding.exerciseStatusCheckBox.isClickable = false
                     exerciseBinding.exerciseStatusCheckBox.isChecked = false
@@ -83,10 +104,25 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     val dietBinding = binding as ItemDietBinding
                     val session = item.session
 
-                    dietBinding.dietNameTextView.text = "식단: ${session.dietId}" // (임시)
-                    dietBinding.dietDetailTextView.text =
-                        "섭취량: ${session.actualQuantity} ${session.actualUnit} (만족도: ${session.userSatisfaction ?: "없음"})"
+                    // 1. 만족도 텍스트 생성
+                    val satisfactionText = when (session.userSatisfaction) {
+                        5 -> "매우 만족 (⭐)"
+                        4 -> "만족 (👍)"
+                        3 -> "보통 (😐)"
+                        2 -> "불만족 (💦)"
+                        1 -> "매우 불만족 (❌)"
+                        else -> "평가 없음"
+                    }
 
+                    // 2. 음식 이름 표시 (foodName이 있으면 표시, 없으면 dietId 표시)
+                    val displayName = session.foodName ?: "식단: ${session.dietId}"
+                    dietBinding.dietNameTextView.text = displayName
+                    dietBinding.dietDetailTextView.text =
+                        "${session.actualQuantity} ${session.actualUnit} 섭취" +
+                                " | 만족도: $satisfactionText"
+
+                    // 3. 칼로리/시간: 우측에 시간 표시
+                    // AI 추천 식단의 칼로리 필드가 없으므로, 우측에는 시간만 표시
                     dietBinding.dietCaloriesTextView.text = timeFormatter.format(session.dateTime)
                 }
             }

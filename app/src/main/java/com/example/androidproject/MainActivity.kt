@@ -47,11 +47,6 @@ class MainActivity : AppCompatActivity() {
         val navController = navHostFragment.navController
         val bottomNav = binding.bottomNavigationView
 
-        // (★수정★) 기본 NavigationUI.setupWithNavController 대신
-        // setOnItemSelectedListener를 직접 구현하여 커스텀 동작(상태 리셋)을 정의합니다.
-
-        // 1. 초기 설정 (선택된 아이템 표시 등)은 setupWithNavController로 하되,
-        //    리스너를 덮어씌우는 방식입니다.
         NavigationUI.setupWithNavController(bottomNav, navController)
 
         // 2. 리스너 재정의
@@ -104,19 +99,19 @@ class MainActivity : AppCompatActivity() {
                     if (!state.isLoading) {
 
                         if (!state.isProfileComplete) {
-                            // 프로필 미완성 시 탭바 숨기고 수정 화면 강제 이동
-                            binding.bottomNavigationView.visibility = View.GONE
 
                             val currentDest = navController.currentDestination?.id
                             if (currentDest != R.id.profileEditFragment) {
+                                // 프로필 입력 강제 이동 로직은 유지 (사용자에게 프로필 입력 필요함을 알림)
                                 Toast.makeText(this@MainActivity, "초기 설정을 위해 정보를 입력해주세요.", Toast.LENGTH_SHORT).show()
                                 try {
                                     navController.navigate(R.id.profileEditFragment)
-                                } catch (_: Exception) { }
+                                } catch (_: Exception) { /* 무시 */ }
                             }
-                        } else {
-                            binding.bottomNavigationView.visibility = View.VISIBLE
                         }
+
+                        // [추가] 로딩이 완료되면 내비게이션 바를 항상 보이도록 설정
+                        binding.bottomNavigationView.visibility = View.VISIBLE
                     }
                 }
             }

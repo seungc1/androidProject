@@ -54,7 +54,6 @@ class SignupActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // 나머지 로직은 기존과 동일
             clearErrors(excludeUsername = true) // 중복 확인은 통과했으므로 제외
 
             val password = binding.passwordEditText.text.toString()
@@ -65,7 +64,7 @@ class SignupActivity : AppCompatActivity() {
 
         // 4. ViewModel의 결과 관찰
         observeSignupState()
-        observeDuplicationState() // ★★★ 신규 관찰 ★★★
+        observeDuplicationState()
     }
 
     private fun clearErrors(excludeUsername: Boolean = false) {
@@ -81,7 +80,7 @@ class SignupActivity : AppCompatActivity() {
         binding.usernameInputLayout.helperText = null
     }
 
-    // ★★★ [수정] 아이디 중복 확인 결과 처리 ★★★
+    // ★★★ 아이디 중복 확인 결과 처리 ★★★
     private fun observeDuplicationState() {
         viewModel.duplicationState.observe(this) { state ->
             // 로딩 상태에서만 버튼 비활성화 (UX 향상)
@@ -113,10 +112,10 @@ class SignupActivity : AppCompatActivity() {
                     binding.usernameInputLayout.requestFocus()
                 }
                 is CheckDuplicationState.NetworkError -> {
-                    // 서버 확인 오류
+                    // 서버 확인 오류 (PERMISSION_DENIED 등)
                     verifiedUsername = null
-                    binding.usernameInputLayout.error = "⚠️ 중복된 계정입니다. 다시 한 번 확인해주세요"
-                    Toast.makeText(this, "서버 접속에 실패하여 중복 확인을 완료할 수 없습니다.", Toast.LENGTH_LONG).show()
+                    binding.usernameInputLayout.error = "서버 확인 불가 (권한 오류)"
+                    Toast.makeText(this, "Firebase 권한 오류: Firestore 규칙을 확인해주세요.", Toast.LENGTH_LONG).show()
                 }
                 is CheckDuplicationState.Idle -> {}
             }

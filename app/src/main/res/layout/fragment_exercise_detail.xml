@@ -18,85 +18,52 @@
         tools:text="손목 스트레칭 (가볍게)" />
 
     <TextView
-        android:id="@+id/detailExerciseDescriptionTextView"
+        android:id="@+id/detailExerciseSetsRepsTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:textAppearance="@style/TextAppearance.App.BodyLarge"
+        android:layout_marginTop="4dp"
+        android:textAppearance="@style/TextAppearance.App.TitleSmall"
+        android:textColor="@color/primaryColor"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/detailExerciseNameTextView"
-        tools:text="손목을 부드럽게 돌려줍니다. 통증이 느껴지면 즉시 중단하세요." />
+        tools:text="3 세트 / 15 회 (난이도: 초급)" />
 
-    <TextView
-        android:id="@+id/ratingTitleTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="수행 만족도"
-        android:textAppearance="@style/TextAppearance.App.TitleLarge"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/detailExerciseDescriptionTextView" />
-
-    <RadioGroup
-        android:id="@+id/ratingRadioGroup"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ratingTitleTextView">
-
-        <RadioButton
-            android:id="@+id/ratingHigh"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="상 (좋음)" />
-
-        <RadioButton
-            android:id="@+id/ratingMedium"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:checked="true"
-            android:text="중 (보통)" />
-
-        <RadioButton
-            android:id="@+id/ratingLow"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="하 (나쁨)" />
-    </RadioGroup>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/notesTextInputLayout"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+    <ImageView
+        android:id="@+id/exerciseImageView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        android:hint="후기 작성 (예: 손목이 조금 아팠음)"
-        app:layout_constraintBottom_toTopOf="@id/saveButton"
+        android:background="@color/divider"
+        android:scaleType="centerInside"
+        android:contentDescription="운동 설명 사진"
+        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ratingRadioGroup">
+        app:layout_constraintTop_toBottomOf="@id/detailExerciseSetsRepsTextView"
+        app:layout_constraintBottom_toTopOf="@id/detailExerciseDescriptionTextView"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintVertical_bias="0.0"
+        tools:src="@android:drawable/ic_menu_gallery" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/notesEditText"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="top"
-            android:inputType="textMultiLine" />
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <Button
-        android:id="@+id/saveButton"
+    <TextView
+        android:id="@+id/detailExerciseDescriptionTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="기록 저장하기"
+        android:layout_marginTop="16dp"
+        android:textAppearance="@style/TextAppearance.App.BodyLarge"
+        app:layout_constraintBottom_toTopOf="@id/completeButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/exerciseImageView"
+        app:layout_constraintVertical_bias="0.0"
+        tools:text="손목을 부드럽게 돌려줍니다. 통증이 느껴지면 즉시 중단하세요." />
+
+    <Button
+        android:id="@+id/completeButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="완료 (기록 페이지로 이동)"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />

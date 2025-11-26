@@ -4,8 +4,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.example.androidproject.data.local.TypeConverters as AppTypeConverters
-import com.example.androidproject.data.local.dao.* // 👈 [수정] Wildcard import
-import com.example.androidproject.data.local.entity.* // 👈 [수정] Wildcard import
+import com.example.androidproject.data.local.dao.*
+import com.example.androidproject.data.local.entity.*
 
 @Database(
     entities = [
@@ -15,9 +15,10 @@ import com.example.androidproject.data.local.entity.* // 👈 [수정] Wildcard 
         DietSessionEntity::class,
         InjuryEntity::class,
         DietEntity::class,
-        ScheduledWorkoutEntity::class
+        ScheduledWorkoutEntity::class,
+        ScheduledDietEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(AppTypeConverters::class)
@@ -30,4 +31,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun injuryDao(): InjuryDao
     abstract fun dietDao(): DietDao
     abstract fun scheduledWorkoutDao(): ScheduledWorkoutDao
+    abstract fun scheduledDietDao(): ScheduledDietDao
 }

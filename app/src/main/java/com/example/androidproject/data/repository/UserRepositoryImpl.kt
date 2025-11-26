@@ -125,11 +125,15 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun checkUserExists(id: String): Boolean {
         // 1. Local DB 확인 (빠른 체크)
         val localExists = localDataSource.getUserCountById(id) > 0
+        android.util.Log.d("DUPLICATION_CHECK", "Local check for '$id': $localExists")
 
         if (localExists) return true
 
         // 2. Firebase Firestore 확인 (서버 체크)
-        return firebaseDataSource.checkUserExistsRemote(id)
+        val remoteExists = firebaseDataSource.checkUserExistsRemote(id)
+        android.util.Log.d("DUPLICATION_CHECK", "Remote check for '$id': $remoteExists")
+        
+        return remoteExists
     }
 
     private fun getTemporaryUser(userId: String): User {
