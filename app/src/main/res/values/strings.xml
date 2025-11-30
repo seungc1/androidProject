@@ -2,6 +2,11 @@
 <resources>
     <string name="app_name">androidProject</string>
 
+    <string name="medical_disclaimer">
+        [면책 조항] 본 앱이 제공하는 재활 정보는 참고용이며, 전문적인 의학적 진단이나 치료를 대체할 수 없습니다.\n
+        통증이 심하거나 지속될 경우 반드시 의사와 상담하십시오.
+    </string>
+
     <string name="title_home">홈</string>
     <string name="title_history">기록</string>
     <string name="title_profile">개인정보</string>

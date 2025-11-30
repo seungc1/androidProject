@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:926805761566:android:ea03f63699cbda2e20980f",
+        "mobilesdk_app_id": "1:926805761566:android:ed99d246185678c620980f",
         "android_client_info": {
-          "package_name": "com.seungc.rehabai"
+          "package_name": "com.dataDoctor.rehabai"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "926805761566-rds70tnik97vb7evse9sshs5i6r12ls4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBiuNdmxPkFj3AIK6QCmTS7l_fHEtsgcGs"
@@ -20,7 +25,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "926805761566-rds70tnik97vb7evse9sshs5i6r12ls4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
