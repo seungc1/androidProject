@@ -7,7 +7,7 @@
 
     <fragment
         android:id="@+id/navigation_home"
-        android:name="com.example.androidproject.presentation.main.HomeFragment"
+        android:name="com.dataDoctor.rehabai.presentation.main.HomeFragment"
         android:label="@string/title_home"
         tools:layout="@layout/fragment_home">
 
@@ -27,13 +27,13 @@
 
     <fragment
         android:id="@+id/navigation_history"
-        android:name="com.example.androidproject.presentation.history.HistoryFragment"
+        android:name="com.dataDoctor.rehabai.presentation.history.HistoryFragment"
         android:label="@string/title_history"
         tools:layout="@layout/fragment_history" />
 
     <fragment
         android:id="@+id/navigation_profile"
-        android:name="com.example.androidproject.presentation.profile.ProfileFragment"
+        android:name="com.dataDoctor.rehabai.presentation.profile.ProfileFragment"
         android:label="@string/title_profile"
         tools:layout="@layout/fragment_profile">
 
@@ -45,7 +45,7 @@
 
     <fragment
         android:id="@+id/exerciseDetailFragment"
-        android:name="com.example.androidproject.presentation.detail.ExerciseDetailFragment"
+        android:name="com.dataDoctor.rehabai.presentation.detail.ExerciseDetailFragment"
         android:label="운동 상세 설명"
         tools:layout="@layout/fragment_exercise_detail">
         <argument
@@ -56,7 +56,7 @@
 
     <fragment
         android:id="@+id/dietDetailFragment"
-        android:name="com.example.androidproject.presentation.detail.DietDetailFragment"
+        android:name="com.dataDoctor.rehabai.presentation.detail.DietDetailFragment"
         android:label="식단 상세 정보"
         tools:layout="@layout/fragment_diet_detail">
         <argument
@@ -66,13 +66,13 @@
 
     <fragment
         android:id="@+id/profileEditFragment"
-        android:name="com.example.androidproject.presentation.profile.ProfileEditFragment"
+        android:name="com.dataDoctor.rehabai.presentation.profile.ProfileEditFragment"
         android:label="내 정보 수정"
         tools:layout="@layout/fragment_profile_edit" />
 
     <fragment
         android:id="@+id/exerciseFeedbackFragment"
-        android:name="com.example.androidproject.presentation.detail.ExerciseFeedbackFragment"
+        android:name="com.dataDoctor.rehabai.presentation.detail.ExerciseFeedbackFragment"
         android:label="운동 후기 및 기록"
         tools:layout="@layout/fragment_exercise_feedback">
         <argument

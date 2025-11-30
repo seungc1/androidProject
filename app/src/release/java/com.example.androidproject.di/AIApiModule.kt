@@ -1,7 +1,7 @@
-package com.example.androidproject.di
+package com.dataDoctor.rehabai.di
 
-import com.example.androidproject.data.repository.AIApiRepositoryImpl
-import com.example.androidproject.domain.repository.AIApiRepository
+import com.dataDoctor.rehabai.data.repository.AIApiRepositoryImpl
+import com.dataDoctor.rehabai.domain.repository.AIApiRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

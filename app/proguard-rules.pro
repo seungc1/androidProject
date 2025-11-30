@@ -37,9 +37,9 @@
 
 # --- 데이터 모델 클래스 보호 ---
 # 앱의 데이터 클래스(User, Exercise 등)의 필드명이 바뀌면 JSON 파싱이 실패하므로 보호합니다.
--keep class com.example.androidproject.domain.model.** { *; }
--keep class com.example.androidproject.data.local.entity.** { *; }
--keep class com.example.androidproject.data.remote.dto.** { *; }
+-keep class com.dataDoctor.rehabai.domain.model.** { *; }
+-keep class com.dataDoctor.rehabai.data.local.entity.** { *; }
+-keep class com.dataDoctor.rehabai.data.remote.dto.** { *; }
 
 # --- Retrofit 관련 규칙 ---
 -keep class retrofit2.** { *; }

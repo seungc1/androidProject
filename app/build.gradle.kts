@@ -23,7 +23,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.example.androidproject"
+    namespace = "com.dataDoctor.rehabai"
     compileSdk = 34
 
     buildFeatures {
@@ -32,7 +32,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.androidproject"
+        applicationId = "com.dataDoctor.rehabai"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
