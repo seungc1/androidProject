@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "1053114952156",
-    "project_id": "android-project-8717h",
-    "storage_bucket": "android-project-8717h.firebasestorage.app"
+    "project_number": "926805761566",
+    "project_id": "rehabai-8717",
+    "storage_bucket": "rehabai-8717.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1053114952156:android:e5497f9494dbca13688719",
+        "mobilesdk_app_id": "1:926805761566:android:ea03f63699cbda2e20980f",
         "android_client_info": {
-          "package_name": "com.example.androidproject"
+          "package_name": "com.seungc.rehabai"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "1053114952156-t9v70b8tnkihdlsjlut9vnkrfvh5dcvm.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAbKO9Os8KgH5ZEnrr43JaszFjlpoc9qrI"
+          "current_key": "AIzaSyBiuNdmxPkFj3AIK6QCmTS7l_fHEtsgcGs"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "1053114952156-t9v70b8tnkihdlsjlut9vnkrfvh5dcvm.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

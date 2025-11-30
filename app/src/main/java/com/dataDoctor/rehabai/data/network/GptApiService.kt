@@ -1,0 +1,15 @@
+package com.dataDoctor.rehabai.data.network
+
+import com.dataDoctor.rehabai.data.network.model.GptRequest
+import com.dataDoctor.rehabai.data.network.model.GptResponse
+import retrofit2.http.Body
+import retrofit2.http.POST
+
+interface GptApiService {
+
+    @POST("v1/chat/completions")
+    suspend fun getChatCompletion(
+        // Interceptor에서 처리하므로 @Header 파라미터 삭제됨
+        @Body request: GptRequest
+    ): GptResponse
+}
