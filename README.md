@@ -135,8 +135,6 @@ GPT 모델 활용 시 발생할 수 있는 토큰 제한과 비용 문제를 해
 |:---:|:---:|:---:|:---:|
 | <img src="docs/images/home.png" width="200"/> | <img src="docs/images/detail.png" width="200"/> | <img src="docs/images/history.png" width="200"/> | <img src="docs/images/analysis.png" width="200"/> |
 
-*(스크린샷 이미지를 `docs/images` 폴더 등에 추가하고 위 경로를 수정해주세요)*
-
 ---
 
 ## 🤝 Contribution
