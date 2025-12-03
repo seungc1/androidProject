@@ -131,7 +131,7 @@ GPT 모델 활용 시 발생할 수 있는 토큰 제한과 비용 문제를 해
 
 ## 📸 Screenshots
 
-| 홈 (대시보드) | 운동 상세 & 피드백 | 캘린더 & 기록 | AI 주간 분석 |
+| 홈 (대시보드) | 운동 상세 | 캘린더 & 기록 | AI 주간 분석 |
 |:---:|:---:|:---:|:---:|
 | <img src="docs/images/home.png" width="200"/> | <img src="docs/images/detail.png" width="200"/> | <img src="docs/images/history.png" width="200"/> | <img src="docs/images/analysis.png" width="200"/> |
 
