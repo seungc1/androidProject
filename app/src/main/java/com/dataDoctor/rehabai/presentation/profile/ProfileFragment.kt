@@ -58,23 +58,22 @@ class ProfileFragment : Fragment() {
         }
 
         // ====================================================================
-        // [수정: 개발용 버튼 숨기기 - 코드 유지, 가시성 GONE]
+        // [수정] 테스트 데이터 생성 버튼 활성화 (11/18 ~ 12/3 기록 생성)
         // ====================================================================
 
-        // [개발용] 지난 7일 기록 생성 버튼
-        binding.generateTestDataButton.setOnClickListener {
-            viewLifecycleOwner.lifecycleScope.launch {
-                viewModel.createTestHistory()
-                // 기록 생성 완료 후 메시지 표시
-                Toast.makeText(context, "✅ 지난 7일 테스트 기록이 생성되었습니다.", Toast.LENGTH_LONG).show()
-
-                // 기록 생성 후 데이터 리로드 및 UI 업데이트 (필수)
-                // loadMainDashboardData를 호출하여 생성된 기록을 바탕으로 오늘의 운동 완료 상태를 다시 계산
+        binding.generateTestDataButton.apply {
+            visibility = View.VISIBLE // 👈 버튼 보이게 설정 (기존 GONE -> VISIBLE)
+            text = "11/18 ~ 12/3 운동 기록 생성 (테스트)" // 버튼 텍스트 변경
+            setOnClickListener {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    // ViewModel의 새로운 함수 호출 (createSpecificTestHistory)
+                    viewModel.createSpecificTestHistory()
+                    Toast.makeText(context, "✅ 11/18 ~ 12/3 기간의 운동 기록이 생성되었습니다.", Toast.LENGTH_LONG).show()
+                }
             }
         }
-        binding.generateTestDataButton.visibility = View.GONE // 👈 숨김 처리
 
-        // [위험!] 계정의 모든 데이터 삭제 버튼
+        // [위험!] 계정의 모든 데이터 삭제 버튼 (실수 방지를 위해 숨김 유지)
         binding.deleteAllDataButton.setOnClickListener {
             // 사용자에게 경고 메시지 표시 후 삭제 확인
             android.app.AlertDialog.Builder(requireContext())
@@ -90,7 +89,7 @@ class ProfileFragment : Fragment() {
                 .setNegativeButton("취소", null)
                 .show()
         }
-        binding.deleteAllDataButton.visibility = View.GONE // 👈 숨김 처리
+        binding.deleteAllDataButton.visibility = View.GONE // 👈 숨김 처리 유지
 
         // ====================================================================
 

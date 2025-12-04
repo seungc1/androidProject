@@ -5,15 +5,35 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.storage.FirebaseStorage // [추가]
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 import javax.inject.Inject
 import android.util.Log
+import android.net.Uri // [추가]
 
 class FirebaseDataSource @Inject constructor(
     private val auth: FirebaseAuth,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val storage: FirebaseStorage // [추가]
 ) {
+    // ... (기존 코드)
+
+    /**
+     * ★★★ [추가] 이미지를 Firebase Storage에 업로드하고 다운로드 URL을 반환 ★★★
+     */
+    suspend fun uploadImage(userId: String, imageUri: Uri): String {
+        val uid = getUid(userId)
+        val fileName = "diet_${System.currentTimeMillis()}.jpg"
+        val storageRef = storage.reference.child("users/$uid/diet_images/$fileName")
+
+        // 1. 업로드
+        storageRef.putFile(imageUri).await()
+
+        // 2. 다운로드 URL 가져오기
+        val downloadUrl = storageRef.downloadUrl.await()
+        return downloadUrl.toString()
+    }
     // (★핵심★) 가짜 도메인 상수
     private val DUMMY_DOMAIN = "@rehabai.com"
 

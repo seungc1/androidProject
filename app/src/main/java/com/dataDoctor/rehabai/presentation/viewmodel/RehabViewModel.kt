@@ -26,7 +26,6 @@ import android.util.Log
 
 @HiltViewModel
 class RehabViewModel @Inject constructor(
-    // [수정 완료] rehabSessionRepository가 생성자에 주입되어야 합니다.
     private val rehabSessionRepository: RehabSessionRepository,
     private val addRehabSessionUseCase: AddRehabSessionUseCase,
     private val workoutRoutineRepository: WorkoutRoutineRepository,
@@ -281,8 +280,6 @@ class RehabViewModel @Inject constructor(
             }
         }
     }
-
-    // createTestHistory 함수는 요청에 따라 삭제했습니다.
     // endregion
 
     // region [Diet Recording]
@@ -375,8 +372,6 @@ class RehabViewModel @Inject constructor(
 
         Log.d("REHAB_LOG_MAP", "=== 매핑 시작 (오늘의 날짜: $todayString) ===")
 
-        Log.d("REHAB_LOG_MAP", "=== 매핑 시작 (오늘의 날짜: $todayString) ===")
-
         android.util.Log.d("RehabDebug", "Today: $todayString (Normalized: ${normalize(todayString)})")
         android.util.Log.d("RehabDebug", "FullRoutine Size: ${fullRoutine.size}")
         fullRoutine.forEach {
@@ -423,21 +418,20 @@ class RehabViewModel @Inject constructor(
         }
     }
 
-    // ✅ [복구] 오늘 식단 필터링 함수
-    // ✅ [복구] 오늘 식단 필터링 함수
+    // ✅ 오늘 식단 필터링 함수
     private fun filterTodayDiets(scheduledDiets: List<ScheduledDiet>): List<Diet> {
         val todayDateString = SimpleDateFormat("M월 d일 (E)", Locale.KOREA).format(Date())
         android.util.Log.d("DIET_DEBUG", "Today's date string: '$todayDateString'")
-        
-        scheduledDiets.forEach { 
-            android.util.Log.d("DIET_DEBUG", "Available scheduled date: '${it.scheduledDate}'") 
+
+        scheduledDiets.forEach {
+            android.util.Log.d("DIET_DEBUG", "Available scheduled date: '${it.scheduledDate}'")
         }
 
         val todayDiet = scheduledDiets.find { it.scheduledDate.contains(todayDateString) }
-            ?: scheduledDiets.firstOrNull().also { 
-                android.util.Log.w("DIET_DEBUG", "Exact match failed. Falling back to first available: ${it?.scheduledDate}") 
+            ?: scheduledDiets.firstOrNull().also {
+                android.util.Log.w("DIET_DEBUG", "Exact match failed. Falling back to first available: ${it?.scheduledDate}")
             }
-        
+
         if (todayDiet != null) {
             android.util.Log.d("DIET_DEBUG", "Match found (or fallback)! Diets count: ${todayDiet.meals.size}")
         } else {
@@ -451,14 +445,71 @@ class RehabViewModel @Inject constructor(
         return this.map { it.toDomain() }
     }
 
+    // -----------------------------------------------------------------------------
+    // [추가] 2025년 11월 18일 ~ 12월 3일 테스트 기록 생성 함수
+    // -----------------------------------------------------------------------------
+    fun createSpecificTestHistory() {
+        viewModelScope.launch {
+            val user = _currentUser.value ?: return@launch
+            val allExercises = ExerciseCatalog.allExercises // 카탈로그의 모든 운동 로드
+
+            if (allExercises.isEmpty()) return@launch
+
+            // 날짜 설정
+            // 시작일: 2025년 11월 18일
+            val startDate = Calendar.getInstance().apply {
+                set(2025, Calendar.NOVEMBER, 18, 9, 0, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            // 종료일: 2025년 12월 3일
+            val endDate = Calendar.getInstance().apply {
+                set(2025, Calendar.DECEMBER, 3, 18, 0, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            val currentDate = startDate.clone() as Calendar
+
+            // 반복문: 시작일부터 종료일까지 하루씩 증가
+            while (!currentDate.after(endDate)) {
+                val date = currentDate.time
+                val dateStr = SimpleDateFormat("yyyyMMdd", Locale.US).format(date)
+
+                // 하루에 2~3개의 운동을 수행했다고 가정하고 랜덤 선택
+                val exercisesToday = allExercises.shuffled().take((2..3).random())
+
+                exercisesToday.forEachIndexed { index, exercise ->
+                    val session = RehabSession(
+                        id = "${user.id}_${dateStr}_${exercise.id}_$index", // 고유 ID
+                        userId = user.id,
+                        exerciseId = exercise.id,
+                        dateTime = date,
+                        sets = 3,
+                        reps = (10..15).random(),
+                        durationMinutes = 20,
+                        userRating = (3..5).random(), // 만족도 3~5점 랜덤
+                        notes = "테스트 자동 생성 기록: ${exercise.name} 완료"
+                    )
+                    // DB 저장
+                    addRehabSessionUseCase(session).collect()
+                }
+
+                // 다음 날짜로 이동
+                currentDate.add(Calendar.DAY_OF_YEAR, 1)
+            }
+
+            // 데이터 생성 후 UI 갱신을 위해 로드 함수 호출
+            loadMainDashboardData(forceReload = false)
+        }
+    }
+
     /**
      * [개발용] 지난 7일간의 임의 운동 및 식단 기록을 생성합니다.
-     * (HomeFragment에서 운동을 완료할 때와 동일한 로직 사용)
      */
     fun createTestHistory() {
         viewModelScope.launch {
             val user = _currentUser.value ?: return@launch
-            val exerciseIds = com.dataDoctor.rehabai.data.ExerciseCatalog.allExercises // ExerciseCatalog 사용
+            val exerciseIds = com.dataDoctor.rehabai.data.ExerciseCatalog.allExercises
                 .filter { it.bodyPart in listOf("목/어깨", "허벅지/엉덩이", "복부/코어") }
                 .take(7)
                 .map { it.id }
@@ -527,10 +578,10 @@ class RehabViewModel @Inject constructor(
             }
 
             // 기록 생성 후 데이터 리로드 및 UI 업데이트 (필수)
-            // loadMainDashboardData를 호출하여 생성된 기록을 바탕으로 오늘의 운동 완료 상태를 다시 계산
             loadMainDashboardData(forceReload = false)
         }
     }
+
     private fun DietRecommendation.toDomain() = Diet(
         id = foodItems?.joinToString() ?: UUID.randomUUID().toString(),
         mealType = mealType,

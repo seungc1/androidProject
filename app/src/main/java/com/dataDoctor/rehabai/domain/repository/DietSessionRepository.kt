@@ -12,4 +12,7 @@ interface DietSessionRepository {
     suspend fun getDietHistory(userId: String): Flow<List<DietSession>>
     //  특정 날짜 범위의 기록을 가져오는 함
     suspend fun getDietSessionsBetween(userId: String, startDate: Date, endDate: Date): Flow<List<DietSession>>
+
+    // [추가] ID로 식단 세션 조회
+    suspend fun getDietSessionById(id: String): Flow<DietSession?>
 }

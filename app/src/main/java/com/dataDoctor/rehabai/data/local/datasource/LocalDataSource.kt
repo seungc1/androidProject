@@ -77,6 +77,15 @@ class LocalDataSource @Inject constructor(
     fun getDietSessionsBetween(userId: String, startDate: Date, endDate: Date): Flow<List<DietSessionEntity>> {
         return dietSessionDao.getSessionsBetween(userId, startDate, endDate)
     }
+    fun getDietSessionById(id: String): Flow<DietSessionEntity?> {
+        return dietSessionDao.getSessionById(id)
+    }
+    suspend fun deleteDietSessionById(id: String) {
+        dietSessionDao.deleteSessionById(id)
+    }
+    suspend fun deleteAllDietSessions(userId: String) {
+        dietSessionDao.deleteAllSessions(userId)
+    }
 
     // --- InjuryDao 관련 함수 ---
     suspend fun upsertInjury(injury: InjuryEntity) {
