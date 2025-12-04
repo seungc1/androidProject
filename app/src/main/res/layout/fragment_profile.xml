@@ -260,6 +260,15 @@
                 android:layout_height="wrap_content"
                 android:text="[개발용] 지난 7일 기록 생성"
                 android:textColor="@android:color/holo_red_light" />
+
+            <Button
+                android:id="@+id/generateDietTestDataButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="식단기록생성(테스트)"
+                android:textColor="@android:color/holo_blue_light"
+                android:visibility="gone" />
             <Button
                 android:id="@+id/deleteAllDataButton"
                 style="@style/Widget.Material3.Button.TextButton"

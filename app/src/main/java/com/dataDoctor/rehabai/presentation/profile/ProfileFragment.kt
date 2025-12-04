@@ -73,6 +73,17 @@ class ProfileFragment : Fragment() {
             }
         }
 
+        // [추가] 식단 테스트 데이터 생성 버튼 연결 (숨김 처리)
+        /*
+        binding.generateDietTestDataButton.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                viewModel.createDietTestHistory()
+                Toast.makeText(context, "✅ 11/18 ~ 12/5 기간의 식단 기록이 생성되었습니다.", Toast.LENGTH_LONG).show()
+            }
+        }
+        */
+        binding.generateDietTestDataButton.visibility = View.GONE
+
         // [위험!] 계정의 모든 데이터 삭제 버튼 (실수 방지를 위해 숨김 유지)
         binding.deleteAllDataButton.setOnClickListener {
             // 사용자에게 경고 메시지 표시 후 삭제 확인

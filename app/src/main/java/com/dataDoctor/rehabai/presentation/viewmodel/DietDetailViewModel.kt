@@ -4,9 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dataDoctor.rehabai.domain.model.Diet
 import com.dataDoctor.rehabai.domain.repository.DietRepository
-import com.dataDoctor.rehabai.domain.repository.DietSessionRepository // [추가]
+import com.dataDoctor.rehabai.domain.repository.DietSessionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -14,17 +13,17 @@ import javax.inject.Inject
 data class DietDetailUiState(
     val isLoading: Boolean = false,
     val diet: Diet? = null,
-    // [추가] AI 추천 식단인지 여부
     val isAiRecommendation: Boolean = false,
     val photoUrl: String? = null,
     val alternatives: List<String> = emptyList(),
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val timestamp: Long? = null // [추가] 기록된 시간 (수정 시 필요)
 )
 
 @HiltViewModel
 class DietDetailViewModel @Inject constructor(
     private val dietRepository: DietRepository,
-    private val dietSessionRepository: DietSessionRepository // [추가]
+    private val dietSessionRepository: DietSessionRepository
 ) : ViewModel() {
 
     private val _dietDetailState = MutableStateFlow(DietDetailUiState())
@@ -48,7 +47,6 @@ class DietDetailViewModel @Inject constructor(
                     }
                     
                     // (복구) AI 추천 대체 식품 로직
-                    // 실제로는 AI API를 호출하거나 DB에서 가져와야 하지만, 일단 더미 데이터로 복구
                     val dummyAlternatives = when (id) {
                         "d001" -> listOf("대체: 그릭 요거트와 견과류", "대체: 통밀빵과 아보카도")
                         "d002" -> listOf("대체: 두부 샐러드", "대체: 연어 스테이크와 채소 구이")
@@ -63,11 +61,11 @@ class DietDetailViewModel @Inject constructor(
                         // Session을 Diet 객체로 변환하여 표시 (임시 매핑)
                         val sessionDiet = Diet(
                             id = foundSession.id,
-                            mealType = "기록된 식단", // 세션에는 mealType이 없을 수 있음
+                            mealType = "기록된 식단",
                             foodName = foundSession.foodName ?: "이름 없음",
                             quantity = foundSession.actualQuantity,
                             unit = foundSession.actualUnit,
-                            calorie = 0, // 세션에는 칼로리 정보가 없을 수 있음
+                            calorie = 0,
                             protein = 0.0,
                             fat = 0.0,
                             carbs = 0.0,
@@ -75,13 +73,14 @@ class DietDetailViewModel @Inject constructor(
                             preparationTips = foundSession.notes,
                             aiRecommendationReason = null
                         )
-                        // [수정] photoUrl도 함께 업데이트, AI 모드 비활성화
+                        // [수정] photoUrl, timestamp도 함께 업데이트, AI 모드 비활성화
                         _dietDetailState.update {
                             it.copy(
                                 diet = sessionDiet,
                                 photoUrl = foundSession.photoUrl,
                                 isAiRecommendation = false,
-                                isLoading = false
+                                isLoading = false,
+                                timestamp = foundSession.dateTime.time // [추가] 타임스탬프 저장
                             )
                         }
                     } else {

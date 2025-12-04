@@ -68,7 +68,18 @@ class HistoryViewModel @Inject constructor(
                     android.util.Log.d("HISTORY_VM", "Rehab sessions: ${rehabSessions.size}, Diet sessions: ${dietSessions.size}")
                     val exerciseItems = rehabSessions.map { HistoryItem.Exercise(it) }
                     val dietItems = dietSessions.map { HistoryItem.Diet(it) }
-                    (exerciseItems + dietItems).sortedByDescending { it.dateTime }
+                    
+                    // [수정] 그룹화 및 정렬 로직 변경
+                    // 1. 식단과 운동을 그룹화 (식단 먼저, 그 다음 운동)
+                    // 2. 각 그룹 내에서는 시간 순서대로 정렬 (오래된 순 = 오름차순)
+                    (dietItems + exerciseItems).sortedWith(
+                        compareBy<HistoryItem> { 
+                            when (it) {
+                                is HistoryItem.Exercise -> 0 // 운동 먼저
+                                is HistoryItem.Diet -> 1     // 식단 나중
+                            }
+                        }.thenBy { it.dateTime } // 시간 오름차순 (오래된 순)
+                    )
                 }.first() // <--- Flow.first() 적용
 
                 // 4. UI 상태 업데이트
