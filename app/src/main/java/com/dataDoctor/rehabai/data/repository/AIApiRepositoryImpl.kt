@@ -55,7 +55,7 @@ class AIApiRepositoryImpl @Inject constructor(
         val userPrompt = createWorkoutUserPrompt(params)
 
         val request = GptRequest(
-            model = "gpt-3.5-turbo",
+            model = "gpt-4-turbo", // [수정] gpt-4-turbo 사용
             messages = listOf(
                 GptMessage(role = "system", content = systemPrompt),
                 GptMessage(role = "user", content = userPrompt)
@@ -102,7 +102,7 @@ class AIApiRepositoryImpl @Inject constructor(
         val userPrompt = createDietUserPrompt(params)
 
         val request = GptRequest(
-            model = "gpt-3.5-turbo",
+            model = "gpt-4-turbo", // [수정] gpt-4-turbo 사용
             messages = listOf(
                 GptMessage(role = "system", content = systemPrompt),
                 GptMessage(role = "user", content = userPrompt)
@@ -148,8 +148,7 @@ class AIApiRepositoryImpl @Inject constructor(
         val userPrompt = createAnalysisUserPrompt(rehabData)
 
         val request = GptRequest(
-            // [수정 1] 모델을 더 저렴한 버전으로 변경 (gpt-4-turbo -> gpt-3.5-turbo)
-            model = "gpt-3.5-turbo",
+            model = "gpt-4-turbo", // [수정] gpt-4-turbo 사용
             messages = listOf(
                 GptMessage(role = "system", content = systemPrompt),
                 GptMessage(role = "user", content = userPrompt)
@@ -157,7 +156,7 @@ class AIApiRepositoryImpl @Inject constructor(
             response_format = ResponseFormat(type = "json_object")
         )
 
-        // ★★★ 429 오류 해결을 위한 재시도 로직 시작 (analyzeProgress) ★★★
+        // ★★★ 429 오류 해결을 위한 재시도 로직 (analyzeProgress) ★★★
         val MAX_RETRIES = 3
         var delayTime = 1000L
         var gptResponse: GptResponse? = null
@@ -165,7 +164,6 @@ class AIApiRepositoryImpl @Inject constructor(
 
         for (attempt in 1..MAX_RETRIES) {
             try {
-                // 실제 API 호출
                 gptResponse = gptApiService.getChatCompletion(request = request)
                 Log.d("AIApiRepo", "AI 분석 요청 성공 (시도 $attempt)")
                 break
@@ -177,13 +175,10 @@ class AIApiRepositoryImpl @Inject constructor(
                     Log.e("AIApiRepo", "AI 분석 요청 최종 실패: ${e.message}")
                     break
                 }
-
-                // 지수 백오프: 다음 시도 전까지 대기 시간을 두 배로 늘립니다.
                 delay(delayTime)
                 delayTime *= 2
             }
         }
-        // ★★★ 429 오류 해결을 위한 재시도 로직 종료 (analyzeProgress) ★★★
 
         val jsonResponseString = gptResponse?.choices?.firstOrNull()?.message?.content
 
@@ -191,16 +186,11 @@ class AIApiRepositoryImpl @Inject constructor(
             val analysisResult = parseGptResponseToAIAnalysisResult(jsonResponseString)
             emit(analysisResult)
         } else if (lastException != null) {
-            // 재시도 후에도 최종적으로 실패한 경우 오류 반환
             emit(createErrorAnalysisResult("AI 분석 응답을 가져오는 데 최종 실패했습니다. (오류: ${lastException.message})"))
         } else {
             emit(createErrorAnalysisResult("AI 분석 응답이 비어있습니다."))
         }
     }
-
-    // =========================================================
-    // ★★★ 헬퍼 함수들 (주요 로직) ★★★
-    // =========================================================
 
     private fun createWorkoutSystemPrompt(): String {
         return """
@@ -242,6 +232,10 @@ class AIApiRepositoryImpl @Inject constructor(
             User Profile:
             Age: ${params.age}, Gender: ${params.gender}
             Height: ${params.heightCm} cm, Weight: ${params.weightKg} kg
+            // [수정] 사용자 수준 판단을 위해 Activity Level과 Fitness Goal 추가
+            Activity Level: ${params.activityLevel}
+            Fitness Goal: ${params.fitnessGoal}
+            
             Injury Area: ${params.injuryArea ?: "None"}
             Injury Type: ${params.injuryType ?: "N/A"}
             Injury Severity: ${params.injurySeverity ?: "N/A"}
@@ -258,7 +252,10 @@ class AIApiRepositoryImpl @Inject constructor(
             - The 'scheduledDate' of the FIRST item MUST BE "$todayDate".
             - The 'name' field **MUST EXACTLY** match an entry in the AVAILABLE EXERCISES CATALOG (Korean name).
             - Generate a **7-day workout plan** starting from "$todayDate".
-            - Each day MUST contain a minimum of 3 exercises and a maximum of 5, appropriate for the user's injury. // 👈 최소 3개 운동 규칙 적용
+            
+            // [수정] 3~5개 운동 개수 및 난이도 조절 규칙 강화
+            - **Constraint:** Each day MUST contain **3 to 5 exercises** (minimum 3, maximum 5).
+            - **Personalization:** Select exercises and adjust difficulty/sets/reps based on the user's **Activity Level** and **Injury Severity**.
         """.trimIndent()
     }
 
@@ -398,7 +395,6 @@ class AIApiRepositoryImpl @Inject constructor(
         }
     }
 
-    // 🚨 [수정] Unresolved reference 'createErrorResult' 오류 해결을 위해 함수를 명확히 정의합니다.
     private fun createErrorResult(message: String): AIRecommendationResult {
         return AIRecommendationResult(
             scheduledWorkouts = emptyList(),
@@ -408,7 +404,6 @@ class AIApiRepositoryImpl @Inject constructor(
         )
     }
 
-    // 🚨 [수정] Unresolved reference 'createErrorAnalysisResult' 오류 해결을 위해 함수를 명확히 정의합니다.
     private fun createErrorAnalysisResult(message: String): AIAnalysisResult {
         return AIAnalysisResult(
             summary = message,
