@@ -11,9 +11,10 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide // [추가]
+import com.bumptech.glide.Glide
 import com.dataDoctor.rehabai.databinding.FragmentDietDetailBinding
 import com.dataDoctor.rehabai.presentation.viewmodel.DietDetailViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -26,11 +27,10 @@ class DietDetailFragment : Fragment() {
     private var _binding: FragmentDietDetailBinding? = null
     private val binding get() = _binding!!
 
-    // (★수정★) 전용 ViewModel 사용
     private val viewModel: DietDetailViewModel by viewModels()
 
     private val args: DietDetailFragmentArgs by navArgs()
-    private lateinit var alternativeFoodAdapter: AlternativeFoodAdapter // [복구]
+    private lateinit var alternativeFoodAdapter: AlternativeFoodAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -49,11 +49,15 @@ class DietDetailFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        // [복구] 어댑터 설정
         alternativeFoodAdapter = AlternativeFoodAdapter()
         binding.alternativesRecyclerView.apply {
             adapter = alternativeFoodAdapter
             layoutManager = LinearLayoutManager(requireContext())
+        }
+
+        // 돌아가기 버튼 리스너
+        binding.backButton.setOnClickListener {
+            findNavController().popBackStack()
         }
     }
 
@@ -64,34 +68,42 @@ class DietDetailFragment : Fragment() {
                     
                     state.diet?.let { diet ->
                         binding.detailDietNameTextView.text = diet.foodName
-                        binding.detailDietInfoTextView.text =
-                            "${diet.mealType} / ${diet.calorie} kcal (단 ${diet.protein}g, 탄 ${diet.carbs}g, 지 ${diet.fat}g)"
                         
-                        // [복구] AI 추천 이유 텍스트 설정
+                        // [수정] 기록된 식단(AI 추천 아님)일 경우 섭취량과 단위 표시
+                        if (state.isAiRecommendation) {
+                             binding.detailDietInfoTextView.text =
+                                "${diet.mealType} / ${diet.calorie} kcal (단 ${diet.protein}g, 탄 ${diet.carbs}g, 지 ${diet.fat}g)"
+                        } else {
+                            // 1.0 -> 1 로 표시하기 위한 로직
+                            val quantityString = if (diet.quantity % 1.0 == 0.0) {
+                                diet.quantity.toInt().toString()
+                            } else {
+                                diet.quantity.toString()
+                            }
+                            binding.detailDietInfoTextView.text = "${diet.mealType} / $quantityString${diet.unit}"
+                        }
+                        
                         binding.aiReasonTextView.text =
                             diet.aiRecommendationReason ?: "AI가 추천 이유를 제공하지 않았습니다."
                     }
 
-                    // [수정] 모드에 따른 UI 가시성 제어
                     if (state.isAiRecommendation) {
-                        // AI 모드: 사진 숨김, AI 정보 표시
+                        // AI 모드
                         binding.dietImageView.isVisible = false
                         binding.aiReasonTitleTextView.isVisible = true
                         binding.aiReasonTextView.isVisible = true
                         binding.alternativesTitleTextView.isVisible = true
                         binding.alternativesRecyclerView.isVisible = true
                         
-                        // 대체 식품 리스트 업데이트
                         alternativeFoodAdapter.submitList(state.alternatives)
                     } else {
-                        // 기록 모드: 사진 표시, AI 정보 숨김
+                        // 기록 모드
                         binding.dietImageView.isVisible = true
                         binding.aiReasonTitleTextView.isVisible = false
                         binding.aiReasonTextView.isVisible = false
                         binding.alternativesTitleTextView.isVisible = false
                         binding.alternativesRecyclerView.isVisible = false
 
-                        // 이미지 로드
                         state.photoUrl?.let { url ->
                             Glide.with(this@DietDetailFragment)
                                 .load(url)
