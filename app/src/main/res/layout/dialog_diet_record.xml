@@ -78,6 +78,38 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/mealTypeLabel" />
 
+    <!-- [추가] 날짜 및 시간 선택 -->
+    <LinearLayout
+        android:id="@+id/dateTimeContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toBottomOf="@id/mealTypeSpinner"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dateButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="날짜 선택"
+            app:icon="@android:drawable/ic_menu_my_calendar" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/timeButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="시간 선택"
+            app:icon="@android:drawable/ic_menu_recent_history" />
+    </LinearLayout>
+
     <!-- 섭취량 입력 -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/quantityInputLayout"
@@ -88,7 +120,7 @@
         android:hint="섭취량"
         app:layout_constraintEnd_toStartOf="@id/unitInputLayout"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/mealTypeSpinner">
+        app:layout_constraintTop_toBottomOf="@id/dateTimeContainer">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/quantityEditText"
@@ -107,7 +139,7 @@
         android:hint="단위"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/quantityInputLayout"
-        app:layout_constraintTop_toBottomOf="@id/mealTypeSpinner">
+        app:layout_constraintTop_toBottomOf="@id/dateTimeContainer">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/unitEditText"

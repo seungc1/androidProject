@@ -10,7 +10,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintBottom_toTopOf="@id/backButton"
+        app:layout_constraintBottom_toTopOf="@id/bottomButtonContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -118,18 +118,41 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <!-- 4. 돌아가기 버튼 (하단 고정) -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/backButton"
+    <!-- 4. 하단 버튼 영역 (수정 / 돌아가기) -->
+    <LinearLayout
+        android:id="@+id/bottomButtonContainer"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:text="돌아가기"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:cornerRadius="30dp"
+        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- 수정 버튼 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/editButton"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="수정"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:backgroundTint="#FF9800"
+            app:cornerRadius="30dp" />
+
+        <!-- 돌아가기 버튼 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/backButton"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="돌아가기"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:cornerRadius="30dp" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

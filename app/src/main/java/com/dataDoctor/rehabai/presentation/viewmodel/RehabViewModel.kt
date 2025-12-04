@@ -284,16 +284,19 @@ class RehabViewModel @Inject constructor(
 
     // region [Diet Recording]
     fun recordDiet(
+        id: String? = null, // [수정] 수정 시 ID 전달 (없으면 신규 생성)
         foodName: String,
-        photoUri: android.net.Uri?,
+        photoUri: android.net.Uri?, // [수정] Uri? 타입 유지 (String 변환은 내부에서)
+        photoUrl: String? = null, // [추가] 기존 이미지 URL (수정 시 사진 변경 안 했을 경우 사용)
         mealType: String,
         quantity: Double,
         unit: String,
-        satisfaction: Int
+        satisfaction: Int,
+        date: Date? = null // [추가] 날짜/시간 (수정 시 사용, 없으면 현재 시간)
     ) {
         viewModelScope.launch {
             val user = _currentUser.value
-            android.util.Log.d("DIET_RECORD", "recordDiet called: user=${user?.id}, foodName=$foodName")
+            android.util.Log.d("DIET_RECORD", "recordDiet called: user=${user?.id}, foodName=$foodName, id=$id")
 
             if (user == null) {
                 android.util.Log.e("DIET_RECORD", "User is null, cannot save diet")
@@ -301,25 +304,27 @@ class RehabViewModel @Inject constructor(
             }
 
             try {
-                // 사진 URI를 문자열로 저장 (실제로는 파일로 복사하거나 Firebase Storage에 업로드해야 함)
-                val photoPath = photoUri?.toString()
+                // 사진 처리: 새 사진이 있으면 Uri -> String, 없으면 기존 photoUrl 사용
+                val finalPhotoPath = photoUri?.toString() ?: photoUrl
 
                 val dietSession = DietSession(
-                    id = UUID.randomUUID().toString(),
+                    id = id ?: UUID.randomUUID().toString(), // ID가 있으면 사용(수정), 없으면 생성(신규)
                     userId = user.id,
-                    dietId = "user_recorded_${System.currentTimeMillis()}", // 사용자 기록은 특별한 ID
-                    dateTime = Date(),
+                    dietId = if (id != null) "user_recorded_updated" else "user_recorded_${System.currentTimeMillis()}", // 식별용 (크게 중요치 않음)
+                    dateTime = date ?: Date(), // 날짜가 있으면 사용, 없으면 현재
                     actualQuantity = quantity,
                     actualUnit = unit,
                     userSatisfaction = satisfaction,
-                    notes = "사용자가 직접 기록한 식단",
-                    foodName = foodName, // [추가] 사용자 입력 음식 이름
-                    photoUrl = photoPath // [추가] 사진 경로
+                    notes = if (id != null) "사용자가 수정한 식단" else "사용자가 직접 기록한 식단",
+                    foodName = foodName,
+                    photoUrl = finalPhotoPath
                 )
 
                 android.util.Log.d("DIET_RECORD", "Calling addDietSessionUseCase with session: ${dietSession.id}")
                 addDietSessionUseCase(dietSession).collect {
                     android.util.Log.d("DIET_RECORD", "Diet session saved successfully: ${dietSession.id}")
+                    // [추가] 수정 후 즉시 데이터 갱신
+                    loadMainDashboardData(forceReload = false)
                 }
             } catch (e: Exception) {
                 android.util.Log.e("DIET_RECORD", "Error saving diet: ${e.message}", e)
@@ -501,6 +506,84 @@ class RehabViewModel @Inject constructor(
             // 데이터 생성 후 UI 갱신을 위해 로드 함수 호출
             loadMainDashboardData(forceReload = false)
         }
+    }
+
+    // [추가] 11월 20일 ~ 12월 5일 식단 테스트 기록 생성 함수
+    fun createDietTestHistory() {
+        viewModelScope.launch {
+            val user = _currentUser.value ?: return@launch
+            
+            // 날짜 설정: 11월 18일 ~ 12월 5일
+            val startDate = Calendar.getInstance().apply {
+                set(2025, Calendar.NOVEMBER, 18, 8, 0, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            val endDate = Calendar.getInstance().apply {
+                set(2025, Calendar.DECEMBER, 5, 20, 0, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            val currentDate = startDate.clone() as Calendar
+            val fixedPhotoUrl = "https://firebasestorage.googleapis.com/v0/b/rehabai-8717.firebasestorage.app/o/users%2FpDYBUw49RRZpCsdYoSY4gfTFCzr1%2Fdiet_images%2FSalmon%20Steak.jpg?alt=media&token=a623250a-028e-496b-9e1f-7827c636cf21"
+            
+            val foodList = listOf("연어 스테이크", "닭가슴살 샐러드", "현미밥과 김치찌개", "그릭 요거트", "오트밀 죽", "고구마와 계란", "두부 구이")
+            // 식사 타입은 고정하지 않고 랜덤으로 하되, 시간대는 고정
+            
+            while (!currentDate.after(endDate)) {
+                val date = currentDate.time
+                
+                // 하루 3끼 고정 생성
+                // 1. 아침 (06:00 ~ 08:00)
+                createRandomDietSession(user, date, 6, 8, "아침", foodList, fixedPhotoUrl)
+                
+                // 2. 점심 (11:00 ~ 13:00)
+                createRandomDietSession(user, date, 11, 13, "점심", foodList, fixedPhotoUrl)
+                
+                // 3. 저녁 (17:00 ~ 20:00)
+                createRandomDietSession(user, date, 17, 20, "저녁", foodList, fixedPhotoUrl)
+                
+                currentDate.add(Calendar.DAY_OF_YEAR, 1)
+            }
+            
+            // 데이터 생성 후 UI 갱신
+            loadMainDashboardData(forceReload = false)
+        }
+    }
+
+    private suspend fun createRandomDietSession(
+        user: User, 
+        date: Date, 
+        startHour: Int, 
+        endHour: Int, 
+        mealType: String, 
+        foodList: List<String>, 
+        photoUrl: String
+    ) {
+        val randomHour = (startHour..endHour).random()
+        val randomMinute = (0..59).random()
+        
+        val mealTime = Calendar.getInstance().apply {
+            time = date
+            set(Calendar.HOUR_OF_DAY, randomHour)
+            set(Calendar.MINUTE, randomMinute)
+        }.time
+
+        val foodName = foodList.random()
+
+        val dietSession = DietSession(
+            id = UUID.randomUUID().toString(),
+            userId = user.id,
+            dietId = "user_recorded_${System.currentTimeMillis()}_${mealType}",
+            dateTime = mealTime,
+            actualQuantity = 1.0, // 1로 고정
+            actualUnit = "인분", // 인분으로 고정
+            userSatisfaction = (3..5).random(),
+            notes = "테스트 자동 생성 식단: $foodName",
+            foodName = foodName,
+            photoUrl = photoUrl
+        )
+        
+        addDietSessionUseCase(dietSession).collect()
     }
 
     /**
