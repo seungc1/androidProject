@@ -30,8 +30,33 @@ class DietRecordDialog : DialogFragment() {
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            selectedPhotoUri = uri
-            binding.foodPhotoImageView.setImageURI(uri)
+            // [수정] 선택된 이미지를 내부 저장소로 복사하여 영구적인 접근 권한 확보
+            val savedUri = copyUriToInternalStorage(uri)
+            if (savedUri != null) {
+                selectedPhotoUri = savedUri
+                binding.foodPhotoImageView.setImageURI(savedUri)
+            } else {
+                Toast.makeText(context, "이미지 저장에 실패했습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // [추가] URI를 내부 저장소로 복사하는 함수
+    private fun copyUriToInternalStorage(uri: Uri): Uri? {
+        return try {
+            val inputStream = requireContext().contentResolver.openInputStream(uri) ?: return null
+            val fileName = "diet_${System.currentTimeMillis()}.jpg"
+            val file = java.io.File(requireContext().filesDir, fileName)
+            val outputStream = java.io.FileOutputStream(file)
+            inputStream.use { input ->
+                outputStream.use { output ->
+                    input.copyTo(output)
+                }
+            }
+            Uri.fromFile(file)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 

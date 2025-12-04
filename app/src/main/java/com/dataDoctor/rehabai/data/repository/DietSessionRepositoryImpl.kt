@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first // [추가]
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
@@ -28,7 +29,22 @@ class DietSessionRepositoryImpl @Inject constructor(
         try {
             // 1. Firebase 저장
             android.util.Log.d("DIET_REPO", "Saving to Firebase...")
-            firebaseDataSource.addDietSession(session)
+
+            // [추가] 로컬 이미지인 경우 Firebase Storage에 업로드하고 URL 교체
+            var sessionToSave = session
+            val photoUrl = session.photoUrl
+            if (photoUrl != null && photoUrl.startsWith("file://")) {
+                try {
+                    val downloadUrl = firebaseDataSource.uploadImage(session.userId, android.net.Uri.parse(photoUrl))
+                    sessionToSave = session.copy(photoUrl = downloadUrl)
+                    android.util.Log.d("DIET_REPO", "Image uploaded to Firebase Storage: $downloadUrl")
+                } catch (e: Exception) {
+                    android.util.Log.e("DIET_REPO", "Image upload failed: ${e.message}")
+                    // 업로드 실패 시 로컬 URI 유지 (오프라인 등)
+                }
+            }
+
+            firebaseDataSource.addDietSession(sessionToSave)
             android.util.Log.d("DIET_REPO", "Firebase save complete")
             
             // 2. Local 저장
@@ -53,6 +69,20 @@ class DietSessionRepositoryImpl @Inject constructor(
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val remoteSessions = firebaseDataSource.getDietHistory(userId)
+                
+                // [추가] 삭제 동기화 로직
+                // 로컬에만 있고 리모트에는 없는 데이터(삭제된 데이터)를 찾아서 로컬에서도 삭제
+                val localSessions = localDataSource.getDietHistory(userId).first() // 현재 로컬 데이터 스냅샷
+                val remoteIds = remoteSessions.map { it.id }.toSet()
+                
+                localSessions.forEach { localEntity ->
+                    if (!remoteIds.contains(localEntity.id)) {
+                        android.util.Log.d("DIET_SYNC", "Deleting local session not found in remote: ${localEntity.id}")
+                        localDataSource.deleteDietSessionById(localEntity.id)
+                    }
+                }
+
+                // 리모트 데이터 로컬에 추가/업데이트
                 remoteSessions.forEach { session ->
                     localDataSource.addDietSession(session.toEntity())
                 }
@@ -67,5 +97,9 @@ class DietSessionRepositoryImpl @Inject constructor(
         return localDataSource.getDietSessionsBetween(userId, startDate, endDate).map { entityList ->
             entityList.map { it.toDomain() }
         }
+    }
+
+    override suspend fun getDietSessionById(id: String): Flow<DietSession?> {
+        return localDataSource.getDietSessionById(id).map { it?.toDomain() }
     }
 }

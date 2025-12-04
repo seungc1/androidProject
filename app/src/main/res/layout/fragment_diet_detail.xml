@@ -12,14 +12,26 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
+        <ImageView
+            android:id="@+id/dietImageView"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:scaleType="centerCrop"
+            android:background="#E0E0E0"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:src="@tools:sample/backgrounds/scenic" />
+
         <TextView
             android:id="@+id/detailDietNameTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:textAppearance="@style/TextAppearance.App.HeadlineMedium"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/dietImageView"
             tools:text="오트밀과 블루베리" />
 
         <TextView
@@ -33,6 +45,7 @@
             app:layout_constraintTop_toBottomOf="@id/detailDietNameTextView"
             tools:text="아침 / 350 kcal (단 10g, 탄 60g, 지 5g)" />
 
+        <!-- [복구] AI 추천 이유 (AI 모드일 때만 표시) -->
         <TextView
             android:id="@+id/aiReasonTitleTextView"
             android:layout_width="wrap_content"
@@ -40,8 +53,10 @@
             android:layout_marginTop="24dp"
             android:text="AI 추천 이유"
             android:textAppearance="@style/TextAppearance.App.TitleLarge"
+            android:visibility="gone"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/detailDietInfoTextView" />
+            app:layout_constraintTop_toBottomOf="@id/detailDietInfoTextView"
+            tools:visibility="visible" />
 
         <TextView
             android:id="@+id/aiReasonTextView"
@@ -49,12 +64,15 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:textAppearance="@style/TextAppearance.App.BodyLarge"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/aiReasonTitleTextView"
-            tools:text="균형잡힌 탄수화물과 항산화제를 제공하여 아침 식사로 훌륭합니다." />
+            tools:text="균형잡힌 탄수화물과 항산화제를 제공하여 아침 식사로 훌륭합니다."
+            tools:visibility="visible" />
 
 
+        <!-- [복구] AI 추천 대체 식품 (AI 모드일 때만 표시) -->
         <TextView
             android:id="@+id/alternativesTitleTextView"
             android:layout_width="wrap_content"
@@ -62,19 +80,9 @@
             android:layout_marginTop="24dp"
             android:text="AI 추천 대체 식품"
             android:textAppearance="@style/TextAppearance.App.TitleLarge"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/aiReasonTextView" />
-
-        <ProgressBar
-            android:id="@+id/alternativesLoadingProgressBar"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:visibility="gone"
-            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/alternativesTitleTextView"
+            app:layout_constraintTop_toBottomOf="@id/aiReasonTextView"
             tools:visibility="visible" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -83,12 +91,14 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:nestedScrollingEnabled="false"
+            android:visibility="gone"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/alternativesLoadingProgressBar"
+            app:layout_constraintTop_toBottomOf="@id/alternativesTitleTextView"
             tools:itemCount="3"
-            tools:listitem="@layout/item_alternative_food" />
+            tools:listitem="@layout/item_alternative_food"
+            tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>

@@ -10,14 +10,25 @@
     android:paddingEnd="16dp"
     android:paddingBottom="8dp">
 
+    <View
+        android:id="@+id/exerciseIndicatorView"
+        android:layout_width="4dp"
+        android:layout_height="0dp"
+        android:background="#2196F3"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <TextView
         android:id="@+id/exerciseNameTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
         android:textAppearance="@style/TextAppearance.App.BodyLarge"
         app:layout_constraintBottom_toTopOf="@+id/exerciseDetailTextView"
         app:layout_constraintEnd_toStartOf="@+id/exerciseStatusCheckBox"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/exerciseIndicatorView"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="벤치 프레스" />
 
@@ -30,7 +41,7 @@
         android:textColor="?android:attr/textColorSecondary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/exerciseStatusCheckBox"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/exerciseIndicatorView"
         app:layout_constraintTop_toBottomOf="@+id/exerciseNameTextView"
         tools:text="3세트 10회" />
 

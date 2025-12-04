@@ -21,4 +21,16 @@ interface DietSessionDao {
     // [수정] BETWEEN 대신 >= :startDate AND dateTime < :endDate 를 사용
     @Query("SELECT * FROM diet_session_table WHERE userId = :userId AND dateTime >= :startDate AND dateTime < :endDate")
     fun getSessionsBetween(userId: String, startDate: Date, endDate: Date): Flow<List<DietSessionEntity>>
+
+    // [추가] ID로 세션 조회
+    @Query("SELECT * FROM diet_session_table WHERE id = :id")
+    fun getSessionById(id: String): Flow<DietSessionEntity?>
+
+    // [추가] 특정 세션 삭제
+    @Query("DELETE FROM diet_session_table WHERE id = :id")
+    suspend fun deleteSessionById(id: String)
+
+    // [추가] 특정 유저의 모든 세션 삭제 (동기화용)
+    @Query("DELETE FROM diet_session_table WHERE userId = :userId")
+    suspend fun deleteAllSessions(userId: String)
 }
