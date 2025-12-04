@@ -35,7 +35,9 @@ sealed class HistoryItem {
 }
 
 // 2. '목록 관리자' (Adapter) 정의
-class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder>(HistoryDiffCallback()) {
+class HistoryAdapter(
+    private val onItemClick: (HistoryItem) -> Unit
+) : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder>(HistoryDiffCallback()) {
 
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
@@ -56,7 +58,9 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
     }
 
     override fun onBindViewHolder(holder: HistoryViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        val item = getItem(position)
+        holder.bind(item)
+        holder.itemView.setOnClickListener { onItemClick(item) }
     }
 
     inner class HistoryViewHolder(private val binding: ViewBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -76,7 +80,7 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                         ?.name
                         ?: "알 수 없는 운동 (${session.exerciseId})" // 찾지 못하면 대체 텍스트를 사용합니다.
 
-                    exerciseBinding.exerciseNameTextView.text = exerciseName
+                    exerciseBinding.exerciseNameTextView.text = "[운동] $exerciseName"
 
                     // 2. 상세 정보: 세트, 횟수, 만족도 결합
                     val ratingText = when (session.userRating) {
@@ -97,6 +101,9 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     exerciseBinding.exerciseStatusCheckBox.text = timeFormatter.format(session.dateTime)
                     exerciseBinding.exerciseStatusCheckBox.isClickable = false
                     exerciseBinding.exerciseStatusCheckBox.isChecked = false
+
+                    // [추가] 히스토리 탭 전용: 파란색 띠 표시
+                    exerciseBinding.exerciseIndicatorView.visibility = android.view.View.VISIBLE
                 }
 
                 // '식단' 데이터
@@ -116,7 +123,7 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
 
                     // 2. 음식 이름 표시 (foodName이 있으면 표시, 없으면 dietId 표시)
                     val displayName = session.foodName ?: "식단: ${session.dietId}"
-                    dietBinding.dietNameTextView.text = displayName
+                    dietBinding.dietNameTextView.text = "[식단] $displayName"
                     dietBinding.dietDetailTextView.text =
                         "${session.actualQuantity} ${session.actualUnit} 섭취" +
                                 " | 만족도: $satisfactionText"
@@ -124,6 +131,9 @@ class HistoryAdapter : ListAdapter<HistoryItem, HistoryAdapter.HistoryViewHolder
                     // 3. 칼로리/시간: 우측에 시간 표시
                     // AI 추천 식단의 칼로리 필드가 없으므로, 우측에는 시간만 표시
                     dietBinding.dietCaloriesTextView.text = timeFormatter.format(session.dateTime)
+
+                    // [추가] 히스토리 탭 전용: 초록색 띠 표시
+                    dietBinding.dietIndicatorView.visibility = android.view.View.VISIBLE
                 }
             }
         }

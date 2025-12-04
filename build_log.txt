@@ -1,0 +1,91 @@
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:processDebugGoogleServices UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:generateSafeArgsDebug UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:kaptGenerateStubsDebugKotlin UP-TO-DATE
+> Task :app:kaptDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:hiltAggregateDepsDebug UP-TO-DATE
+
+> Task :app:hiltJavaCompileDebug FAILED
+/Users/nahyowon/Documents/exAndroid/androidProject/app/build/generated/hilt/component_sources/debug/com/dataDoctor/rehabai/RehabAIApp_HiltComponents.java:159: error: [Dagger/MissingBinding] com.dataDoctor.rehabai.domain.repository.AIApiRepository cannot be provided without an @Provides-annotated method.
+  public abstract static class SingletonC implements RehabAIApp_GeneratedInjector,
+                         ^
+  
+      com.dataDoctor.rehabai.domain.repository.AIApiRepository is injected at
+          [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ViewModelC] com.dataDoctor.rehabai.domain.usecase.GetWeeklyAnalysisUseCase(…, aiApiRepository, …)
+      com.dataDoctor.rehabai.domain.usecase.GetWeeklyAnalysisUseCase is injected at
+          [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ViewModelC] com.dataDoctor.rehabai.presentation.viewmodel.HistoryViewModel(…, getWeeklyAnalysisUseCase, …)
+      com.dataDoctor.rehabai.presentation.viewmodel.HistoryViewModel is injected at
+          [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ViewModelC] com.dataDoctor.rehabai.presentation.viewmodel.HistoryViewModel_HiltModules.BindsModule.binds(vm)
+      @dagger.hilt.android.internal.lifecycle.HiltViewModelMap java.util.Map<java.lang.Class<?>,javax.inject.Provider<androidx.lifecycle.ViewModel>> is requested at
+          [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ViewModelC] dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.SingletonC → com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ActivityRetainedC → com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ViewModelC]
+  It is also requested at:
+      com.dataDoctor.rehabai.data.repository.WorkoutRoutineRepositoryImpl(…, aiApiRepository, …)
+  The following other entry points also depend on it:
+      com.dataDoctor.rehabai.presentation.history.HistoryFragment_GeneratedInjector.injectHistoryFragment(com.dataDoctor.rehabai.presentation.history.HistoryFragment) [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.SingletonC → com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ActivityRetainedC → com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ActivityC → com.dataDoctor.rehabai.RehabAIApp_HiltComponents.FragmentC]
+1 error
+
+[Incubating] Problems report is available at: file:///Users/nahyowon/Documents/exAndroid/androidProject/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:hiltJavaCompileDebug'.
+> Compilation failed; see the compiler output below.
+  /Users/nahyowon/Documents/exAndroid/androidProject/app/build/generated/hilt/component_sources/debug/com/dataDoctor/rehabai/RehabAIApp_HiltComponents.java:159: error: [Dagger/MissingBinding] com.dataDoctor.rehabai.domain.repository.AIApiRepository cannot be provided without an @Provides-annotated method.
+    public abstract static class SingletonC implements RehabAIApp_GeneratedInjector,
+                           ^
+    
+        com.dataDoctor.rehabai.domain.repository.AIApiRepository is injected at
+            [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ViewModelC] com.dataDoctor.rehabai.domain.usecase.GetWeeklyAnalysisUseCase(…, aiApiRepository, …)
+        com.dataDoctor.rehabai.domain.usecase.GetWeeklyAnalysisUseCase is injected at
+            [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ViewModelC] com.dataDoctor.rehabai.presentation.viewmodel.HistoryViewModel(…, getWeeklyAnalysisUseCase, …)
+        com.dataDoctor.rehabai.presentation.viewmodel.HistoryViewModel is injected at
+            [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ViewModelC] com.dataDoctor.rehabai.presentation.viewmodel.HistoryViewModel_HiltModules.BindsModule.binds(vm)
+        @dagger.hilt.android.internal.lifecycle.HiltViewModelMap java.util.Map<java.lang.Class<?>,javax.inject.Provider<androidx.lifecycle.ViewModel>> is requested at
+            [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ViewModelC] dagger.hilt.android.internal.lifecycle.HiltViewModelFactory.ViewModelFactoriesEntryPoint.getHiltViewModelMap() [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.SingletonC → com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ActivityRetainedC → com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ViewModelC]
+    It is also requested at:
+        com.dataDoctor.rehabai.data.repository.WorkoutRoutineRepositoryImpl(…, aiApiRepository, …)
+    The following other entry points also depend on it:
+        com.dataDoctor.rehabai.presentation.history.HistoryFragment_GeneratedInjector.injectHistoryFragment(com.dataDoctor.rehabai.presentation.history.HistoryFragment) [com.dataDoctor.rehabai.RehabAIApp_HiltComponents.SingletonC → com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ActivityRetainedC → com.dataDoctor.rehabai.RehabAIApp_HiltComponents.ActivityC → com.dataDoctor.rehabai.RehabAIApp_HiltComponents.FragmentC]
+  1 error
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.13/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 1s
+29 actionable tasks: 1 executed, 28 up-to-date

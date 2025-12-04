@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "926805761566-bv4atrgrjl19a5qjmqtmm1s33nih4duf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dataDoctor.rehabai",
+            "certificate_hash": "7520a8877f1ff8cda3ddd738c5323dd2679113a4"
+          }
+        },
+        {
           "client_id": "926805761566-rds70tnik97vb7evse9sshs5i6r12ls4.apps.googleusercontent.com",
           "client_type": 3
         }

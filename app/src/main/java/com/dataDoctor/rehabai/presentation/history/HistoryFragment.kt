@@ -30,6 +30,8 @@ import com.dataDoctor.rehabai.data.local.SessionManager
 import com.dataDoctor.rehabai.domain.usecase.GetWeeklyAnalysisUseCase
 import com.dataDoctor.rehabai.domain.repository.UserRepository
 import com.dataDoctor.rehabai.data.ExerciseCatalog
+import androidx.navigation.fragment.findNavController // [추가]
+import androidx.recyclerview.widget.LinearLayoutManager // [추가]
 import android.util.Log
 
 @AndroidEntryPoint
@@ -40,7 +42,7 @@ class HistoryFragment : Fragment() {
 
     private val viewModel: HistoryViewModel by viewModels()
 
-    // [제거됨] private lateinit var historyAdapter: HistoryAdapter
+    private lateinit var historyAdapter: HistoryAdapter // [복구]
 
     // ★★★ [유지/재사용] 필요한 의존성 주입 ★★★
     @Inject
@@ -65,7 +67,7 @@ class HistoryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // [삭제됨] setupRecyclerView()
+        setupRecyclerView() // [복구]
         setupCalendarListener()
         // [삭제됨] setupSwipeToRefresh()
         observeUiState()
@@ -90,9 +92,31 @@ class HistoryFragment : Fragment() {
         loadDailyHistory(selectedDate.date)
     }
 
+    private fun setupRecyclerView() {
+        historyAdapter = HistoryAdapter { item ->
+            // 클릭 이벤트 처리
+            when (item) {
+                is HistoryItem.Diet -> {
+                    // 식단 상세 화면으로 이동 (session.id를 전달하여 ViewModel에서 조회)
+                    val action = HistoryFragmentDirections.actionHistoryFragmentToDietDetailFragment(item.session.id)
+                    findNavController().navigate(action)
+                }
+                is HistoryItem.Exercise -> {
+                    // 운동 상세는 현재 별도 화면이 없으므로 토스트 메시지 등 처리 (선택 사항)
+                    // Toast.makeText(context, "운동 상세: ${item.session.exerciseId}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        binding.historyRecyclerView.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = historyAdapter
+        }
+    }
+
     private fun setupCalendarListener() {
         binding.calendarView.setOnDateChangedListener { _, date, _ ->
-            loadDailyHistory(date.date) // [수정] 메인 로직 호출
+            loadDailyHistory(date.date)
         }
     }
 
@@ -125,7 +149,11 @@ class HistoryFragment : Fragment() {
                         binding.analysisCard.isVisible = false
                     }
 
-                    // [삭제됨] RecyclerView 관련 로직 제거
+                    // [복구] RecyclerView 데이터 업데이트
+                    historyAdapter.submitList(state.historyItems)
+                    binding.emptyHistoryTextView.isVisible = !state.isLoading && state.historyItems.isEmpty()
+                    binding.historyRecyclerView.isVisible = !state.isLoading && state.historyItems.isNotEmpty()
+                    binding.loadingProgressBar.isVisible = state.isLoading
 
                     state.errorMessage?.let { message ->
                         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -159,66 +187,10 @@ class HistoryFragment : Fragment() {
         }
     }
 
-    // ★★★ [수정/주력] 메인 기록 로드 함수 (이전 loadDailyHistoryTest 로직 사용) ★★★
+    // ★★★ [수정] ViewModel을 통한 데이터 로드 ★★★
     private fun loadDailyHistory(date: LocalDate) {
-        val userId = sessionManager.getUserId()
-        val textView = binding.historyRecordsTextView // [수정] 메인 ID 사용
-
-        if (userId.isNullOrEmpty()) {
-            textView.text = "로그인된 사용자 정보가 없습니다."
-            return
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            // 로딩 스피너 수동 제어 시작
-            binding.loadingProgressBar.isVisible = true
-
-            try {
-                val localDate = DateTimeUtils.toDate(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
-                textView.text = "선택 날짜 ${SimpleDateFormat("M월 d일 (E)", Locale.KOREA).format(localDate)} 기록 로드 중..."
-
-                // 선택된 날짜의 데이터 로드 (Flow.first()를 사용하여 즉시 결과 획득)
-                val (rehabSessions, dietSessions) = getDailyHistoryUseCase(userId, localDate).first()
-
-                val output = StringBuilder()
-                output.append("운동 기록 (${rehabSessions.size}개)\n")
-                if (rehabSessions.isEmpty()) {
-                    output.append("기록된 운동이 없습니다.\n")
-                } else {
-                    rehabSessions.sortedBy { it.dateTime }.forEach { session ->
-                        val exerciseName = ExerciseCatalog.allExercises
-                            .find { it.id == session.exerciseId }
-                            ?.name ?: "알 수 없는 운동 (${session.exerciseId})"
-                        val ratingText = when (session.userRating) {
-                            5 -> "매우 좋음" 4 -> "좋음" 3 -> "보통" 2 -> "힘듦" 1 -> "나쁨" else -> "평가 없음"
-                        }
-                        val time = SimpleDateFormat("a h:mm", Locale.KOREA).format(session.dateTime)
-                        output.append("• $exerciseName (${session.sets}세트, ${session.reps}회) / 평점: $ratingText\n")
-                    }
-                }
-
-                output.append("\n식단 기록 (${dietSessions.size}개) \n")
-                if (dietSessions.isEmpty()) {
-                    output.append("기록된 식단이 없습니다.\n")
-                } else {
-                    dietSessions.sortedBy { it.dateTime }.forEach { session ->
-                        val foodName = session.foodName ?: "알 수 없는 식단"
-                        val satisfactionText = when (session.userSatisfaction) {
-                            5 -> "매우 만족" 4 -> "만족" 3 -> "보통" 2 -> "불만족" 1 -> "매우 불만족" else -> "평가 없음"
-                        }
-                        val time = SimpleDateFormat("a h:mm", Locale.KOREA).format(session.dateTime)
-                        output.append("• [식단] $time: $foodName (${session.actualQuantity}${session.actualUnit}) / 만족도: $satisfactionText\n")
-                    }
-                }
-                textView.text = output.toString()
-
-            } catch (e: Exception) {
-                Log.e("HistoryFragment", "메인 기록 로드 실패: ${e.message}", e)
-                textView.text = "기록 로드 중 오류 발생: ${e.message}"
-            } finally {
-                binding.loadingProgressBar.isVisible = false // 로딩 완료
-            }
-        }
+        // ViewModel에 로드 요청 (UI 업데이트는 observeUiState에서 처리)
+        viewModel.loadHistory(date)
     }
 
     override fun onDestroyView() {

@@ -6,15 +6,26 @@
     android:layout_height="wrap_content"
     android:padding="12dp">
 
+    <View
+        android:id="@+id/dietIndicatorView"
+        android:layout_width="4dp"
+        android:layout_height="0dp"
+        android:background="#4CAF50"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <TextView
         android:id="@+id/dietNameTextView"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
         android:layout_marginEnd="16dp"
         android:textAppearance="@style/TextAppearance.App.BodyLarge"
         android:textColor="?android:attr/textColorPrimary"
         app:layout_constraintEnd_toStartOf="@+id/dietCaloriesTextView"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/dietIndicatorView"
         app:layout_constraintTop_toTopOf="parent"
         tools:text="닭가슴살 샐러드" />
 
@@ -27,7 +38,7 @@
         android:textAppearance="@style/TextAppearance.App.TitleSmall"
         android:textColor="?android:attr/textColorSecondary"
         app:layout_constraintEnd_toStartOf="@+id/dietCaloriesTextView"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@id/dietIndicatorView"
         app:layout_constraintTop_toBottomOf="@id/dietNameTextView"
         tools:text="점심 / 40g 단백질" />
 

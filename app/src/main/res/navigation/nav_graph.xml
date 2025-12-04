@@ -29,7 +29,11 @@
         android:id="@+id/navigation_history"
         android:name="com.dataDoctor.rehabai.presentation.history.HistoryFragment"
         android:label="@string/title_history"
-        tools:layout="@layout/fragment_history" />
+        tools:layout="@layout/fragment_history">
+        <action
+            android:id="@+id/action_historyFragment_to_dietDetailFragment"
+            app:destination="@id/dietDetailFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_profile"
